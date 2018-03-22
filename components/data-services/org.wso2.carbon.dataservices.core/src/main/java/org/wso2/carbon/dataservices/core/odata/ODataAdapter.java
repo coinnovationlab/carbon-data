@@ -68,6 +68,7 @@ import org.apache.olingo.server.api.uri.queryoption.OrderByOption;
 import org.apache.olingo.server.api.uri.queryoption.SkipOption;
 import org.apache.olingo.server.api.uri.queryoption.SkipTokenOption;
 import org.apache.olingo.server.api.uri.queryoption.TopOption;
+import org.apache.olingo.server.api.uri.queryoption.expression.ExpressionVisitException;
 import org.apache.olingo.server.core.ContentNegotiatorException;
 import org.apache.olingo.server.core.ServiceHandler;
 import org.apache.olingo.server.core.requests.ActionRequest;
@@ -191,6 +192,7 @@ public class ODataAdapter implements ServiceHandler {
         Entity parentEntity;
         EntityDetails details = new EntityDetails();
         String baseURL = request.getODataRequest().getRawBaseUri();
+        UriInfo uriInfo = request.getUriInfo();
         try {
             if (request.isSingleton()) {
                 log.error(new ODataServiceFault("Singletons are not supported."));
@@ -201,12 +203,17 @@ public class ODataAdapter implements ServiceHandler {
                 entityType = edmEntitySet.getEntityType();
                 List<UriParameter> keys = request.getKeyPredicates();
                 if (keys != null && !keys.isEmpty()) {
-                    entity = getEntity(entityType, keys, baseURL);
+                    entity = getEntity(entityType, keys, baseURL, uriInfo);
                     if (getETagMatchedEntity(request.getETag(), getIfMatch(request), entity) != null) {
                         details.eTagMatched = true;
                     }
                 } else {
-                    entitySet = getEntityCollection(edmEntitySet.getName(), baseURL);
+                    try {
+						entitySet = getEntityCollection(edmEntitySet.getName(), baseURL, uriInfo);
+					} catch (ExpressionVisitException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
                 }
             }
             if (!request.getNavigations().isEmpty() && entity != null) {
@@ -225,7 +232,7 @@ public class ODataAdapter implements ServiceHandler {
             details.entitySet = entitySet;
             details.entityType = entityType;
             // According to the odatav4 spec we have to perform these queries according to the following order
-            UriInfo uriInfo = request.getUriInfo();
+            
             EdmEntitySet edmEntitySet = getEdmEntitySet(uriInfo);
             FilterOption filterOption = uriInfo.getFilterOption();
             CountOption countOption = uriInfo.getCountOption();
@@ -233,12 +240,15 @@ public class ODataAdapter implements ServiceHandler {
             SkipOption skipOption = uriInfo.getSkipOption();
             TopOption topOption = uriInfo.getTopOption();
             SkipTokenOption skipTokenOption = uriInfo.getSkipTokenOption();
-            if (filterOption != null) {
+            /*if (filterOption != null) {
                 QueryHandler.applyFilterSystemQuery(filterOption, details.entitySet, edmEntitySet);
-            }
+            }*/
             if (countOption != null) {
-                QueryHandler.applyCountSystemQueryOption(countOption, details.entitySet);
+            	int countRecords = getCountCollection(uriInfo,edmEntitySet.getName());
+                //QueryHandler.applyCountSystemQueryOption(countOption, details.entitySet);
+                QueryHandler.applyCountOption(countOption, entitySet, countRecords);
             }
+            /*
             if (orderByOption != null) {
                 QueryHandler.applyOrderByOption(orderByOption, details.entitySet, edmEntitySet);
             }
@@ -253,9 +263,9 @@ public class ODataAdapter implements ServiceHandler {
                                                                            .getHeaders(HttpHeader.PREFER))
                                       .getMaxPageSize();
                 QueryHandler.applyServerSidePaging(skipTokenOption, details.entitySet, edmEntitySet, baseURL, pageSize);
-            }
+            }*/
             return details;
-        } catch (ODataServiceFault dataServiceFault) {
+        } catch (ODataServiceFault | ExpressionVisitException dataServiceFault) {
             log.error("Error in processing the read request. : " + dataServiceFault.getMessage(), dataServiceFault);
             throw new ODataApplicationException(dataServiceFault.getMessage(),
                                                 HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), Locale.ENGLISH);
@@ -426,7 +436,7 @@ public class ODataAdapter implements ServiceHandler {
             } else {
                 // This below code should be run in transaction, for the sake of E-Tag
                 initializeTransactionalConnection();
-                Entity entity = getEntity(request.getEntitySet().getEntityType(), keys, baseUrl);
+                Entity entity = getEntity(request.getEntitySet().getEntityType(), keys, baseUrl,null);
                 if (entity == null) {
                     response.writeNotFound(true);
                     if (log.isDebugEnabled()) {
@@ -476,7 +486,7 @@ public class ODataAdapter implements ServiceHandler {
         String baseUrl = request.getODataRequest().getRawBaseUri();
         Entity currentEntity;
         try {
-            currentEntity = getEntity(edmEntitySet.getEntityType(), request.getKeyPredicates(), baseUrl);
+            currentEntity = getEntity(edmEntitySet.getEntityType(), request.getKeyPredicates(), baseUrl, null);
             if (currentEntity == null) {
                 createEntity(request, entity, response);
             } else {
@@ -500,7 +510,7 @@ public class ODataAdapter implements ServiceHandler {
             ODataEntry deleteEntity = wrapKeyParamToDataEntry(keys);
             if (!EMPTY_E_TAG.equals(eTag)) {
                 initializeTransactionalConnection();
-                Entity entity = getEntity(request.getEntitySet().getEntityType(), keys, baseUrl);
+                Entity entity = getEntity(request.getEntitySet().getEntityType(), keys, baseUrl, null);
                 if (entity == null) {
                     response.writeNotFound(true);
                     if (log.isDebugEnabled()) {
@@ -588,7 +598,7 @@ public class ODataAdapter implements ServiceHandler {
                 } else {
                     // This should be done in transactional, for the sake of E-Tag
                     initializeTransactionalConnection();
-                    Entity entity = getEntity(request.getEntitySet().getEntityType(), keys, baseUrl);
+                    Entity entity = getEntity(request.getEntitySet().getEntityType(), keys, baseUrl, null);
                     if (entity == null) {
                         response.writeNotFound(true);
                         if (log.isDebugEnabled()) {
@@ -671,7 +681,7 @@ public class ODataAdapter implements ServiceHandler {
                 } else {
                     // This should be done in transactional, for the sake of E-Tag
                     initializeTransactionalConnection();
-                    Entity entity = getEntity(request.getEntitySet().getEntityType(), keys, baseUrl);
+                    Entity entity = getEntity(request.getEntitySet().getEntityType(), keys, baseUrl, null);
                     if (entity == null) {
                         response.writeNotFound(true);
                         if (log.isDebugEnabled()) {
@@ -774,7 +784,7 @@ public class ODataAdapter implements ServiceHandler {
                 if (EMPTY_E_TAG.equals(entityETag)) {
                     deleted = this.dataHandler.updateEntityInTable(tableName, entry);
                 } else {
-                    Entity entity = getEntity(edmEntitySet.getEntityType(), keys, baseUrl);
+                    Entity entity = getEntity(edmEntitySet.getEntityType(), keys, baseUrl, null);
                     if (entity != null) {
                         if (entityETag.equals(entity.getETag())) {
                             deleted = this.dataHandler.updateEntityInTableTransactional(tableName,
@@ -798,7 +808,7 @@ public class ODataAdapter implements ServiceHandler {
                 if (EMPTY_E_TAG.equals(entityETag)) {
                     updated = this.dataHandler.updateEntityInTable(tableName, entry);
                 } else {
-                    Entity entity = getEntity(edmEntitySet.getEntityType(), keys, baseUrl);
+                    Entity entity = getEntity(edmEntitySet.getEntityType(), keys, baseUrl, null);
                     if (entity != null) {
                         if (entityETag.equals(entity.getETag())) {
                             updated = this.dataHandler.updateEntityInTableTransactional(tableName,
@@ -873,7 +883,7 @@ public class ODataAdapter implements ServiceHandler {
             navigationKeys = getKeyPredicatesFromReference(referenceID, navigationTable);
             if (!EMPTY_E_TAG.equals(entityETag)) {
                 initializeTransactionalConnection();
-                Entity entity = getEntity(request.getEntitySet().getEntityType(), rootKeys, baseUrl);
+                Entity entity = getEntity(request.getEntitySet().getEntityType(), rootKeys, baseUrl, null);
                 if (entity == null) {
                     response.writeNotFound();
                     if (log.isDebugEnabled()) {
@@ -933,7 +943,7 @@ public class ODataAdapter implements ServiceHandler {
             }
             if (!EMPTY_E_TAG.equals(entityETag)) {
                 initializeTransactionalConnection();
-                Entity entity = getEntity(request.getEntitySet().getEntityType(), rootKeys, baseUrl);
+                Entity entity = getEntity(request.getEntitySet().getEntityType(), rootKeys, baseUrl, null);
                 if (entity == null) {
                     response.writeNotFound();
                     if (log.isDebugEnabled()) {
@@ -1287,11 +1297,24 @@ public class ODataAdapter implements ServiceHandler {
      * @param tableName Name of the table
      * @return EntityCollection
      * @throws ODataServiceFault
+     * @throws ODataApplicationException 
+     * @throws ExpressionVisitException 
      */
-    private EntityCollection getEntityCollection(String tableName, String baseUrl) throws ODataServiceFault {
-        return createEntityCollectionFromDataEntryList(tableName, this.dataHandler.readTable(tableName), baseUrl);
+    private int getCountCollection(UriInfo uriInfo, String tableName) throws ODataServiceFault, ExpressionVisitException, ODataApplicationException {
+        return this.dataHandler.countRecords(uriInfo, tableName);
     }
 
+    /**
+     * This method returns the count of the entity collection from the ODataDataHandler
+     *
+     * @param tableName Name of the table
+     * @return EntityCollection
+     * @throws ODataServiceFault
+     */
+    private EntityCollection getEntityCollection(String tableName, String baseUrl, UriInfo uriInfo) throws ODataServiceFault, ExpressionVisitException, ODataApplicationException {
+        return createEntityCollectionFromDataEntryList(tableName, this.dataHandler.readTable(tableName, uriInfo), baseUrl);
+    }
+    
     /**
      * This method returns matched entity list, where it uses in getEntity method to get the matched entity.
      *
@@ -1407,10 +1430,10 @@ public class ODataAdapter implements ServiceHandler {
      * @throws ODataApplicationException
      * @throws ODataServiceFault
      */
-    private Entity getEntity(EdmEntityType entityType, List<UriParameter> keys, String baseUrl)
+    private Entity getEntity(EdmEntityType entityType, List<UriParameter> keys, String baseUrl,UriInfo uriInfo)
             throws ODataApplicationException, ODataServiceFault {
         EntityCollection entityCollection = createEntityCollectionFromDataEntryList(entityType.getName(), dataHandler
-                .readTableWithKeys(entityType.getName(), wrapKeyParamToDataEntry(keys)), baseUrl);
+                .readTableWithKeys(entityType.getName(), wrapKeyParamToDataEntry(keys), uriInfo), baseUrl);
         return getEntity(entityType, entityCollection, keys);
     }
 
@@ -1496,7 +1519,7 @@ public class ODataAdapter implements ServiceHandler {
             }
         }
         results = createEntityCollectionFromDataEntryList(linkName, dataHandler
-                .readTableWithKeys(linkName, wrapPropertiesToDataEntry(type, properties, propertyMap)), url);
+                .readTableWithKeys(linkName, wrapPropertiesToDataEntry(type, properties, propertyMap),null), url);
         return results;
 
     }
@@ -1532,7 +1555,7 @@ public class ODataAdapter implements ServiceHandler {
         }
         EntityCollection results;
         results = createEntityCollectionFromDataEntryList(linkName, dataHandler
-                .readTableWithKeys(linkName, wrapPropertiesToDataEntry(type, properties, propertyMap)), baseUrl);
+                .readTableWithKeys(linkName, wrapPropertiesToDataEntry(type, properties, propertyMap), null), baseUrl);
         if (!results.getEntities().isEmpty()) {
             return results.getEntities().get(0);
         } else {

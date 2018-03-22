@@ -22,11 +22,28 @@ import org.apache.axis2.databinding.utils.ConverterUtil;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.olingo.commons.api.data.Entity;
+import org.apache.olingo.commons.api.edm.EdmEntitySet;
+import org.apache.olingo.server.api.ODataApplicationException;
+import org.apache.olingo.server.api.uri.UriInfo;
+import org.apache.olingo.server.api.uri.queryoption.CountOption;
+import org.apache.olingo.server.api.uri.queryoption.FilterOption;
+import org.apache.olingo.server.api.uri.queryoption.OrderByItem;
+import org.apache.olingo.server.api.uri.queryoption.OrderByOption;
+import org.apache.olingo.server.api.uri.queryoption.SkipOption;
+import org.apache.olingo.server.api.uri.queryoption.TopOption;
+import org.apache.olingo.server.api.uri.queryoption.expression.Expression;
+import org.apache.olingo.server.api.uri.queryoption.expression.ExpressionVisitException;
 import org.wso2.carbon.dataservices.common.DBConstants;
 import org.wso2.carbon.dataservices.core.DBUtils;
 import org.wso2.carbon.dataservices.core.DataServiceFault;
 import org.wso2.carbon.dataservices.core.engine.DataEntry;
 import org.wso2.carbon.dataservices.core.odata.DataColumn.ODataDataType;
+import org.wso2.carbon.dataservices.core.odata.expression.ExpressionVisitorImpl;
+import org.wso2.carbon.dataservices.core.odata.expression.FilterExpressionVisitor;
+import org.wso2.carbon.dataservices.core.odata.expression.operand.TypedOperand;
+import org.wso2.carbon.dataservices.core.odata.expression.operand.VisitorOperand;
+import org.wso2.carbon.dataservices.core.odata.RDBMSDataHandler;
 
 import javax.sql.DataSource;
 import java.io.BufferedReader;
@@ -90,6 +107,9 @@ public class RDBMSDataHandler implements ODataDataHandler {
     public static final String TABLE_NAME = "TABLE_NAME";
     public static final String TABLE = "TABLE";
     public static final String ORACLE_SERVER = "oracle";
+    public static final String MSSQL_SERVER = "microsoft sql server";
+    public static final String MYSQL = "mysql";
+    public static final String POSTGRESQL = "postgresql";
 
     private ThreadLocal<Connection> transactionalConnection = new ThreadLocal<Connection>() {
         protected synchronized Connection initialValue() {
@@ -369,13 +389,39 @@ public class RDBMSDataHandler implements ODataDataHandler {
     }
 
     @Override
-    public List<ODataEntry> readTable(String tableName) throws ODataServiceFault {
+    public List<ODataEntry> readTable(String tableName, UriInfo uriInfo) throws ODataServiceFault, ExpressionVisitException, ODataApplicationException {
         ResultSet resultSet = null;
         Connection connection = null;
         PreparedStatement statement = null;
+        FilterOption filterOption = uriInfo.getFilterOption();
+        OrderByOption orderByOption = uriInfo.getOrderByOption();
+        SkipOption skipOption = uriInfo.getSkipOption();
+        TopOption topOption = uriInfo.getTopOption();
+        int limit=0;int offset=0;
+        String [] orderBy ;
+        String query = "", where = "", order = "";
+        if (topOption != null) {
+        	limit = topOption.getValue();
+        }
+        if(skipOption != null) {
+        	offset = skipOption.getValue();
+        }
+        if(orderByOption != null) {
+        	orderBy = getOrderBy(orderByOption);
+        	order= " order by " + String.join(", ", orderBy);
+        }
+        if (filterOption != null) {
+        	Expression exp = filterOption.getExpression();
+        	where = " where " + filterOption.getExpression().accept(new FilterExpressionVisitor());
+        	log.info(exp);
+        }
+        log.info("limit: " + limit + " offset: " + offset+ " orderBy: " + order + " where: " + where);
         try {
             connection = initializeConnection();
-            String query = "select * from " + tableName;
+            String select = "select * from " + tableName;
+            
+            query = queryBasedOnDBType(select, where, limit, offset, order);
+            log.info("Generated query: " + query);
             statement = connection.prepareStatement(query);
             resultSet = statement.executeQuery();
             return createDataEntryCollectionFromRS(tableName, resultSet);
@@ -388,6 +434,148 @@ public class RDBMSDataHandler implements ODataDataHandler {
         }
     }
 
+    public String queryBasedOnDBType(String select, String where, int row_count, int offset, String orderBy) throws ODataServiceFault {
+        Connection connection = null;
+        DatabaseMetaData meta = null;
+        String query= "";
+        try {
+            connection = initializeConnection();
+            meta = connection.getMetaData();
+            String dbType=meta.getDatabaseProductName().toLowerCase();
+            switch(dbType) {
+            	case ORACLE_SERVER: 
+            		query = queryGeneratorOracle(select, where, row_count, offset, orderBy); 
+            		break; 
+            	case MSSQL_SERVER: 
+            		query = queryGeneratorMSSql(select, where, row_count, offset, orderBy); 
+            		break; 
+            	case POSTGRESQL: 
+            		/* fall through */
+            	case MYSQL: 
+            		query = queryGeneratorSQL(select, where, row_count, offset, orderBy); 
+            		break;
+        		default: 
+        			throw new ODataServiceFault("DB Type not supported. " );
+            }
+        	return query;
+        } catch (SQLException e) {
+            throw new ODataServiceFault(e, "Error occurred while detecting db type :" +
+                                           e.getMessage());
+        } finally {
+            releaseConnection(connection);            
+        }
+    }
+    
+    /*
+     * Query Generator supporting query format for oracle version 12c
+     */
+    private String queryGeneratorOracle (String select, String where, int row_count, int offset, String orderBy) {
+    	String query = "",limit= "";
+    	if(row_count != 0) {
+        	if(offset != 0) {
+        		limit = " OFFSET "+ offset + " ROWS";
+        		limit += " FETCH NEXT "+ row_count +" ROWS ONLY ";
+            }
+        	else {
+        		limit += " FETCH FIRST "+ row_count +" ROWS ONLY ";
+        	}
+        }
+        else if(offset != 0 ){
+        	limit =" OFFSET "+ offset + " ROWS";
+        }
+    	// ROWNUM <= number;  // old versions   	
+    	query = select + where + orderBy + limit;
+    	return query;
+    }
+    
+    /*
+     * Query Generator supporting query format for Microsoft SQL Server 2012 and over
+     */
+    private String queryGeneratorMSSql (String select, String where, int row_count, int offset, String orderBy) {
+    	String query = "",limit= "";
+    	if(row_count != 0) {
+        	if(offset != 0) {
+        		limit = " OFFSET "+ offset + " ROWS";
+        		limit += " FETCH NEXT "+ row_count +" ROWS ONLY ";
+            }
+        	else {
+        		limit += " FETCH FIRST "+ row_count +" ROWS ONLY ";
+        	}
+        }
+        else if(offset != 0 ){
+        	limit =" OFFSET "+ offset + " ROWS";
+        }
+    	// Select TOP 3 * // old versions
+    	query = select + where + orderBy + limit;
+    	return query;
+    }
+    
+    /*
+     * Query Generator supporting query format for MySQL, PostgreSQL 
+     */
+    private String queryGeneratorSQL (String select, String where, int row_count, int offset, String orderBy) {
+    	String query = "", limit= "";
+    	if(row_count != 0) {
+    		limit = " limit "+ row_count;
+        	if(offset != 0) {
+        		limit += " offset "+ offset;
+            }
+        }
+        else if(offset != 0 ){
+        	limit = " offset "+ offset;
+        }
+    	query = select + where + orderBy + limit;
+    	return query;
+    }
+    
+    private String[] getOrderBy(OrderByOption orderByOption) throws ExpressionVisitException, ODataApplicationException {
+    	ArrayList<String> orders = new ArrayList<>();
+    	String  direction="";
+    	for (int i = 0; i < orderByOption.getOrders().size(); i++) {
+    		final OrderByItem item = orderByOption.getOrders().get(i);
+    		direction = item.isDescending() ? " DESC" : " ASC";
+    		String column = (String) item.getExpression().accept(new FilterExpressionVisitor());
+    		orders.add(column + direction);
+        }
+    	String [] order = orders.toArray(new String [orders.size()]);
+    	return order;
+    }
+    
+    @Override
+    public int countRecords(UriInfo uriInfo, String tableName) throws ODataServiceFault, ExpressionVisitException, ODataApplicationException {
+    	String query = "" , where = "";
+    	int total = 0;
+    	CountOption countOption = uriInfo.getCountOption();
+    	FilterOption filterOption = uriInfo.getFilterOption();
+    	if (filterOption != null) {
+        	where = " where " + filterOption.getExpression().accept(new FilterExpressionVisitor());
+        }
+    	Boolean count = countOption.getValue();
+    	Connection connection = null;
+    	ResultSet resultSet = null;
+        PreparedStatement statement = null;
+    	
+    	if (count) {
+    		 try {
+                connection = initializeConnection();
+                query = "select count(*) as total from " + tableName + where;
+                log.info("Count query: " + query);
+                statement = connection.prepareStatement(query);
+                resultSet = statement.executeQuery();
+                while (resultSet.next()) {
+                	total = resultSet.getInt("total");
+                }
+            } catch (SQLException e) {
+                throw new ODataServiceFault(e, "Error occurred while counting entities from " + tableName + " table. :" +
+                                               e.getMessage());
+            } finally {
+                releaseResources(resultSet, statement);
+                releaseConnection(connection);
+            }   		
+        }
+    	return total;
+    }
+    
     @Override
     public List<String> getTableList() {
         return this.tableList;
@@ -477,7 +665,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
     }
 
     @Override
-    public List<ODataEntry> readTableWithKeys(String tableName, ODataEntry keys) throws ODataServiceFault {
+    public List<ODataEntry> readTableWithKeys(String tableName, ODataEntry keys, UriInfo uriInfo) throws ODataServiceFault {
         ResultSet resultSet = null;
         Connection connection = null;
         PreparedStatement statement = null;
@@ -977,7 +1165,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
         }
 
     }
-
+    
     private String getBase64StringFromInputStream(InputStream in) throws SQLException {
         ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
         String strData;

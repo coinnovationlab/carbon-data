@@ -34,6 +34,10 @@ import org.wso2.carbon.dataservices.common.DBConstants;
 import org.wso2.carbon.dataservices.core.DBUtils;
 import org.wso2.carbon.dataservices.core.DataServiceFault;
 import org.wso2.carbon.dataservices.core.odata.DataColumn.ODataDataType;
+import org.apache.olingo.server.api.ODataApplicationException;
+import org.apache.olingo.server.api.uri.UriInfo;
+import org.apache.olingo.server.api.uri.queryoption.expression.ExpressionVisitException;
+
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
@@ -113,7 +117,7 @@ public class CassandraDataHandler implements ODataDataHandler {
     }
 
     @Override
-    public List<ODataEntry> readTable(String tableName) throws ODataServiceFault {
+    public List<ODataEntry> readTable(String tableName,UriInfo uriInfo) throws ODataServiceFault {
         Statement statement = new SimpleStatement("Select * from " + this.keyspace + "." + tableName);
         ResultSet resultSet = this.session.execute(statement);
         Iterator<Row> iterator = resultSet.iterator();
@@ -127,7 +131,7 @@ public class CassandraDataHandler implements ODataDataHandler {
     }
 
     @Override
-    public List<ODataEntry> readTableWithKeys(String tableName, ODataEntry keys) throws ODataServiceFault {
+    public List<ODataEntry> readTableWithKeys(String tableName, ODataEntry keys,UriInfo uriInfo) throws ODataServiceFault {
         List<ColumnMetadata> cassandraTableMetaData = this.session.getCluster().getMetadata().getKeyspace(this.keyspace)
                                                                   .getTable(tableName).getColumns();
         List<String> pKeys = this.primaryKeys.get(tableName);
@@ -153,7 +157,12 @@ public class CassandraDataHandler implements ODataDataHandler {
         }
         return entryList;
     }
-
+    
+    @Override
+    public int countRecords(UriInfo uriInfo, String tableName) throws ODataServiceFault, ExpressionVisitException, ODataApplicationException {
+           return 0;
+    }
+    
     @Override
     public ODataEntry insertEntityToTable(String tableName, ODataEntry entity) throws ODataServiceFault {
         List<ColumnMetadata> cassandraTableMetaData = this.session.getCluster().getMetadata().getKeyspace(this.keyspace)
