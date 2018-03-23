@@ -404,7 +404,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
         	limit = topOption.getValue();
         }
         else {
-        	limit=30; // TODO Temporarly hardcoded, defining it in some global variables 
+        	limit=30; // TODO Temporally hardcoded, defining it in some global variables 
         }
         if(skipOption != null) {
         	offset = skipOption.getValue();

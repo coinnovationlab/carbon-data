@@ -46,6 +46,7 @@ import org.wso2.carbon.dataservices.core.description.config.SQLCarbonDataSourceC
 import org.wso2.carbon.dataservices.core.description.query.QueryFactory;
 import org.wso2.carbon.dataservices.core.engine.DataService;
 import org.wso2.carbon.dataservices.core.engine.DataServiceSerializer;
+import org.wso2.carbon.dataservices.core.odata.ODataServiceFault;
 import org.wso2.carbon.dataservices.core.script.DSGenerator;
 import org.wso2.carbon.dataservices.core.script.PaginatedTableInfo;
 import org.wso2.carbon.dataservices.core.sqlparser.SQLParserUtil;
@@ -60,8 +61,11 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -73,6 +77,15 @@ import java.util.List;
 public class DataServiceAdmin extends AbstractAdmin {
 
 	private static final Log log = LogFactory.getLog(DataServiceAdmin.class);
+	public static final String TABLE_NAME = "TABLE_NAME";
+	public static final String TABLE = "TABLE";
+    public static final String ORACLE_SERVER = "oracle";
+    public static final String MSSQL_SERVER = "microsoft sql server";
+    private ThreadLocal<Connection> transactionalConnection = new ThreadLocal<Connection>() {
+        protected synchronized Connection initialValue() {
+            return null;
+        }
+    };
 
 	public DataServiceAdmin() {
 	}
@@ -312,6 +325,105 @@ public class DataServiceAdmin extends AbstractAdmin {
 			PrivilegedCarbonContext.endTenantFlow();
 		}
 	}
+
+	/**
+    * This method creates a list of tables available in the DB.
+    *
+    * @return Table List of the DB
+	 * @throws Exception 
+    */
+   public List<String> generateTableList(String driverClass, String jdbcURL, String username,
+			String password, String passwordAlias) throws Exception {
+       List<String> tableList = new ArrayList<>();
+       Connection connection = null;
+       ResultSet rs = null;
+       String message;
+       int tenantId =
+				PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
+		try {
+			PrivilegedCarbonContext.startTenantFlow();
+			PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(tenantId);
+			String resolvePwd;
+			if (driverClass == null || driverClass.length() == 0) {
+				message = "Driver class is missing";
+				if (log.isDebugEnabled()) {
+					log.debug(message);
+				}
+			}
+			if (jdbcURL == null || jdbcURL.length() == 0) {
+				message = "Driver connection URL is missing";
+				if (log.isDebugEnabled()) {
+					log.debug(message);
+				}
+			}
+
+			if (null != passwordAlias && !passwordAlias.isEmpty()) {
+				resolvePwd = DBUtils.loadFromSecureVault(passwordAlias);
+			} else {
+				resolvePwd = password;
+			}
+			Class.forName(driverClass.trim());
+			
+			if (null != username && !username.isEmpty()) {
+				connection = DriverManager.getConnection(jdbcURL, username, resolvePwd);
+				message = "Database connection is successful with driver class " + driverClass + " , jdbc url " +
+				          jdbcURL + " and user name " + username;
+			} else {
+				connection = DriverManager.getConnection(jdbcURL);
+				message = "Database connection is successful with driver class " + driverClass + " , jdbc url " +
+				          jdbcURL;
+		   }
+           DatabaseMetaData meta = connection.getMetaData();
+           if (meta.getDatabaseProductName().toLowerCase().contains(ORACLE_SERVER)) {
+               rs = meta.getTables(null, meta.getUserName(), null, new String[] { TABLE });
+           } else {
+               rs = meta.getTables(null, null, null, new String[] { TABLE });
+           }
+           while (rs.next()) {
+               String tableName = rs.getString(TABLE_NAME);
+               tableList.add(tableName);
+           }
+           return tableList;
+       } catch (Exception e) {
+           throw new Exception("Error in reading tables from the database. :" + e.getMessage());
+       } finally {
+           releaseResources(rs, null);
+           releaseConnection(connection);
+           PrivilegedCarbonContext.endTenantFlow();
+       }
+   }
+   
+   private void releaseResources(ResultSet resultSet, Statement statement) {
+	    /* close the result set */
+       if (resultSet != null) {
+           try {
+               resultSet.close();
+           } catch (Exception ignore) {
+               // ignore
+           }
+       }
+		/* close the statement */
+       if (statement != null) {
+           try {
+               statement.close();
+           } catch (Exception ignore) {
+               // ignore
+           }
+       }
+   }
+   private void releaseConnection(Connection connection) {
+       if (getTransactionalConnection() == null) {
+			/* close the connection */
+           try {
+               connection.close();
+           } catch (Exception ignore) {
+               // ignore
+           }
+       }
+   }
+   private Connection getTransactionalConnection() {
+       return transactionalConnection.get();
+   }
 
     /**
      * This will test the connection(retrieve CallFeed) of a Google spreadsheet

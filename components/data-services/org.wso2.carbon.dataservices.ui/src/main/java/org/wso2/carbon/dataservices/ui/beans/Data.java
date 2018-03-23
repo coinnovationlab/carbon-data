@@ -23,6 +23,7 @@ import org.apache.axiom.om.OMNamespace;
 import org.wso2.carbon.dataservices.common.DBConstants;
 import org.wso2.carbon.dataservices.common.DBConstants.DBSFields;
 import org.wso2.carbon.dataservices.common.conf.DynamicAuthConfiguration;
+import org.wso2.carbon.dataservices.common.conf.DynamicODataConfig;
 
 import javax.xml.namespace.QName;
 import java.util.ArrayList;
@@ -485,6 +486,18 @@ public class Data extends DataServiceConfigurationElement{
                          nestedProperty.add(nestedProp);
                      }
                     property.setValue(nestedProperty);
+                } else if (name.getAttributeValue().equals(DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING)) {
+                    property.setName(name.getAttributeValue());
+                    ArrayList<String> dynamicTableList = new ArrayList<String>();
+                    DynamicODataConfig dynamicODataTableConfiguration = new DynamicODataConfig();
+                    Iterator<OMElement> dynamicODataTablesConfigs = propertyEle.getChildrenWithName(new QName("tblname"));
+                    while (dynamicODataTablesConfigs.hasNext()) {
+                        OMElement dynamicUserConfig = dynamicODataTablesConfigs.next();
+                        String tblname = dynamicUserConfig.getText();
+                        dynamicTableList.add(tblname);
+                    }
+                    dynamicODataTableConfiguration.setTables(dynamicTableList);
+                    property.setValue(dynamicODataTableConfiguration);
                 } else {
                 	property.setName(name.getAttributeValue());
                 	if (name.getAttributeValue().equals(DBConstants.RDBMS.PASSWORD) || 

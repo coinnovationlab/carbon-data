@@ -139,6 +139,7 @@ public class JDBCPoolSQLConfig extends SQLConfig {
 		props.remove(RDBMS.MAX_WAIT);
 		props.remove(RDBMS.DYNAMIC_USER_AUTH_CLASS);
 		props.remove(RDBMS.DYNAMIC_USER_AUTH_MAPPING);
+                props.remove(RDBMS.DYNAMIC_ODATA_TABLE_MAPPING);
 	}
 	
 	private void handlePostConfigInit(RDBMSConfiguration config) {

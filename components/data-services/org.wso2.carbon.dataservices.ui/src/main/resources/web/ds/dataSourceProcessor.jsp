@@ -17,6 +17,7 @@
 -->
 <%@page import="org.wso2.carbon.dataservices.common.DBConstants" %>
 <%@ page import="org.wso2.carbon.dataservices.common.conf.DynamicAuthConfiguration" %>
+<%@ page import="org.wso2.carbon.dataservices.common.conf.DynamicODataConfig" %>
 <%@ page import="org.wso2.carbon.dataservices.ui.beans.Config" %>
 <%@ page import="org.wso2.carbon.dataservices.ui.beans.Property" %>
 <%@ page import="org.wso2.carbon.dataservices.ui.beans.Query" %>
@@ -40,6 +41,13 @@
         } else if (value instanceof DynamicAuthConfiguration) {
             List<DynamicAuthConfiguration.Entry> userEntries = ((DynamicAuthConfiguration) value).getEntries();
             if (userEntries != null && userEntries.size() > 0) {
+                config.updateProperty(propertyName, value);
+            } else {
+                config.removeProperty(propertyName);
+            }
+        } else if (value instanceof DynamicODataConfig) {
+            List<String> tableEntries = ((DynamicODataConfig) value).getTables();
+            if (tableEntries != null && tableEntries.size() > 0) {
                 config.updateProperty(propertyName, value);
             } else {
                 config.removeProperty(propertyName);
@@ -112,6 +120,7 @@
     String validationQueryTimeout = request.getParameter(DBConstants.RDBMS.VALIDATION_QUERY_TIMEOUT);
     String alternateUserNameAllowed = request.getParameter(DBConstants.RDBMS.ALTERNATE_USERNAME_ALLOWED);
     String dynamicUserAuthClass = request.getParameter(DBConstants.RDBMS.DYNAMIC_USER_AUTH_CLASS);
+    String dynamicODataConfigurations = request.getParameter(DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING);
 
     String excelDatasource = request.getParameter(DBConstants.Excel.DATASOURCE);
     
@@ -427,7 +436,9 @@
                     updateConfiguration(dsConfig, DBConstants.RDBMS.DYNAMIC_USER_AUTH_CLASS, dynamicUserAuthClass);
                     Iterator<Property> iterator = dsConfig.getProperties().iterator();
                     ArrayList<DynamicAuthConfiguration.Entry> dynamicUserList = new ArrayList<DynamicAuthConfiguration.Entry>();
+                    ArrayList<String> dynamicTableList = new ArrayList<String>();
                     DynamicAuthConfiguration dynamicAuthConfiguration = new DynamicAuthConfiguration();
+                    DynamicODataConfig dynamicODataConfig = new DynamicODataConfig();
                     while (iterator.hasNext()) {
                         Property availableProperty = iterator.next();
                         if (availableProperty.getName().equals(DBConstants.RDBMS.DYNAMIC_USER_AUTH_MAPPING)) {
@@ -443,12 +454,20 @@
                                         dynamicUserEntry.setRequest(carbonUsername);
                                         dynamicUserEntry.setUsername(dbUsername);
                                         dynamicUserEntry.setPassword(dbUserPwd);
-
                                         dynamicUserList.add(dynamicUserEntry);
                                     }
                                 }
                                 dynamicAuthConfiguration.setEntries(dynamicUserList);
-                                break;
+                            }
+                        } else if (availableProperty.getName().equals(DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING)) {
+                           if (availableProperty.getValue() instanceof DynamicODataConfig) {
+                        	   if(request.getParameterValues("tablesOdata") != null){
+	                            	String [] chkbTblNames = request.getParameterValues("tablesOdata");
+	                                for (String tblname : chkbTblNames) {
+	                                    dynamicTableList.add(tblname);
+	                                }
+	                                dynamicODataConfig.setTables(dynamicTableList);
+                        	   }
                             }
                         }
                     }
@@ -457,6 +476,13 @@
                     } else {
                         dsConfig.removeProperty(DBConstants.RDBMS.DYNAMIC_USER_AUTH_MAPPING);
                     }
+                    System.out.println("OData Table size" + dynamicTableList.size());
+                    if (dynamicTableList.size() > 0) {
+                        updateConfiguration(dsConfig, DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING, dynamicODataConfig);
+                    } else {
+                        dsConfig.removeProperty(DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING);
+                    }
+                    
                 } else if (DBConstants.DataSourceTypes.EXCEL.equals(datasourceType)) {
                 	if (useQueryMode) {
                 		String excelQueryModeUrl = DBConstants.DSSQLDriverPrefixes.EXCEL_PREFIX + ":" +

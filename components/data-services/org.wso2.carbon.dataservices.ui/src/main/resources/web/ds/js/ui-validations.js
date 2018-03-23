@@ -1951,6 +1951,18 @@ function showAdvancedRDBMSConfigurations() {
   }
 }
 
+function showAdvancedConfigODataTables() {
+	  var advODataSymbolMax =  document.getElementById('advODataSymbolMax');
+	  var advancedConfigFields = document.getElementById('advancedConfigODataTables');
+	  if(advancedConfigFields.style.display == 'none') {
+		  advODataSymbolMax.setAttribute('style','background-image:url(images/minus.gif);');
+	    advancedConfigFields.style.display = '';
+	  } else {
+		  advODataSymbolMax.setAttribute('style','background-image:url(images/plus.gif);');
+	      advancedConfigFields.style.display = 'none';
+	  }
+	}
+
 function deleteNewPropertyField(i) {
     var propertyNameRaw = document.getElementById("propertyNameRaw" + i);
     if (propertyNameRaw != undefined && propertyNameRaw != null) {

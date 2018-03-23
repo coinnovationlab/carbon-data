@@ -19,6 +19,7 @@ import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
 import org.wso2.carbon.dataservices.common.conf.DynamicAuthConfiguration;
+import org.wso2.carbon.dataservices.common.conf.DynamicODataConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -113,6 +114,18 @@ public class Property extends DataServiceConfigurationElement{
                         dynamicUserAuthConfigEle.addChild(dynamicUserEntryEle);
                     }
                     propEl.addChild(dynamicUserAuthConfigEle);
+                }
+            }
+            else if (this.getValue() instanceof DynamicODataConfig) {
+                propEl.addAttribute("name", this.getName(), null);
+                DynamicODataConfig dynamicODataConfiguration = (DynamicODataConfig) this.getValue();
+                List<String> dynamicTableEntries = dynamicODataConfiguration.getTables();
+                if (dynamicTableEntries != null) {
+                    for (String table : dynamicTableEntries) {
+                        OMElement dynamicUserEntryEle = fac.createOMElement("tblname", null);
+                        dynamicUserEntryEle.setText(table);
+                        propEl.addChild(dynamicUserEntryEle);
+                    }
                 }
             }
         }

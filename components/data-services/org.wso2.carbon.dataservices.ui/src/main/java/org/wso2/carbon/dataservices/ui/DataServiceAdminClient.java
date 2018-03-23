@@ -22,10 +22,12 @@ import org.apache.axis2.context.ConfigurationContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.dataservices.ui.beans.AuthProvider;
+import org.wso2.carbon.dataservices.ui.stub.DataServiceAdminExceptionException;
 import org.wso2.carbon.dataservices.ui.stub.DataServiceAdminStub;
 import org.wso2.carbon.dataservices.ui.stub.admin.core.xsd.PaginatedTableInfo;
 
 import java.rmi.RemoteException;
+import java.util.List;
 
 
 public class DataServiceAdminClient {
@@ -108,6 +110,19 @@ public class DataServiceAdminClient {
     	String response = "";
     	try {
 			response = stub.testJDBCConnection(driverClass, jdbcURL, username, password,
+					passwordAlias);
+		} catch (RemoteException e) {
+			throw new AxisFault("Error connecting to " + jdbcURL +
+                    ". Message from the service is : ", e);
+		}
+		return response;
+    }
+ 
+    public String[] generateTableList(String driverClass, String jdbcURL, String username,
+            String password, String passwordAlias) throws AxisFault, DataServiceAdminExceptionException {
+    	String[] response ;
+    	try {
+			response = stub.generateTableList(driverClass, jdbcURL, username, password,
 					passwordAlias);
 		} catch (RemoteException e) {
 			throw new AxisFault("Error connecting to " + jdbcURL +

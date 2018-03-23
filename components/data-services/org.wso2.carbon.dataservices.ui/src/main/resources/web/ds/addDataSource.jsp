@@ -26,6 +26,7 @@
 <%@ page import="org.wso2.carbon.dataservices.common.DBConstants.RDBMS" %>
 <%@ page import="org.wso2.carbon.dataservices.common.RDBMSUtils" %>
 <%@ page import="org.wso2.carbon.dataservices.common.conf.DynamicAuthConfiguration" %>
+<%@ page import="org.wso2.carbon.dataservices.common.conf.DynamicODataConfig" %>
 <%@ page import="org.wso2.carbon.dataservices.ui.DataServiceAdminClient" %>
 <%@ page import="org.wso2.carbon.dataservices.ui.beans.Config" %>
 <%@ page import="org.wso2.carbon.dataservices.ui.beans.Property" %>
@@ -34,12 +35,14 @@
 <%@ page import="javax.xml.bind.JAXBContext" %>
 <%@ page import="javax.xml.bind.Marshaller" %>
 <%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Iterator" %>
 <%@ page import="javax.xml.bind.JAXBException" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.regex.Pattern" %>
 <%@ page import="java.util.regex.Matcher" %>
 <%@ page import="org.wso2.carbon.dataservices.sql.driver.parser.Constants" %>
+<%@ page import="org.apache.axis2.AxisFault"%>
 
 <fmt:bundle basename="org.wso2.carbon.dataservices.ui.i18n.Resources">
 <script type="text/javascript" src="../ajax/js/prototype.js"></script>
@@ -322,6 +325,10 @@ private Config addNotAvailableFunctions(Config config,String selectedType, HttpS
         DynamicAuthConfiguration dynamicUserConfig = new DynamicAuthConfiguration();
         if (config.getPropertyValue(DBConstants.RDBMS.DYNAMIC_USER_AUTH_MAPPING) == null) {
             config.addProperty(DBConstants.RDBMS.DYNAMIC_USER_AUTH_MAPPING, dynamicUserConfig);
+        }
+        DynamicODataConfig dynamicODataConfig = new DynamicODataConfig();
+        if (config.getPropertyValue(DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING) == null) {
+            config.addProperty(DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING, dynamicODataConfig);
         }
     } else if (DBConstants.DataSourceTypes.EXCEL.equals(selectedType)) {
     	if (config.getPropertyValue(DBConstants.RDBMS.DRIVER_CLASSNAME) == null) {
@@ -802,6 +809,8 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
 
                     DynamicAuthConfiguration dynamicUserConfig = new DynamicAuthConfiguration();
                     newConfig.addProperty(DBConstants.RDBMS.DYNAMIC_USER_AUTH_MAPPING, dynamicUserConfig);
+                    DynamicODataConfig dynamicODataConfig = new DynamicODataConfig();
+                    newConfig.addProperty(DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING, dynamicODataConfig);
 
                 } else if (DBConstants.DataSourceTypes.EXCEL.equals(selectedType)) {
                 	newConfig.addProperty(DBConstants.RDBMS.DRIVER_CLASSNAME, "");
@@ -1800,6 +1809,7 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
             ||propertyName.equals(DBConstants.RDBMS.ALTERNATE_USERNAME_ALLOWED)
             ||propertyName.equals(DBConstants.RDBMS.DYNAMIC_USER_AUTH_CLASS)
             ||propertyName.equals(DBConstants.RDBMS.DYNAMIC_USER_AUTH_MAPPING)
+            ||propertyName.equals(DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING)
             ||propertyName.equals(DBConstants.CustomDataSource.DATA_SOURCE_PROPS) 
             ||propertyName.equals(DBConstants.CustomDataSource.DATA_SOURCE_QUERY_CLASS)
             ||propertyName.equals(DBConstants.CustomDataSource.DATA_SOURCE_TABULAR_CLASS)) && 
@@ -2429,6 +2439,7 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
             ||propertyName.equals(DBConstants.RDBMS.ALTERNATE_USERNAME_ALLOWED)
             ||propertyName.equals(DBConstants.RDBMS.DYNAMIC_USER_AUTH_CLASS)
             ||propertyName.equals(DBConstants.RDBMS.DYNAMIC_USER_AUTH_MAPPING)
+            ||propertyName.equals(DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING)
             ||propertyName.equals(DBConstants.CustomDataSource.DATA_SOURCE_PROPS) 
             ||propertyName.equals(DBConstants.CustomDataSource.DATA_SOURCE_QUERY_CLASS)
             ||propertyName.equals(DBConstants.CustomDataSource.DATA_SOURCE_TABULAR_CLASS)) && !(propertyName.equals(DBConstants.GSpread.DATASOURCE) && useQueryMode)
@@ -2450,7 +2461,7 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
     <td class="leftCol-small" style="white-space: nowrap;">
         Enable OData</td>
     <td>
-        <input type="checkbox" name="isOData" id="isOData" value="isOData" <%=(isOData==true ? "checked" : "") %>>
+        <input type="checkbox" name="isOData" id="isOData" value="isOData" <%=(isOData==true ? "checked" : "") %> onclick="reloadOdataConfig(<%=isOData%>);">
     </td>
 </tr>
 <% } %>
@@ -2467,6 +2478,114 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
     </tr>
 <%} %>
 </table>
+
+<% if("RDBMS".equals(dataSourceType) || "Cassandra".equals(dataSourceType) || "CARBON_DATASOURCE".equals(dataSourceType)) { %>
+<table id="advancedTable" class="styledLeft noBorders" cellspacing="0" width="100%">
+    <tr>
+        <td colspan="2" class="middle-header">
+        <a onclick="showAdvancedConfigODataTables()" class="icon-link" style="background-image:url(images/plus.gif);"
+                     id="advODataSymbolMax"></a>
+            <fmt:message key="odata.configuration.activate.table"/></td>
+    </tr>
+    <tr id="advancedConfigODataTables" style="display:none">
+	    <td>
+	    	<table>
+	    		<%
+                    if (configId != null && configId.trim().length() > 0) {
+                        Config dsConfig = dataService.getConfig(configId);
+
+                        if (dsConfig == null || (dsConfig != null && !flag.equals("edit"))) {
+                            dsConfig = newConfig;
+                        }
+                        if (dsConfig != null) {
+                            dataSourceType = dsConfig.getDataSourceType();
+                            if (dataSourceType == null) {
+                                dataSourceType = "";
+                            }
+                            if (selectedType == null) {
+                                selectedType = dsConfig.getDataSourceType();
+                            }
+                            dsConfig = addNotAvailableFunctions(dsConfig, selectedType, request);
+                            ArrayList configProperties = dsConfig.getProperties();
+                            propertyIterator = configProperties.iterator();
+
+                        }
+                    }
+                    if (propertyIterator != null) {
+                    	DynamicODataConfig dynamicODataConfig;
+                        List<String> dynamicTableList = new ArrayList<String>();
+                        String driverClass = "";
+                    	String jdbcUrl = "";
+                    	String userName = "";
+                    	String password = "";
+                    	String passwordAlias1 = "";
+                    	
+                        while (propertyIterator.hasNext()) {
+                            Property property = (Property) propertyIterator.next();
+                            String propertyName = property.getName();
+                            Object propertyValue = property.getValue();
+                            if(property.getValue() instanceof  String ){
+                            	if (propertyName.equals(DBConstants.RDBMS.DRIVER_CLASSNAME)) {
+                            		driverClass = (String) propertyValue;
+                                } else if (propertyName.equals(DBConstants.RDBMS.URL)) {
+                                	jdbcUrl = (String) propertyValue;
+                                } else if (propertyName.equals(DBConstants.RDBMS.USERNAME)) {
+                                	userName = (String) propertyValue;
+                                } else if (propertyName.equals(DBConstants.RDBMS.PASSWORD)) {
+                            		password = (String) propertyValue;
+                                }
+                            } else if (property.getValue() instanceof DynamicODataConfig) {
+                                if (propertyName.equals(DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING)) {
+                                	dynamicODataConfig = (DynamicODataConfig)propertyValue;
+                                    dynamicTableList = dynamicODataConfig.getTables();
+                                }
+                            }
+                        }
+                    	
+                    	String backendServerURL = CarbonUIUtil
+                    			.getServerURL(config.getServletContext(), session);
+                    	ConfigurationContext configContext = (ConfigurationContext) config.getServletContext()
+                    			.getAttribute(CarbonConstants.CONFIGURATION_CONTEXT);
+                    	String cookie = (String) session.getAttribute(ServerConstants.ADMIN_SERVICE_COOKIE);
+                    	DataServiceAdminClient client = new DataServiceAdminClient(cookie, backendServerURL,
+                    			configContext);
+                    	String [] tableList2 = {};
+                    	if( driverClass != "" && jdbcUrl != "" && userName != "" ){
+                    		tableList2 = client.generateTableList(driverClass, jdbcUrl, userName, password, passwordAlias1);
+                    	}
+                    	System.out.println(tableList2.length);
+				    	List<String> tableList = new ArrayList<String>(Arrays.asList(tableList2));
+				    	for(int i=0;i<tableList.size();i=i+5){%>
+		    	<tr>
+	    			<td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i %>" value="<%=tableList.get(i)%>" <%= dynamicTableList.contains(tableList.get(i))  ? "checked='checked'" : ""  %>/></td>
+	    			<td><label for="tablesOdata<%=i %>" ><%=tableList.get(i) %></label></td>
+	    			<td></td><td></td>
+                    <% if (i+1<tableList.size() ) { %>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+1 %>" value="<%=tableList.get(i+1)%>" <%= dynamicTableList.contains(tableList.get(i+1))  ? "checked='checked'" : ""  %>/></td>
+	    			<td><label for="tablesOdata<%=i+1 %>"><%=tableList.get(i+1) %></label></td>
+	    			<td></td><td></td>
+                    <%} if (i+2<tableList.size() ) {%>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+2 %>" value="<%=tableList.get(i+2)%>" <%= dynamicTableList.contains(tableList.get(i+2))  ? "checked='checked'" : ""  %>/></td>
+	    			<td><label for="tablesOdata<%=i+2 %>"><%=tableList.get(i+2) %></label></td>
+	    			<td></td><td></td>
+	    			<% }%>
+	    			<% if (i+3<tableList.size() ) { %>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+3 %>" value="<%=tableList.get(i+3)%>" <%= dynamicTableList.contains(tableList.get(i+3))  ? "checked='checked'" : ""  %>/></td>
+	    			<td><label for="tablesOdata<%=i+3 %>"><%=tableList.get(i+3) %></label></td>
+	    			<td></td><td></td>
+                    <%} if (i+4<tableList.size() ) {%>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+4 %>" value="<%=tableList.get(i+4)%>" <%= dynamicTableList.contains(tableList.get(i+4))  ? "checked='checked'" : ""  %>/></td>
+	    			<td><label for="tablesOdata<%=i+4 %>"><%=tableList.get(i+4) %></label></td>
+	    			<td></td><td></td>
+	    			<% }%>
+		    	</tr>
+		    	<% }
+		    	}%>
+	    	</table>
+	    </td>
+    </tr>
+</table>
+<%} %>
 
 <% if (DBConstants.DataSourceTypes.RDBMS.equals(selectedType)) { %>
 <table id="advancedTable" class="styledLeft noBorders" cellspacing="0" width="100%">
