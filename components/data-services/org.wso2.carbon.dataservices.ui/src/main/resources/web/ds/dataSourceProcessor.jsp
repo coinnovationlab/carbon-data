@@ -460,7 +460,7 @@
                                 dynamicAuthConfiguration.setEntries(dynamicUserList);
                             }
                         } else if (availableProperty.getName().equals(DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING)) {
-                           if (availableProperty.getValue() instanceof DynamicODataConfig) {
+                           if (availableProperty.getValue() instanceof DynamicODataConfig && null != request.getParameter("isOData")) {
                         	   if(request.getParameterValues("tablesOdata") != null){
 	                            	String [] chkbTblNames = request.getParameterValues("tablesOdata");
 	                                for (String tblname : chkbTblNames) {
@@ -468,6 +468,9 @@
 	                                }
 	                                dynamicODataConfig.setTables(dynamicTableList);
                         	   }
+                        	   if(request.getParameter("ODataMaxLimit") != null && !request.getParameter("ODataMaxLimit").trim().equals("0") && !request.getParameter("ODataMaxLimit").trim().equals("") ){
+	                            	dynamicODataConfig.setMaxLimit(request.getParameter("ODataMaxLimit"));
+                       	   }
                             }
                         }
                     }

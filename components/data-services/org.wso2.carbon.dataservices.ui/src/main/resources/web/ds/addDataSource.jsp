@@ -64,6 +64,7 @@
 
 var propertyCount_ = 0;
 var staticUserMappingsCount = 0;
+
 function setHiddenInputs() {
     if (document.getElementById("mongoDB_authentication_type").value == 'NONE') {
         document.getElementById("tr:username").style.display = 'none';
@@ -190,22 +191,31 @@ private boolean isFieldMandatory(String propertName) {
 }
 
 Boolean isOData = false;
+
 private Config addNotAvailableFunctions(Config config,String selectedType, HttpServletRequest request) {
     String xaVal = request.getParameter ("xaVal");
+    String driver = request.getParameter (DBConstants.RDBMS.DRIVER_CLASSNAME) ==  null ? "" : request.getParameter (DBConstants.RDBMS.DRIVER_CLASSNAME);
+    String url = request.getParameter (DBConstants.RDBMS.URL) ==  null ? "" : request.getParameter (DBConstants.RDBMS.URL);
+    String username = request.getParameter (DBConstants.RDBMS.USERNAME) ==  null ? "" : request.getParameter (DBConstants.RDBMS.USERNAME);
+    String passw = request.getParameter (DBConstants.RDBMS.PASSWORD) ==  null ? "" : request.getParameter (DBConstants.RDBMS.PASSWORD);
 	if (DBConstants.DataSourceTypes.RDBMS.equals(selectedType)) {
-		 if (config.getPropertyValue(DBConstants.RDBMS.DRIVER_CLASSNAME) == null) {
-			 config.addProperty(DBConstants.RDBMS.DRIVER_CLASSNAME, "");
+		 if (config.getPropertyValue(DBConstants.RDBMS.DRIVER_CLASSNAME) == null || request.getParameter (DBConstants.RDBMS.DRIVER_CLASSNAME) != null) {
+			 config.removeProperty(DBConstants.RDBMS.DRIVER_CLASSNAME);
+			 config.addProperty(DBConstants.RDBMS.DRIVER_CLASSNAME, driver);
 		 }
-		 if (config.getPropertyValue(DBConstants.RDBMS.URL) == null) {
-			 config.addProperty(DBConstants.RDBMS.URL, "");
+		 if (config.getPropertyValue(DBConstants.RDBMS.URL) == null || request.getParameter (DBConstants.RDBMS.URL) != null) {
+			 config.removeProperty(DBConstants.RDBMS.URL);
+			 config.addProperty(DBConstants.RDBMS.URL, url);
 		 }
-		 if (config.getPropertyValue(DBConstants.RDBMS.USERNAME) == null) {
-			 config.addProperty(DBConstants.RDBMS.USERNAME, "");
+		 if (config.getPropertyValue(DBConstants.RDBMS.USERNAME) == null || request.getParameter (DBConstants.RDBMS.USERNAME) != null) {
+			 config.removeProperty(DBConstants.RDBMS.USERNAME);
+			 config.addProperty(DBConstants.RDBMS.USERNAME, username);
 		 }
-		 if (config.getPropertyValue(DBConstants.RDBMS.PASSWORD) == null) {
-			 config.addProperty(DBConstants.RDBMS.PASSWORD, "");
+		 if (config.getPropertyValue(DBConstants.RDBMS.PASSWORD) == null || request.getParameter (DBConstants.RDBMS.PASSWORD) != null) {
+			 config.removeProperty(DBConstants.RDBMS.PASSWORD);
+			 config.addProperty(DBConstants.RDBMS.PASSWORD, passw);
 		 }
-	 	 if (config.isExposeAsODataService() == true) {
+	 	 if (config.isExposeAsODataService() == true || (request.getParameter("isOData") != null && request.getParameter("isOData").equals("true") ) ) {
 			 isOData = true;
 		 } else {
 		 	isOData = false;
@@ -722,6 +732,10 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
     String configId = request.getParameter("configId");
     String selectedType = request.getParameter("selectedType");
     String scraperString = request.getParameter("scraper-config");
+    String driver = request.getParameter("driverClassName");
+    String url = request.getParameter("url");
+    String username = request.getParameter("username");
+    String password = request.getParameter("password");
     boolean isXAAvailable = false;
     String xaVal = request.getParameter ("xaVal");
     String[] carbonDataSourceNames = null;
@@ -735,6 +749,7 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
     String detailedServiceName = request.getParameter("detailedServiceName");
     String dynamicUserAuthClass = request.getParameter("dynamicUserAuthClass");
     dynamicUserAuthClass = (dynamicUserAuthClass == null) ? "" : dynamicUserAuthClass;
+    
     if (configId == null
         || (selectedType != null && newConfig.getDataSourceType() != null) && !newConfig.getDataSourceType().equals(selectedType)) {
         /* if a new datasource or,
@@ -759,7 +774,7 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
             if (selectedType != null && selectedType.trim().length() > 0 && newConfig.getId() == null) {
                 newConfig.setId(configId);
                 if (DBConstants.DataSourceTypes.RDBMS.equals(selectedType)) {
-                    newConfig.addProperty(DBConstants.RDBMS.DRIVER_CLASSNAME, "");
+                    newConfig.addProperty(DBConstants.RDBMS.DRIVER_CLASSNAME, driver);
                     newConfig.addProperty(DBConstants.RDBMS.URL, "");
                     newConfig.addProperty(DBConstants.RDBMS.USERNAME, "");
                     newConfig.addProperty(DBConstants.RDBMS.PASSWORD, "");
@@ -935,7 +950,7 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
                 Config conf = new Config();
                 conf.setId(configId);
                 if (DBConstants.DataSourceTypes.RDBMS.equals(selectedType)) {
-                    conf.addProperty(DBConstants.RDBMS.DRIVER_CLASSNAME, "");
+                    conf.addProperty(DBConstants.RDBMS.DRIVER_CLASSNAME, driver);
                     conf.addProperty(DBConstants.RDBMS.URL, "");
                     conf.addProperty(DBConstants.RDBMS.USERNAME, "");
                     conf.addProperty(DBConstants.RDBMS.PASSWORD, "");
@@ -1165,7 +1180,7 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
                 useSecretAlias = dsConfig.isUseSecretAliasForPassword();
             }
         } else {
-            configId = "";
+        	configId = "";
         }
         /* if the selectType is carbon datasources, populate the names list */
         if ((selectedType != null && selectedType.equals("CARBON_DATASOURCE")) || dataSourceType.equals("CARBON_DATASOURCE")) {
@@ -1648,7 +1663,7 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
 
 
 <%
-    if (propertyIterator != null) {
+    if (propertyIterator != null) { // TODO
         String jdbcUrl = "";
         while (propertyIterator.hasNext()) {
             Property property = (Property) propertyIterator.next();
@@ -1810,6 +1825,7 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
             ||propertyName.equals(DBConstants.RDBMS.DYNAMIC_USER_AUTH_CLASS)
             ||propertyName.equals(DBConstants.RDBMS.DYNAMIC_USER_AUTH_MAPPING)
             ||propertyName.equals(DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING)
+            ||propertyName.equals(DBConstants.RDBMS.ODATA_MAX_LIMIT)
             ||propertyName.equals(DBConstants.CustomDataSource.DATA_SOURCE_PROPS) 
             ||propertyName.equals(DBConstants.CustomDataSource.DATA_SOURCE_QUERY_CLASS)
             ||propertyName.equals(DBConstants.CustomDataSource.DATA_SOURCE_TABULAR_CLASS)) && 
@@ -2440,6 +2456,7 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
             ||propertyName.equals(DBConstants.RDBMS.DYNAMIC_USER_AUTH_CLASS)
             ||propertyName.equals(DBConstants.RDBMS.DYNAMIC_USER_AUTH_MAPPING)
             ||propertyName.equals(DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING)
+            ||propertyName.equals(DBConstants.RDBMS.ODATA_MAX_LIMIT)
             ||propertyName.equals(DBConstants.CustomDataSource.DATA_SOURCE_PROPS) 
             ||propertyName.equals(DBConstants.CustomDataSource.DATA_SOURCE_QUERY_CLASS)
             ||propertyName.equals(DBConstants.CustomDataSource.DATA_SOURCE_TABULAR_CLASS)) && !(propertyName.equals(DBConstants.GSpread.DATASOURCE) && useQueryMode)
@@ -2455,13 +2472,75 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
 
     }
     }
+Boolean createView = false;
+if (configId != null && configId.trim().length() > 0) {
+    Config dsConfig = dataService.getConfig(configId);
+
+    if (dsConfig == null || (dsConfig != null && !flag.equals("edit"))) {
+        dsConfig = newConfig;
+        createView = true;
+    }
+    if (dsConfig != null) {
+        dataSourceType = dsConfig.getDataSourceType();
+        if (dataSourceType == null) {
+            dataSourceType = "";
+        }
+        if (selectedType == null) {
+            selectedType = dsConfig.getDataSourceType();
+        }
+        dsConfig = addNotAvailableFunctions(dsConfig, selectedType, request);
+        ArrayList configProperties = dsConfig.getProperties();
+        propertyIterator = configProperties.iterator();
+
+    }
+}
+DynamicODataConfig dynamicODataConfig;
+List<String> dynamicTableList = new ArrayList<String>();
+String maxLimit = "100";
+String driverClass = "";
+String jdbcUrl = "";
+String userName = "";
+String pswd = "";
+String passwordAlias1 = "";
+if (propertyIterator != null) {
+    while (propertyIterator.hasNext()) {
+        Property property = (Property) propertyIterator.next();
+        String propertyName = property.getName();
+        Object propertyValue = property.getValue();
+        if(property.getValue() instanceof  String ){
+        	if (propertyName.equals(DBConstants.RDBMS.DRIVER_CLASSNAME)) {
+        		driverClass = (String) propertyValue;
+            } else if (propertyName.equals(DBConstants.RDBMS.URL)) {
+            	jdbcUrl = (String) propertyValue;
+            } else if (propertyName.equals(DBConstants.RDBMS.USERNAME)) {
+            	userName = (String) propertyValue;
+            } else if (propertyName.equals(DBConstants.RDBMS.PASSWORD)) {
+            	pswd = (String) propertyValue;
+            }
+        } else if (property.getValue() instanceof DynamicODataConfig) {
+            if (propertyName.equals(DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING)) {
+            	dynamicODataConfig = (DynamicODataConfig)propertyValue;
+                dynamicTableList = dynamicODataConfig.getTables();
+                maxLimit = dynamicODataConfig.getMaxLimit();
+            }
+        }
+    }
+}
 %>
 <% if("RDBMS".equals(dataSourceType) || "Cassandra".equals(dataSourceType) || "CARBON_DATASOURCE".equals(dataSourceType)) { %>
 <tr>
     <td class="leftCol-small" style="white-space: nowrap;">
         Enable OData</td>
     <td>
-        <input type="checkbox" name="isOData" id="isOData" value="isOData" <%=(isOData==true ? "checked" : "") %> onclick="reloadOdataConfig(<%=isOData%>);">
+        <input type="checkbox" name="isOData" id="isOData" value="isOData" <%=(isOData==true ? "checked" : "") %> onclick="reloadOdataConfig(<%=createView%>,'<%=DBConstants.RDBMS.DRIVER_CLASSNAME%>','<%=DBConstants.RDBMS.URL%>','<%=DBConstants.RDBMS.USERNAME%>','<%=DBConstants.RDBMS.PASSWORD%>');">
+    </td>
+</tr>
+<tr>
+	<td class="leftCol-small" style="white-space: nowrap;">
+        Max Limit OData Records
+    </td>
+    <td>
+        <input type="text" name="ODataMaxLimit" id="ODataMaxLimit" value="<%=maxLimit %>" >
     </td>
 </tr>
 <% } %>
@@ -2491,58 +2570,8 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
 	    <td>
 	    	<table>
 	    		<%
-                    if (configId != null && configId.trim().length() > 0) {
-                        Config dsConfig = dataService.getConfig(configId);
-
-                        if (dsConfig == null || (dsConfig != null && !flag.equals("edit"))) {
-                            dsConfig = newConfig;
-                        }
-                        if (dsConfig != null) {
-                            dataSourceType = dsConfig.getDataSourceType();
-                            if (dataSourceType == null) {
-                                dataSourceType = "";
-                            }
-                            if (selectedType == null) {
-                                selectedType = dsConfig.getDataSourceType();
-                            }
-                            dsConfig = addNotAvailableFunctions(dsConfig, selectedType, request);
-                            ArrayList configProperties = dsConfig.getProperties();
-                            propertyIterator = configProperties.iterator();
-
-                        }
-                    }
                     if (propertyIterator != null) {
-                    	DynamicODataConfig dynamicODataConfig;
-                        List<String> dynamicTableList = new ArrayList<String>();
-                        String driverClass = "";
-                    	String jdbcUrl = "";
-                    	String userName = "";
-                    	String password = "";
-                    	String passwordAlias1 = "";
-                    	
-                        while (propertyIterator.hasNext()) {
-                            Property property = (Property) propertyIterator.next();
-                            String propertyName = property.getName();
-                            Object propertyValue = property.getValue();
-                            if(property.getValue() instanceof  String ){
-                            	if (propertyName.equals(DBConstants.RDBMS.DRIVER_CLASSNAME)) {
-                            		driverClass = (String) propertyValue;
-                                } else if (propertyName.equals(DBConstants.RDBMS.URL)) {
-                                	jdbcUrl = (String) propertyValue;
-                                } else if (propertyName.equals(DBConstants.RDBMS.USERNAME)) {
-                                	userName = (String) propertyValue;
-                                } else if (propertyName.equals(DBConstants.RDBMS.PASSWORD)) {
-                            		password = (String) propertyValue;
-                                }
-                            } else if (property.getValue() instanceof DynamicODataConfig) {
-                                if (propertyName.equals(DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING)) {
-                                	dynamicODataConfig = (DynamicODataConfig)propertyValue;
-                                    dynamicTableList = dynamicODataConfig.getTables();
-                                }
-                            }
-                        }
-                    	
-                    	String backendServerURL = CarbonUIUtil
+                        String backendServerURL = CarbonUIUtil
                     			.getServerURL(config.getServletContext(), session);
                     	ConfigurationContext configContext = (ConfigurationContext) config.getServletContext()
                     			.getAttribute(CarbonConstants.CONFIGURATION_CONTEXT);
@@ -2551,9 +2580,8 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
                     			configContext);
                     	String [] tableList2 = {};
                     	if( driverClass != "" && jdbcUrl != "" && userName != "" ){
-                    		tableList2 = client.generateTableList(driverClass, jdbcUrl, userName, password, passwordAlias1);
+                    		tableList2 = client.generateTableList(driverClass, jdbcUrl, userName, pswd, passwordAlias1);
                     	}
-                    	System.out.println(tableList2.length);
 				    	List<String> tableList = new ArrayList<String>(Arrays.asList(tableList2));
 				    	for(int i=0;i<tableList.size();i=i+5){%>
 		    	<tr>

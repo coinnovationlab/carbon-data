@@ -120,6 +120,10 @@ public class Property extends DataServiceConfigurationElement{
                 propEl.addAttribute("name", this.getName(), null);
                 DynamicODataConfig dynamicODataConfiguration = (DynamicODataConfig) this.getValue();
                 List<String> dynamicTableEntries = dynamicODataConfiguration.getTables();
+                String maxLimit = dynamicODataConfiguration.getMaxLimit();
+                if(maxLimit != null) {
+                	propEl.addAttribute("maxLimit", maxLimit, null);
+                }
                 if (dynamicTableEntries != null) {
                     for (String table : dynamicTableEntries) {
                         OMElement dynamicUserEntryEle = fac.createOMElement("tblname", null);

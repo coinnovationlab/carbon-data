@@ -1342,6 +1342,20 @@ function changeDataSourceType (obj, document) {
 
 }
 
+function reloadOdataConfig (createOp,driver,url,username,passw) {
+	var selectedType =  document.getElementById('datasourceType')[document.getElementById('datasourceType').selectedIndex].value;
+	var selectedDS = document.getElementById('datasourceId').value;
+	var driverClassName = document.getElementById(driver).value;
+	var urlValue = document.getElementById(url).value;
+	var usernameValue = document.getElementById(username).value;
+	var passwValue = document.getElementById(passw).value;
+	var isOData = document.getElementById("isOData").checked;
+	if (createOp && isOData){
+		location.href = 'addDataSource.jsp?selectedType=RDBMS&configId='+selectedDS+'&ds=edit&flag=edit_changed'+
+			'&'+driver+'='+driverClassName+'&'+url+'='+urlValue+'&'+username+'='+usernameValue+'&'+passw+'='+passwValue+'&isOData='+isOData;
+	}
+}
+
 function changeXADataSourceEngine (obj, document) {
  	var selectedType =  obj[obj.selectedIndex].value;
  	var driverClass = selectedType.substring(0, selectedType.indexOf("#"));

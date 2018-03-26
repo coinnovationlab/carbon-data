@@ -496,6 +496,8 @@ public class Data extends DataServiceConfigurationElement{
                         String tblname = dynamicUserConfig.getText();
                         dynamicTableList.add(tblname);
                     }
+                    String maxLimit = propertyEle.getAttributeValue(new QName("maxLimit"));
+                    dynamicODataTableConfiguration.setMaxLimit(maxLimit);;
                     dynamicODataTableConfiguration.setTables(dynamicTableList);
                     property.setValue(dynamicODataTableConfiguration);
                 } else {
