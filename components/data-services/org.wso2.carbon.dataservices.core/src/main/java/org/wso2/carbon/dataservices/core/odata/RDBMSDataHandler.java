@@ -18,6 +18,8 @@
 
 package org.wso2.carbon.dataservices.core.odata;
 
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.axis2.databinding.utils.ConverterUtil;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.Log;
@@ -35,6 +37,7 @@ import org.apache.olingo.server.api.uri.queryoption.TopOption;
 import org.apache.olingo.server.api.uri.queryoption.expression.Expression;
 import org.apache.olingo.server.api.uri.queryoption.expression.ExpressionVisitException;
 import org.wso2.carbon.dataservices.common.DBConstants;
+import org.wso2.carbon.dataservices.common.conf.DynamicODataConfig;
 import org.wso2.carbon.dataservices.core.DBUtils;
 import org.wso2.carbon.dataservices.core.DataServiceFault;
 import org.wso2.carbon.dataservices.core.engine.DataEntry;
@@ -46,6 +49,9 @@ import org.wso2.carbon.dataservices.core.odata.expression.operand.VisitorOperand
 import org.wso2.carbon.dataservices.core.odata.RDBMSDataHandler;
 
 import javax.sql.DataSource;
+import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamException;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -67,6 +73,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -103,6 +110,8 @@ public class RDBMSDataHandler implements ODataDataHandler {
      * List of Tables in the Database.
      */
     private List<String> tableList;
+    private List<String> oDataTableList;
+    private int oDataMaxLimit;
 
     public static final String TABLE_NAME = "TABLE_NAME";
     public static final String TABLE = "TABLE";
@@ -125,11 +134,31 @@ public class RDBMSDataHandler implements ODataDataHandler {
      */
     private Map<String, NavigationTable> navigationProperties;
 
-    public RDBMSDataHandler(DataSource dataSource, String configId) throws ODataServiceFault {
-        this.dataSource = dataSource;
-        this.tableList = generateTableList();
+    public RDBMSDataHandler(DataSource dataSource, String configId, String odataConfig) throws ODataServiceFault {
+    	
+    	this.dataSource = dataSource;
         this.configID = configId;
-        this.rdbmsDataTypes = new HashMap<>(this.tableList.size());
+        try {
+	        OMElement dynTableODataConfEl = AXIOMUtil.stringToOM(odataConfig);
+	        ArrayList<String> dynamicTableList = new ArrayList<String>();
+	        if(dynTableODataConfEl != null) {
+	            DynamicODataConfig dynamicODataTableConfiguration = new DynamicODataConfig();
+	            Iterator<OMElement> dynamicODataTablesConfigs = dynTableODataConfEl.getChildrenWithName(new QName("tblname"));
+	            this.oDataMaxLimit = Integer.parseInt(dynTableODataConfEl.getAttributeValue(new QName("maxLimit")) );
+	            while (dynamicODataTablesConfigs.hasNext()) {
+	                OMElement dynamicUserConfig = dynamicODataTablesConfigs.next();
+	                String tblname = dynamicUserConfig.getText();
+	                System.out.println(" OData Table Config List " + tblname);
+	                dynamicTableList.add(tblname);
+	            }
+	        }
+            this.oDataTableList=dynamicTableList;
+            this.tableList = generateTableList(dynamicTableList);
+            this.rdbmsDataTypes = new HashMap<>(this.tableList.size());
+        }
+        catch (XMLStreamException e) {
+        	
+        }
         initializeMetaData();
     }
 
@@ -404,7 +433,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
         	limit = topOption.getValue();
         }
         else {
-        	limit=30; // TODO Temporally hardcoded, defining it in some global variables 
+        	limit=this.oDataMaxLimit; 
         }
         if(skipOption != null) {
         	offset = skipOption.getValue();
@@ -1278,7 +1307,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
      * @return Table List of the DB
      * @throws ODataServiceFault
      */
-    private List<String> generateTableList() throws ODataServiceFault {
+    private List<String> generateTableList(List<String> oDataTableList) throws ODataServiceFault {
         List<String> tableList = new ArrayList<>();
         Connection connection = null;
         ResultSet rs = null;
@@ -1292,7 +1321,9 @@ public class RDBMSDataHandler implements ODataDataHandler {
             }
             while (rs.next()) {
                 String tableName = rs.getString(TABLE_NAME);
-                tableList.add(tableName);
+                if(oDataTableList.contains(tableName)) {
+                	tableList.add(tableName);
+                }
             }
             return tableList;
         } catch (SQLException e) {

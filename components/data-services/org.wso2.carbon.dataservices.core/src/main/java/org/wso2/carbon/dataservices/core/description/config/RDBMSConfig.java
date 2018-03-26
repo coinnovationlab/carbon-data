@@ -61,7 +61,7 @@ public class RDBMSConfig extends JDBCPoolSQLConfig {
 
 	@Override
 	public ODataDataHandler createODataHandler() throws DataServiceFault {
-		return new RDBMSDataHandler(getDataSource(), getConfigId());
+		return new RDBMSDataHandler(getDataSource(), getConfigId(), getProperty(DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING));
 	}
 
 }
