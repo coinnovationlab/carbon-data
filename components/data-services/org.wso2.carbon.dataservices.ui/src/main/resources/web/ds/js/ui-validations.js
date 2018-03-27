@@ -1356,6 +1356,20 @@ function reloadOdataConfig (createOp,driver,url,username,passw) {
 	}
 }
 
+function select_unselect () {
+	var all_chkb = document.getElementsByName("tablesOdata");
+	var nr_checked=0;
+	for(var i=0;i<all_chkb.length;i++) {
+		if(all_chkb[i].checked){
+			nr_checked++;
+		}
+	}
+	var checked = nr_checked == all_chkb.length ? false : true;
+	for(var i=0;i<all_chkb.length;i++) {
+		all_chkb[i].checked=checked;
+	}
+}
+
 function changeXADataSourceEngine (obj, document) {
  	var selectedType =  obj[obj.selectedIndex].value;
  	var driverClass = selectedType.substring(0, selectedType.indexOf("#"));

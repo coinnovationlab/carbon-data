@@ -2568,6 +2568,12 @@ if (propertyIterator != null) {
     </tr>
     <tr id="advancedConfigODataTables" style="display:none">
 	    <td>
+	    <table>
+		    <tr>
+		    	<td><input class="button" type="button" value="<fmt:message key="odata.select.all"/>"
+               onclick="select_unselect();return false;"/></td>
+		    </tr>
+	    </table>
 	    	<table>
 	    		<%
                     if (propertyIterator != null) {
