@@ -450,7 +450,20 @@ public class RDBMSDataHandler implements ODataDataHandler {
         log.info("limit: " + limit + " offset: " + offset+ " orderBy: " + order + " where: " + where);
         try {
             connection = initializeConnection();
-            String select = "select * from " + tableName;
+            org.apache.tomcat.jdbc.pool.DataSource tcDataSource = (org.apache.tomcat.jdbc.pool.DataSource)dataSource;
+            String urlJDBC = tcDataSource.getUrl();
+            String select = null;
+            System.out.println(" DB url conn "+ urlJDBC);
+            if (urlJDBC.startsWith("jdbc:sqlserver") && urlJDBC.indexOf("schema=")>0)
+            {
+                String schema = urlJDBC.substring(urlJDBC.indexOf("schema=")+7,urlJDBC.length());
+                schema = schema.substring(0,schema.indexOf(";"));
+                select = "select * from " + schema+"."+tableName;
+            }
+            else
+            {
+                select = "select * from " + tableName;
+            } 
             
             query = queryBasedOnDBType(select, where, limit, offset, order);
             log.info("Generated query: " + query);
@@ -525,18 +538,12 @@ public class RDBMSDataHandler implements ODataDataHandler {
      */
     private String queryGeneratorMSSql (String select, String where, int row_count, int offset, String orderBy) {
     	String query = "",limit= "";
-    	if(row_count != 0) {
-        	if(offset != 0) {
-        		limit = " OFFSET "+ offset + " ROWS";
-        		limit += " FETCH NEXT "+ row_count +" ROWS ONLY ";
-            }
-        	else {
-        		limit += " FETCH FIRST "+ row_count +" ROWS ONLY ";
-        	}
-        }
-        else if(offset != 0 ){
-        	limit =" OFFSET "+ offset + " ROWS";
-        }
+    	orderBy = orderBy.trim();
+    	if(orderBy.equals("")) {
+    		orderBy = " ORDER BY (SELECT 1) ";
+    	}
+    	limit = " OFFSET "+ offset + " ROWS";
+        limit += " FETCH NEXT "+ row_count +" ROWS ONLY ";
     	// Select TOP 3 * // old versions
     	query = select + where + orderBy + limit;
     	return query;

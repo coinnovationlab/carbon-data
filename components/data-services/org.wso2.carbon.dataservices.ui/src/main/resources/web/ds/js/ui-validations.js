@@ -1350,7 +1350,7 @@ function reloadOdataConfig (createOp,driver,url,username,passw) {
 	var usernameValue = document.getElementById(username).value;
 	var passwValue = document.getElementById(passw).value;
 	var isOData = document.getElementById("isOData").checked;
-	if (createOp && isOData){
+	if (isOData){
 		location.href = 'addDataSource.jsp?selectedType=RDBMS&configId='+selectedDS+'&ds=edit&flag=edit_changed'+
 			'&'+driver+'='+driverClassName+'&'+url+'='+urlValue+'&'+username+'='+usernameValue+'&'+passw+'='+passwValue+'&isOData='+isOData;
 	}
@@ -1368,6 +1368,10 @@ function select_unselect () {
 	for(var i=0;i<all_chkb.length;i++) {
 		all_chkb[i].checked=checked;
 	}
+}
+
+function select_unselect_columns(){
+	
 }
 
 function changeXADataSourceEngine (obj, document) {
@@ -1989,8 +1993,80 @@ function showAdvancedConfigODataTables() {
 		  advODataSymbolMax.setAttribute('style','background-image:url(images/plus.gif);');
 	      advancedConfigFields.style.display = 'none';
 	  }
+	  openTabContent(null, "Tables0");
 	}
 
+function showAdvancedConfigODataTablesColumns(){
+	  var advODataSymbolMax =  document.getElementById('advODataColumnsSymbolMax');
+	  var advancedConfigFields = document.getElementById('advancedConfigODataTablesColumns');
+	  if(advancedConfigFields.style.display == 'none') {
+		  advODataSymbolMax.setAttribute('style','background-image:url(images/minus.gif);');
+	    advancedConfigFields.style.display = '';
+	  } else {
+		  advODataSymbolMax.setAttribute('style','background-image:url(images/plus.gif);');
+	      advancedConfigFields.style.display = 'none';
+	  }
+}
+
+function openTabContent(evt, tabName) {
+    var i, tabcontent, tablinks;
+    tabcontent = document.getElementsByClassName("tabcontent");
+    for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+    }
+    tablinks = document.getElementsByClassName("tablinks");
+    for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+    if(document.getElementById(tabName)!==undefined && document.getElementById(tabName) !== null){
+    	document.getElementById(tabName).style.display = "block";
+    }
+    if(document.getElementById(tabName+"Header")!==undefined && document.getElementById(tabName+"Header")!==null){
+    	document.getElementById(tabName+"Header").className += " active";
+    }
+}
+
+function reloadOdataObjects(driver,url,username,passw){
+	
+	var obj=document.getElementById('schema_list');
+	var schemaSelected = obj[obj.selectedIndex].value;
+    var driverClassName = document.getElementById(driver).value;
+	var urlValue = document.getElementById(url).value;
+	var usernameValue = document.getElementById(username).value;
+	var passwValue = document.getElementById(passw).value;
+    var useAlias = document.getElementById('useSecretAliasValue').value;
+    var pwdalias="";
+    if (useAlias == 'true') {
+    	if (document.getElementById('pwdalias') != null) {
+    		pwdalias = document.getElementById('pwdalias').value;
+    	}
+        var url = '../ds/getTablesList.jsp?driver=' + encodeURIComponent(driverClassName) + '&jdbcUrl=' + encodeURIComponent(urlValue) + '&userName=' + encodeURIComponent(usernameValue) + '&password=' + encodeURIComponent(passwValue) + '&passwordAlias=' +pwdalias + '&schema=' +schemaSelected ;
+    } else {
+    	var url = '../ds/getTablesList.jsp?driver=' + encodeURIComponent(driverClassName) + '&jdbcUrl=' + encodeURIComponent(urlValue) + '&userName=' + encodeURIComponent(usernameValue) + '&password=' + encodeURIComponent(passwValue) + '&schema=' +schemaSelected ;
+    }
+    var selectedODataEntities = document.getElementById("selectedODataEntities").value;
+    for(var i = 0;i<obj.options.length;i++){
+    	document.getElementById(obj.item(i).value).style.display="none";
+    }
+    document.getElementById(schemaSelected).style.display="inline";
+    openTabContent(event, 'Tables'+obj.selectedIndex);
+    /*jQuery.ajax({
+            url: url,
+            type: 'POST',
+            async: false,
+            cache: false,
+            data: selectedODataEntities,
+            processData: false,
+            timeout: 5000,
+            error: function() {
+            	CARBON.showWarningDialog("error");
+            },
+            contentType: 'application/json',
+            success: function(msg) {
+                    console.log(msg);
+            }
+        });*/
+}
 function deleteNewPropertyField(i) {
     var propertyNameRaw = document.getElementById("propertyNameRaw" + i);
     if (propertyNameRaw != undefined && propertyNameRaw != null) {

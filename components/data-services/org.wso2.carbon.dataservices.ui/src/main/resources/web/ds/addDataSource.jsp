@@ -43,12 +43,18 @@
 <%@ page import="java.util.regex.Matcher" %>
 <%@ page import="org.wso2.carbon.dataservices.sql.driver.parser.Constants" %>
 <%@ page import="org.apache.axis2.AxisFault"%>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.HashMap" %>
+<%@ page import="org.wso2.carbon.dataservices.ui.stub.admin.core.xsd.GeneratedListTables" %>
+
 
 <fmt:bundle basename="org.wso2.carbon.dataservices.ui.i18n.Resources">
 <script type="text/javascript" src="../ajax/js/prototype.js"></script>
 <script type="text/javascript" src="../resources/js/resource_util.js"></script>
 <jsp:include page="../resources/resources-i18n-ajaxprocessor.jsp"/>
 <link rel="stylesheet" type="text/css" href="../resources/css/registry.css"/>
+<link rel="stylesheet" type="text/css" href="css/datasource.css" media="all"/>
 
 <carbon:breadcrumb
         label="Add Datasource"
@@ -2526,7 +2532,10 @@ if (propertyIterator != null) {
         }
     }
 }
+String selectedOdataEntities=String.join(",", dynamicTableList);
 %>
+<input type="hidden" id="selectedODataEntities" value="<%= selectedOdataEntities %>" >
+
 <% if("RDBMS".equals(dataSourceType) || "Cassandra".equals(dataSourceType) || "CARBON_DATASOURCE".equals(dataSourceType)) { %>
 <tr>
     <td class="leftCol-small" style="white-space: nowrap;">
@@ -2558,9 +2567,28 @@ if (propertyIterator != null) {
 <%} %>
 </table>
 
-<% if("RDBMS".equals(dataSourceType) || "Cassandra".equals(dataSourceType) || "CARBON_DATASOURCE".equals(dataSourceType)) { %>
+<% if("RDBMS".equals(dataSourceType) || "Cassandra".equals(dataSourceType) ) { %>
 <table id="advancedTable" class="styledLeft noBorders" cellspacing="0" width="100%">
-    <tr>
+    <%
+           if (propertyIterator != null) {
+               String backendServerURL = CarbonUIUtil
+           			.getServerURL(config.getServletContext(), session);
+           	ConfigurationContext configContext = (ConfigurationContext) config.getServletContext()
+           			.getAttribute(CarbonConstants.CONFIGURATION_CONTEXT);
+           	String cookie = (String) session.getAttribute(ServerConstants.ADMIN_SERVICE_COOKIE);
+           	DataServiceAdminClient client = new DataServiceAdminClient(cookie, backendServerURL,
+           			configContext);
+           	GeneratedListTables [] tableList2 = {};
+           	GeneratedListTables [] viewsList2 = {};
+           	String [] schemaList = {};
+           	if( driverClass != "" && jdbcUrl != "" && userName != "" ){
+           		schemaList = client.getdbSchemaListUsingParams(driverClass, jdbcUrl, userName, pswd, passwordAlias1);
+           		tableList2 = client.generateTableList(driverClass, jdbcUrl, userName, pswd, passwordAlias1,schemaList,"TABLE" );
+           		viewsList2 = client.generateTableList(driverClass, jdbcUrl, userName, pswd, passwordAlias1,schemaList,"VIEW" );
+           	}
+	    	
+	    	%>
+	<tr>
         <td colspan="2" class="middle-header">
         <a onclick="showAdvancedConfigODataTables()" class="icon-link" style="background-image:url(images/plus.gif);"
                      id="advODataSymbolMax"></a>
@@ -2572,54 +2600,136 @@ if (propertyIterator != null) {
 		    <tr>
 		    	<td><input class="button" type="button" value="<fmt:message key="odata.select.all"/>"
                onclick="select_unselect();return false;"/></td>
+               <td><fmt:message key="odata.choose.schema"/>:</td>
+               <td><select id="schema_list" name="schema_list" onchange="reloadOdataObjects('<%=DBConstants.RDBMS.DRIVER_CLASSNAME%>','<%=DBConstants.RDBMS.URL%>','<%=DBConstants.RDBMS.USERNAME%>','<%=DBConstants.RDBMS.PASSWORD%>')">
+                           <% for(int i=0;i<schemaList.length;i++){%>
+                           		<option value="<%=schemaList[i] %>"><%=schemaList[i] %></option>
+                           <%} %>
+                    </select>
+               </td>
 		    </tr>
 	    </table>
-	    	<table>
-	    		<%
-                    if (propertyIterator != null) {
-                        String backendServerURL = CarbonUIUtil
-                    			.getServerURL(config.getServletContext(), session);
-                    	ConfigurationContext configContext = (ConfigurationContext) config.getServletContext()
-                    			.getAttribute(CarbonConstants.CONFIGURATION_CONTEXT);
-                    	String cookie = (String) session.getAttribute(ServerConstants.ADMIN_SERVICE_COOKIE);
-                    	DataServiceAdminClient client = new DataServiceAdminClient(cookie, backendServerURL,
-                    			configContext);
-                    	String [] tableList2 = {};
-                    	if( driverClass != "" && jdbcUrl != "" && userName != "" ){
-                    		tableList2 = client.generateTableList(driverClass, jdbcUrl, userName, pswd, passwordAlias1);
-                    	}
-				    	List<String> tableList = new ArrayList<String>(Arrays.asList(tableList2));
-				    	for(int i=0;i<tableList.size();i=i+5){%>
+	    <% for(int j=0;j<schemaList.length;j++){
+	    	String [] tableArray = {};
+	    	String [] viewsArray = {};
+	    	for(int k=0;k<tableList2.length;k++){
+	    		GeneratedListTables currSchemaTables = tableList2[k];
+	    		GeneratedListTables currSchemaViews = viewsList2[k];    		
+	    		if(currSchemaTables.getSchemaName().equals(schemaList[j])){
+	    			if(currSchemaTables.getTables() != null){
+	    				tableArray = (String [])currSchemaTables.getTables();
+	    			}
+	    			if(currSchemaViews.getTables() != null){
+	    				viewsArray = (String [])currSchemaViews.getTables();
+	    			}
+	    			break;
+	    		}
+	    	}
+	   		List<String> tableList = new ArrayList<String>(Arrays.asList(tableArray ));
+	    	List<String> viewsList = new ArrayList<String>(Arrays.asList(viewsArray ));
+	    	%>
+	    <div id="<%= schemaList[j] %>" style="display:<%= ((j==0) ? "inline" : "none")%>">
+	    <div class="tab">
+			  <span class="tablinks" id="Tables<%= j %>Header" onclick="openTabContent(event, 'Tables<%= j %>')">Tables</span>
+			  <span class="tablinks" id="Views<%= j %>Header" onclick="openTabContent(event, 'Views<%= j %>')">Views</span>
+			</div>
+			
+			<div id="Tables<%= j %>" class="tabcontent">
+			  <h3>List of Tables</h3>
+			  <p><table>
+	    		<% for(int i=0;i<tableList.size();i=i+5){%>
 		    	<tr>
-	    			<td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i %>" value="<%=tableList.get(i)%>" <%= dynamicTableList.contains(tableList.get(i))  ? "checked='checked'" : ""  %>/></td>
-	    			<td><label for="tablesOdata<%=i %>" ><%=tableList.get(i) %></label></td>
+	    			<td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+"_"+schemaList[j] %>" value="<%=tableList.get(i)%>" <%= dynamicTableList.contains(tableList.get(i))  ? "checked='checked'" : ""  %>/></td>
+	    			<td><label for="tablesOdata<%=i+"_"+schemaList[j] %>" ><%=tableList.get(i) %></label></td>
 	    			<td></td><td></td>
                     <% if (i+1<tableList.size() ) { %>
-                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+1 %>" value="<%=tableList.get(i+1)%>" <%= dynamicTableList.contains(tableList.get(i+1))  ? "checked='checked'" : ""  %>/></td>
-	    			<td><label for="tablesOdata<%=i+1 %>"><%=tableList.get(i+1) %></label></td>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+1 +"_"+schemaList[j]%>" value="<%=tableList.get(i+1)%>" <%= dynamicTableList.contains(tableList.get(i+1))  ? "checked='checked'" : ""  %>/></td>
+	    			<td><label for="tablesOdata<%=i+1 +"_"+schemaList[j]%>"><%=tableList.get(i+1) %></label></td>
 	    			<td></td><td></td>
                     <%} if (i+2<tableList.size() ) {%>
-                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+2 %>" value="<%=tableList.get(i+2)%>" <%= dynamicTableList.contains(tableList.get(i+2))  ? "checked='checked'" : ""  %>/></td>
-	    			<td><label for="tablesOdata<%=i+2 %>"><%=tableList.get(i+2) %></label></td>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+2 +"_"+schemaList[j]%>" value="<%=tableList.get(i+2)%>" <%= dynamicTableList.contains(tableList.get(i+2))  ? "checked='checked'" : ""  %>/></td>
+	    			<td><label for="tablesOdata<%=i+2+"_"+schemaList[j]%>"><%=tableList.get(i+2) %></label></td>
 	    			<td></td><td></td>
 	    			<% }%>
 	    			<% if (i+3<tableList.size() ) { %>
-                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+3 %>" value="<%=tableList.get(i+3)%>" <%= dynamicTableList.contains(tableList.get(i+3))  ? "checked='checked'" : ""  %>/></td>
-	    			<td><label for="tablesOdata<%=i+3 %>"><%=tableList.get(i+3) %></label></td>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+3 +"_"+schemaList[j]%>" value="<%=tableList.get(i+3)%>" <%= dynamicTableList.contains(tableList.get(i+3))  ? "checked='checked'" : ""  %>/></td>
+	    			<td><label for="tablesOdata<%=i+3 +"_"+schemaList[j]%>"><%=tableList.get(i+3) %></label></td>
 	    			<td></td><td></td>
                     <%} if (i+4<tableList.size() ) {%>
-                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+4 %>" value="<%=tableList.get(i+4)%>" <%= dynamicTableList.contains(tableList.get(i+4))  ? "checked='checked'" : ""  %>/></td>
-	    			<td><label for="tablesOdata<%=i+4 %>"><%=tableList.get(i+4) %></label></td>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+4 +"_"+schemaList[j]%>" value="<%=tableList.get(i+4)%>" <%= dynamicTableList.contains(tableList.get(i+4))  ? "checked='checked'" : ""  %>/></td>
+	    			<td><label for="tablesOdata<%=i+4 +"_"+schemaList[j]%>"><%=tableList.get(i+4) %></label></td>
 	    			<td></td><td></td>
 	    			<% }%>
 		    	</tr>
 		    	<% }
-		    	}%>
+		    	%>
 	    	</table>
+	    	</p>
+			</div>
+			
+			<div id="Views<%= j %>" class="tabcontent">
+			  <h3>List of Views</h3>
+			  <p>
+			  <table>
+	    		<% for(int i=0;i<viewsList.size();i=i+5){%>
+		    	<tr>
+	    			<td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i %>" value="<%=viewsList.get(i)%>" <%= dynamicTableList.contains(viewsList.get(i))  ? "checked='checked'" : ""  %>/></td>
+	    			<td><label for="tablesOdata<%=i %>" ><%=viewsList.get(i) %></label></td>
+	    			<td></td><td></td>
+                    <% if (i+1<viewsList.size() ) { %>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+1 %>" value="<%=viewsList.get(i+1)%>" <%= dynamicTableList.contains(viewsList.get(i+1))  ? "checked='checked'" : ""  %>/></td>
+	    			<td><label for="tablesOdata<%=i+1 %>"><%=viewsList.get(i+1) %></label></td>
+	    			<td></td><td></td>
+                    <%} if (i+2<viewsList.size() ) {%>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+2 %>" value="<%=viewsList.get(i+2)%>" <%= dynamicTableList.contains(viewsList.get(i+2))  ? "checked='checked'" : ""  %>/></td>
+	    			<td><label for="tablesOdata<%=i+2 %>"><%=viewsList.get(i+2) %></label></td>
+	    			<td></td><td></td>
+	    			<% }%>
+	    			<% if (i+3<viewsList.size() ) { %>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+3 %>" value="<%=viewsList.get(i+3)%>" <%= dynamicTableList.contains(viewsList.get(i+3))  ? "checked='checked'" : ""  %>/></td>
+	    			<td><label for="tablesOdata<%=i+3 %>"><%=viewsList.get(i+3) %></label></td>
+	    			<td></td><td></td>
+                    <%} if (i+4<viewsList.size() ) {%>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+4 %>" value="<%=viewsList.get(i+4)%>" <%= dynamicTableList.contains(viewsList.get(i+4))  ? "checked='checked'" : ""  %>/></td>
+	    			<td><label for="tablesOdata<%=i+4 %>"><%=viewsList.get(i+4) %></label></td>
+	    			<td></td><td></td>
+	    			<% }%>
+		    	</tr>
+		    	<% }
+		    	%>
+	    	</table>
+	    	</p> 
+			</div>
+	    </div>
+	    <%} %>
+	    	
 	    </td>
     </tr>
+    <tr>
+        <td colspan="2" class="middle-header">
+        <a onclick="showAdvancedConfigODataTablesColumns()" class="icon-link" style="background-image:url(images/plus.gif);"
+                     id="advODataColumnsSymbolMax"></a>
+            <fmt:message key="odata.configuration.activate.table.columns"/></td>
+    </tr>
+    <tr id="advancedConfigODataTablesColumns" style="display:none">
+	    <td>
+	    <table>
+		    <tr>
+		    	<td><input class="button" type="button" value="<fmt:message key="odata.select.all.columns"/>"
+               onclick="select_unselect_columns();return false;"/></td>
+               <td><fmt:message key="odata.choose.table"/>:</td>
+               <td><select id="columns_list" name="columns_list" onchange="">
+                           <option value=""><fmt:message key="odata.table.none"/></option>
+                    </select>
+               </td>
+		    </tr>
+	    </table>
+	    	 
+	    </td>
+    </tr>
+    <%  }%>
 </table>
-<%} %>
+<% } %>
 
 <% if (DBConstants.DataSourceTypes.RDBMS.equals(selectedType)) { %>
 <table id="advancedTable" class="styledLeft noBorders" cellspacing="0" width="100%">

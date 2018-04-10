@@ -25,9 +25,12 @@ import org.wso2.carbon.dataservices.ui.beans.AuthProvider;
 import org.wso2.carbon.dataservices.ui.stub.DataServiceAdminExceptionException;
 import org.wso2.carbon.dataservices.ui.stub.DataServiceAdminStub;
 import org.wso2.carbon.dataservices.ui.stub.admin.core.xsd.PaginatedTableInfo;
+import org.wso2.carbon.dataservices.ui.stub.admin.core.xsd.GeneratedListTables;
 
 import java.rmi.RemoteException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class DataServiceAdminClient {
@@ -118,16 +121,11 @@ public class DataServiceAdminClient {
 		return response;
     }
  
-    public String[] generateTableList(String driverClass, String jdbcURL, String username,
-            String password, String passwordAlias) throws AxisFault, DataServiceAdminExceptionException {
-    	String[] response ;
-    	try {
-			response = stub.generateTableList(driverClass, jdbcURL, username, password,
-					passwordAlias);
-		} catch (RemoteException e) {
-			throw new AxisFault("Error connecting to " + jdbcURL +
-                    ". Message from the service is : ", e);
-		}
+    public GeneratedListTables[] generateTableList(String driverClass, String jdbcURL, String username,
+            String password, String passwordAlias, String[] schemas, String type) throws RemoteException, DataServiceAdminExceptionException {
+    	
+    	GeneratedListTables[] response = {} ;
+		response = stub.generateTableList(driverClass, jdbcURL, username, password, passwordAlias,schemas, type);
 		return response;
     }
  
@@ -172,6 +170,11 @@ public class DataServiceAdminClient {
 
     public String[]  getdbSchemaList(String datasourceId) throws Exception {
         return stub.getdbSchemaList(datasourceId);
+    }
+    
+    public String[]  getdbSchemaListUsingParams(String driverClass, String jdbcURL, String username,
+            String password, String passwordAlias) throws Exception {
+        return stub.getdbSchemaListUsingParams(driverClass, jdbcURL, username, password, passwordAlias);
     }
     
     /*

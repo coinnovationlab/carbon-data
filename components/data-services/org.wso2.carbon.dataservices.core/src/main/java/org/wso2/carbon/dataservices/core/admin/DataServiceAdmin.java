@@ -48,6 +48,7 @@ import org.wso2.carbon.dataservices.core.engine.DataService;
 import org.wso2.carbon.dataservices.core.engine.DataServiceSerializer;
 import org.wso2.carbon.dataservices.core.odata.ODataServiceFault;
 import org.wso2.carbon.dataservices.core.script.DSGenerator;
+import org.wso2.carbon.dataservices.core.script.GeneratedListTables;
 import org.wso2.carbon.dataservices.core.script.PaginatedTableInfo;
 import org.wso2.carbon.dataservices.core.sqlparser.SQLParserUtil;
 import org.wso2.carbon.utils.Pageable;
@@ -70,6 +71,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.io.*;
 
 /**
  * Data Services admin service class, for the basic functions.
@@ -79,6 +83,7 @@ public class DataServiceAdmin extends AbstractAdmin {
 	private static final Log log = LogFactory.getLog(DataServiceAdmin.class);
 	public static final String TABLE_NAME = "TABLE_NAME";
 	public static final String TABLE = "TABLE";
+	public static final String VIEW = "VIEW";
     public static final String ORACLE_SERVER = "oracle";
     public static final String MSSQL_SERVER = "microsoft sql server";
     private ThreadLocal<Connection> transactionalConnection = new ThreadLocal<Connection>() {
@@ -332,12 +337,15 @@ public class DataServiceAdmin extends AbstractAdmin {
     * @return Table List of the DB
 	 * @throws Exception 
     */
-   public List<String> generateTableList(String driverClass, String jdbcURL, String username,
-			String password, String passwordAlias) throws Exception {
-       List<String> tableList = new ArrayList<>();
+   public List<GeneratedListTables> generateTableList(String driverClass, String jdbcURL, String username,
+			String password, String passwordAlias, String[] schemas, String type) throws Exception {
+       List<String> tableList = new ArrayList<String>();
+       List<GeneratedListTables> generatedListTables = new ArrayList<GeneratedListTables>();
+       GeneratedListTables genTablesInstance= new GeneratedListTables();
        Connection connection = null;
        ResultSet rs = null;
        String message;
+       String objectType = type.equals("VIEW") ? VIEW : TABLE; 
        int tenantId =
 				PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
 		try {
@@ -375,15 +383,45 @@ public class DataServiceAdmin extends AbstractAdmin {
 		   }
            DatabaseMetaData meta = connection.getMetaData();
            if (meta.getDatabaseProductName().toLowerCase().contains(ORACLE_SERVER)) {
-               rs = meta.getTables(null, meta.getUserName(), null, new String[] { TABLE });
+               rs = meta.getTables(null, meta.getUserName(), null, new String[] { objectType });
+               while (rs.next()) {
+                   String tableName = rs.getString(TABLE_NAME);
+                   tableList.add(tableName);
+               }
+               genTablesInstance.setSchemaName("all");
+               String [] tablesArray = tableList.toArray(new String[tableList.size()]);
+               genTablesInstance.setTables(tablesArray);
+               generatedListTables.add(genTablesInstance);
+           } else if(schemas.length >0) {
+        	   for(int i=0; i<schemas.length;i++) {
+        		   //System.out.println("schema:  "+schemas[i]+" "+schemas.length);
+        		   rs = meta.getTables(null, schemas[i], null, new String[] { objectType });
+        		   tableList = new ArrayList<String>();
+        		   while (rs.next()) {
+                       String tableName = rs.getString(TABLE_NAME);
+                       //System.out.println("table:  "+tableName);
+                       tableList.add(tableName);
+                   }
+        		   genTablesInstance= new GeneratedListTables();
+        		   genTablesInstance.setSchemaName(schemas[i]);
+        		   String [] tablesArray = tableList.toArray(new String[tableList.size()]);
+                   genTablesInstance.setTables(tablesArray);
+                   generatedListTables.add(genTablesInstance);
+                   //System.out.println("second time: "+generatedListTables.get(0).getSchemaName());
+        	   }
            } else {
-               rs = meta.getTables(null, null, null, new String[] { TABLE });
-           }
-           while (rs.next()) {
-               String tableName = rs.getString(TABLE_NAME);
-               tableList.add(tableName);
-           }
-           return tableList;
+        	   rs = meta.getTables(null, null, null, new String[] { objectType });
+        	   while (rs.next()) {
+                   String tableName = rs.getString(TABLE_NAME);
+                   tableList.add(tableName);
+               }
+        	   genTablesInstance.setSchemaName("all");
+        	   String [] tablesArray = tableList.toArray(new String[tableList.size()]);
+               genTablesInstance.setTables(tablesArray);
+               generatedListTables.add(genTablesInstance);
+           }  
+           //System.out.println(generatedListTables.get(4).getTables()[0]);
+           return generatedListTables;
        } catch (Exception e) {
            throw new Exception("Error in reading tables from the database. :" + e.getMessage());
        } finally {
@@ -591,6 +629,51 @@ public class DataServiceAdmin extends AbstractAdmin {
 
 	public String[] getdbSchemaList(String datasourceId) throws Exception {
 		return DSGenerator.getSchemas(datasourceId);
+	}
+	
+	//Provide this method in order to generate the list of schemas using the parameters given by user before the DS is being saved
+	public String[] getdbSchemaListUsingParams(String driverClass, String jdbcURL, String username, String password, String passwordAlias) throws Exception {
+
+	       Connection connection = null;
+	       String message;
+	       try {
+				String resolvePwd;
+				if (driverClass == null || driverClass.length() == 0) {
+					message = "Driver class is missing";
+					if (log.isDebugEnabled()) {
+						log.debug(message);
+					}
+				}
+				if (jdbcURL == null || jdbcURL.length() == 0) {
+					message = "Driver connection URL is missing";
+					if (log.isDebugEnabled()) {
+						log.debug(message);
+					}
+				}
+				if (null != passwordAlias && !passwordAlias.isEmpty()) {
+					resolvePwd = DBUtils.loadFromSecureVault(passwordAlias);
+				} else {
+					resolvePwd = password;
+				}
+				Class.forName(driverClass.trim());
+				
+				if (null != username && !username.isEmpty()) {
+					connection = DriverManager.getConnection(jdbcURL, username, resolvePwd);
+					message = "Database connection is successful with driver class " + driverClass + " , jdbc url " +
+					          jdbcURL + " and user name " + username;
+				} else {
+					connection = DriverManager.getConnection(jdbcURL);
+					message = "Database connection is successful with driver class " + driverClass + " , jdbc url " +
+					          jdbcURL;
+			   }
+				return DSGenerator.getSchemas(connection);
+			}
+			catch (Exception e) {
+		           throw new Exception("Error in reading the list of schemas from the database. :" + e.getMessage());
+	       } finally {
+	           releaseConnection(connection);
+	       }
+			
 	}
 
     public PaginatedTableInfo getPaginatedSchemaInfo(int pageNumber, String datasourceId)
