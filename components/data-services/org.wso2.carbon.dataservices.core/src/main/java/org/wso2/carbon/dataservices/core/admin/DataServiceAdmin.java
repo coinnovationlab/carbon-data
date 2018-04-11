@@ -388,7 +388,7 @@ public class DataServiceAdmin extends AbstractAdmin {
                    String tableName = rs.getString(TABLE_NAME);
                    tableList.add(tableName);
                }
-               genTablesInstance.setSchemaName("all");
+               genTablesInstance.setSchemaName(DBConstants.NO_SCHEMA);
                String [] tablesArray = tableList.toArray(new String[tableList.size()]);
                genTablesInstance.setTables(tablesArray);
                generatedListTables.add(genTablesInstance);
@@ -415,7 +415,7 @@ public class DataServiceAdmin extends AbstractAdmin {
                    String tableName = rs.getString(TABLE_NAME);
                    tableList.add(tableName);
                }
-        	   genTablesInstance.setSchemaName("all");
+        	   genTablesInstance.setSchemaName(DBConstants.NO_SCHEMA);
         	   String [] tablesArray = tableList.toArray(new String[tableList.size()]);
                genTablesInstance.setTables(tablesArray);
                generatedListTables.add(genTablesInstance);

@@ -24,6 +24,7 @@ import org.wso2.carbon.dataservices.common.DBConstants;
 import org.wso2.carbon.dataservices.common.DBConstants.DBSFields;
 import org.wso2.carbon.dataservices.common.conf.DynamicAuthConfiguration;
 import org.wso2.carbon.dataservices.common.conf.DynamicODataConfig;
+import org.wso2.carbon.dataservices.common.conf.ODataTableSchemaConfig;
 
 import javax.xml.namespace.QName;
 import java.util.ArrayList;
@@ -488,16 +489,21 @@ public class Data extends DataServiceConfigurationElement{
                     property.setValue(nestedProperty);
                 } else if (name.getAttributeValue().equals(DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING)) {
                     property.setName(name.getAttributeValue());
-                    ArrayList<String> dynamicTableList = new ArrayList<String>();
+                    ArrayList<ODataTableSchemaConfig> dynamicTableList = new ArrayList<ODataTableSchemaConfig>();
                     DynamicODataConfig dynamicODataTableConfiguration = new DynamicODataConfig();
                     Iterator<OMElement> dynamicODataTablesConfigs = propertyEle.getChildrenWithName(new QName("tblname"));
+                    ODataTableSchemaConfig odataTableSchema = new ODataTableSchemaConfig();
                     while (dynamicODataTablesConfigs.hasNext()) {
                         OMElement dynamicUserConfig = dynamicODataTablesConfigs.next();
                         String tblname = dynamicUserConfig.getText();
-                        dynamicTableList.add(tblname);
+                        String schemaname = dynamicUserConfig.getAttributeValue(new QName("schema"));
+                        odataTableSchema = new ODataTableSchemaConfig();
+                        odataTableSchema.setTableName(tblname);
+                        odataTableSchema.setSchemaName(schemaname);
+                        dynamicTableList.add(odataTableSchema);
                     }
                     String maxLimit = propertyEle.getAttributeValue(new QName("maxLimit"));
-                    dynamicODataTableConfiguration.setMaxLimit(maxLimit);;
+                    dynamicODataTableConfiguration.setMaxLimit(maxLimit);
                     dynamicODataTableConfiguration.setTables(dynamicTableList);
                     property.setValue(dynamicODataTableConfiguration);
                 } else {

@@ -9,15 +9,14 @@ import javax.xml.bind.annotation.XmlElement;
 
 public class DynamicODataConfig {
 
-		private List<String> tables = new ArrayList<>();
+		private List<ODataTableSchemaConfig> tables = new ArrayList<>();
 		private String maxLimit = "100"; 
 		
-		@XmlElement(name = "tblname")
-		public List<String> getTables() {
+		public List<ODataTableSchemaConfig> getTables() {
 			return tables;
 		}
 
-		public void setTables(List<String> tables) {
+		public void setTables(List<ODataTableSchemaConfig> tables) {
 			this.tables = tables;
 		}
 		

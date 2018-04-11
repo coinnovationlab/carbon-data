@@ -20,6 +20,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
 import org.wso2.carbon.dataservices.common.conf.DynamicAuthConfiguration;
 import org.wso2.carbon.dataservices.common.conf.DynamicODataConfig;
+import org.wso2.carbon.dataservices.common.conf.ODataTableSchemaConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -119,16 +120,20 @@ public class Property extends DataServiceConfigurationElement{
             else if (this.getValue() instanceof DynamicODataConfig) {
                 propEl.addAttribute("name", this.getName(), null);
                 DynamicODataConfig dynamicODataConfiguration = (DynamicODataConfig) this.getValue();
-                List<String> dynamicTableEntries = dynamicODataConfiguration.getTables();
+                List<ODataTableSchemaConfig> dynamicTableEntries = dynamicODataConfiguration.getTables();
                 String maxLimit = dynamicODataConfiguration.getMaxLimit();
                 if(maxLimit != null) {
                 	propEl.addAttribute("maxLimit", maxLimit, null);
                 }
                 if (dynamicTableEntries != null) {
-                    for (String table : dynamicTableEntries) {
-                        OMElement dynamicUserEntryEle = fac.createOMElement("tblname", null);
-                        dynamicUserEntryEle.setText(table);
-                        propEl.addChild(dynamicUserEntryEle);
+                    for (ODataTableSchemaConfig table : dynamicTableEntries) {
+                        if(table.getTableName() != null && table.getSchemaName() != null) {
+	                    	OMElement dynamicUserEntryEle = fac.createOMElement("tblname", null);
+	                        dynamicUserEntryEle.setText(table.getTableName());
+	                        String schemaName = table.getSchemaName();
+	                        dynamicUserEntryEle.addAttribute("schema", schemaName, null);
+	                        propEl.addChild(dynamicUserEntryEle);
+                        }
                     }
                 }
             }

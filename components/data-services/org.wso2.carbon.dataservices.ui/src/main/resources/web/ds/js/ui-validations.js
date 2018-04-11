@@ -2044,7 +2044,7 @@ function reloadOdataObjects(driver,url,username,passw){
     } else {
     	var url = '../ds/getTablesList.jsp?driver=' + encodeURIComponent(driverClassName) + '&jdbcUrl=' + encodeURIComponent(urlValue) + '&userName=' + encodeURIComponent(usernameValue) + '&password=' + encodeURIComponent(passwValue) + '&schema=' +schemaSelected ;
     }
-    var selectedODataEntities = document.getElementById("selectedODataEntities").value;
+    //var selectedODataEntities = document.getElementById("selectedODataEntities").value;
     for(var i = 0;i<obj.options.length;i++){
     	document.getElementById(obj.item(i).value).style.display="none";
     }

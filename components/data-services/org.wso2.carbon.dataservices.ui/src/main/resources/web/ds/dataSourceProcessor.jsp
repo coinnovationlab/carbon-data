@@ -18,6 +18,7 @@
 <%@page import="org.wso2.carbon.dataservices.common.DBConstants" %>
 <%@ page import="org.wso2.carbon.dataservices.common.conf.DynamicAuthConfiguration" %>
 <%@ page import="org.wso2.carbon.dataservices.common.conf.DynamicODataConfig" %>
+<%@ page import="org.wso2.carbon.dataservices.common.conf.ODataTableSchemaConfig" %>
 <%@ page import="org.wso2.carbon.dataservices.ui.beans.Config" %>
 <%@ page import="org.wso2.carbon.dataservices.ui.beans.Property" %>
 <%@ page import="org.wso2.carbon.dataservices.ui.beans.Query" %>
@@ -46,7 +47,7 @@
                 config.removeProperty(propertyName);
             }
         } else if (value instanceof DynamicODataConfig) {
-            List<String> tableEntries = ((DynamicODataConfig) value).getTables();
+            List<ODataTableSchemaConfig> tableEntries = ((DynamicODataConfig) value).getTables();
             if (tableEntries != null && tableEntries.size() > 0) {
                 config.updateProperty(propertyName, value);
             } else {
@@ -436,7 +437,7 @@
                     updateConfiguration(dsConfig, DBConstants.RDBMS.DYNAMIC_USER_AUTH_CLASS, dynamicUserAuthClass);
                     Iterator<Property> iterator = dsConfig.getProperties().iterator();
                     ArrayList<DynamicAuthConfiguration.Entry> dynamicUserList = new ArrayList<DynamicAuthConfiguration.Entry>();
-                    ArrayList<String> dynamicTableList = new ArrayList<String>();
+                    ArrayList<ODataTableSchemaConfig> dynamicTableList = new ArrayList<ODataTableSchemaConfig>();
                     DynamicAuthConfiguration dynamicAuthConfiguration = new DynamicAuthConfiguration();
                     DynamicODataConfig dynamicODataConfig = new DynamicODataConfig();
                     while (iterator.hasNext()) {
@@ -463,8 +464,15 @@
                            if (availableProperty.getValue() instanceof DynamicODataConfig && null != request.getParameter("isOData")) {
                         	   if(request.getParameterValues("tablesOdata") != null){
 	                            	String [] chkbTblNames = request.getParameterValues("tablesOdata");
-	                                for (String tblname : chkbTblNames) {
-	                                    dynamicTableList.add(tblname);
+	                            	ODataTableSchemaConfig odataTableSchema = new ODataTableSchemaConfig();
+	                                for (String tblnameSchema : chkbTblNames) {
+	                                	String [] arrayTblSch = tblnameSchema.split("::");
+	                                	String tblname = arrayTblSch[0];
+	                                	String schemaname = arrayTblSch[1];
+	                                	odataTableSchema = new ODataTableSchemaConfig();
+	                                	odataTableSchema.setTableName(tblname);
+	                                	odataTableSchema.setSchemaName(schemaname);
+	                                    dynamicTableList.add(odataTableSchema);
 	                                }
 	                                dynamicODataConfig.setTables(dynamicTableList);
                         	   }

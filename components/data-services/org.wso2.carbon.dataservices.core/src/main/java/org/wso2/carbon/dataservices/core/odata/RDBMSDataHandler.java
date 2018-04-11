@@ -111,6 +111,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
      */
     private List<String> tableList;
     private List<String> oDataTableList;
+    private Map<String,String> oDataTableSchema = new HashMap<String,String>();
     private int oDataMaxLimit;
 
     public static final String TABLE_NAME = "TABLE_NAME";
@@ -146,10 +147,11 @@ public class RDBMSDataHandler implements ODataDataHandler {
 	            Iterator<OMElement> dynamicODataTablesConfigs = dynTableODataConfEl.getChildrenWithName(new QName("tblname"));
 	            this.oDataMaxLimit = Integer.parseInt(dynTableODataConfEl.getAttributeValue(new QName("maxLimit")) );
 	            while (dynamicODataTablesConfigs.hasNext()) {
-	                OMElement dynamicUserConfig = dynamicODataTablesConfigs.next();
-	                String tblname = dynamicUserConfig.getText();
-	                System.out.println(" OData Table Config List " + tblname);
+	                OMElement dynamicOdataConfig = dynamicODataTablesConfigs.next();
+	                String tblname = dynamicOdataConfig.getText();
+	                String schemaname = dynamicOdataConfig.getAttributeValue(new QName("schema"));
 	                dynamicTableList.add(tblname);
+	                this.oDataTableSchema.put(tblname, schemaname);
 	            }
 	        }
             this.oDataTableList=dynamicTableList;
@@ -450,21 +452,12 @@ public class RDBMSDataHandler implements ODataDataHandler {
         log.info("limit: " + limit + " offset: " + offset+ " orderBy: " + order + " where: " + where);
         try {
             connection = initializeConnection();
-            org.apache.tomcat.jdbc.pool.DataSource tcDataSource = (org.apache.tomcat.jdbc.pool.DataSource)dataSource;
-            String urlJDBC = tcDataSource.getUrl();
-            String select = null;
-            System.out.println(" DB url conn "+ urlJDBC);
-            if (urlJDBC.startsWith("jdbc:sqlserver") && urlJDBC.indexOf("schema=")>0)
-            {
-                String schema = urlJDBC.substring(urlJDBC.indexOf("schema=")+7,urlJDBC.length());
-                schema = schema.substring(0,schema.indexOf(";"));
-                select = "select * from " + schema+"."+tableName;
-            }
-            else
-            {
-                select = "select * from " + tableName;
-            } 
-            
+            String select = "";
+            String schema_prefix = this.oDataTableSchema.get(tableName)+".";
+        	if(this.oDataTableSchema.get(tableName).equals(DBConstants.NO_SCHEMA)) { //takes in consideration dbs that don't use schema like MySQL
+        		schema_prefix = "";
+        	}        	
+            select = "Select * from " + schema_prefix + tableName;
             query = queryBasedOnDBType(select, where, limit, offset, order);
             log.info("Generated query: " + query);
             statement = connection.prepareStatement(query);
@@ -584,6 +577,10 @@ public class RDBMSDataHandler implements ODataDataHandler {
     public int countRecords(UriInfo uriInfo, String tableName) throws ODataServiceFault, ExpressionVisitException, ODataApplicationException {
     	String query = "" , where = "";
     	int total = 0;
+    	String schema_prefix = this.oDataTableSchema.get(tableName)+".";
+    	if(this.oDataTableSchema.get(tableName).equals(DBConstants.NO_SCHEMA)) { //takes in consideration dbs that don't use schema like MySQL
+    		schema_prefix = "";
+    	}
     	CountOption countOption = uriInfo.getCountOption();
     	FilterOption filterOption = uriInfo.getFilterOption();
     	if (filterOption != null) {
@@ -597,7 +594,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
     	if (count) {
     		 try {
                 connection = initializeConnection();
-                query = "select count(*) as total from " + tableName + where;
+                query = "select count(*) as total from " + schema_prefix +tableName + where;
                 log.info("Count query: " + query);
                 statement = connection.prepareStatement(query);
                 resultSet = statement.executeQuery();
