@@ -24,6 +24,7 @@ import org.wso2.carbon.dataservices.common.DBConstants;
 import org.wso2.carbon.dataservices.common.DBConstants.DBSFields;
 import org.wso2.carbon.dataservices.common.conf.DynamicAuthConfiguration;
 import org.wso2.carbon.dataservices.common.conf.DynamicODataConfig;
+import org.wso2.carbon.dataservices.common.conf.ODataColumnsConfig;
 import org.wso2.carbon.dataservices.common.conf.ODataTableSchemaConfig;
 
 import javax.xml.namespace.QName;
@@ -495,11 +496,24 @@ public class Data extends DataServiceConfigurationElement{
                     ODataTableSchemaConfig odataTableSchema = new ODataTableSchemaConfig();
                     while (dynamicODataTablesConfigs.hasNext()) {
                         OMElement dynamicUserConfig = dynamicODataTablesConfigs.next();
-                        String tblname = dynamicUserConfig.getText();
+                        String tblname = dynamicUserConfig.getAttributeValue(new QName("name"));
                         String schemaname = dynamicUserConfig.getAttributeValue(new QName("schema"));
                         odataTableSchema = new ODataTableSchemaConfig();
                         odataTableSchema.setTableName(tblname);
                         odataTableSchema.setSchemaName(schemaname);
+                        Iterator<OMElement> dynamicODataColumnsConfigs = dynamicUserConfig.getChildrenWithName(new QName("column"));
+                        ODataColumnsConfig columnsConf = new ODataColumnsConfig();
+                        List<ODataColumnsConfig> columnsList = new ArrayList<ODataColumnsConfig>();
+                        while(dynamicODataColumnsConfigs.hasNext()) {
+                        	OMElement dynamicColumnsonfig = dynamicODataColumnsConfigs.next();
+                        	String columnname = dynamicColumnsonfig.getText();
+                            String type = dynamicColumnsonfig.getAttributeValue(new QName("type"));
+                            columnsConf = new ODataColumnsConfig();
+                            columnsConf.setColumnName(columnname);
+                            columnsConf.setType(type);
+                            columnsList.add(columnsConf);
+                        }
+                        odataTableSchema.setColumns(columnsList);
                         dynamicTableList.add(odataTableSchema);
                     }
                     String maxLimit = propertyEle.getAttributeValue(new QName("maxLimit"));

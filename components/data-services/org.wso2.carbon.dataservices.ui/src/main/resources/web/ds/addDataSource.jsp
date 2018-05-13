@@ -28,6 +28,7 @@
 <%@ page import="org.wso2.carbon.dataservices.common.conf.DynamicAuthConfiguration" %>
 <%@ page import="org.wso2.carbon.dataservices.common.conf.DynamicODataConfig" %>
 <%@ page import="org.wso2.carbon.dataservices.common.conf.ODataTableSchemaConfig" %>
+<%@ page import="org.wso2.carbon.dataservices.common.conf.ODataColumnsConfig" %>
 <%@ page import="org.wso2.carbon.dataservices.ui.DataServiceAdminClient" %>
 <%@ page import="org.wso2.carbon.dataservices.ui.beans.Config" %>
 <%@ page import="org.wso2.carbon.dataservices.ui.beans.Property" %>
@@ -47,6 +48,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.HashMap" %>
+<%@ page import="com.google.gson.Gson" %>
 <%@ page import="org.wso2.carbon.dataservices.ui.stub.admin.core.xsd.GeneratedListTables" %>
 
 
@@ -2504,12 +2506,14 @@ if (configId != null && configId.trim().length() > 0) {
 DynamicODataConfig dynamicODataConfig;
 List<ODataTableSchemaConfig> dynamicOdataTableList = new ArrayList<ODataTableSchemaConfig>();
 List<String> dynamicTableList = new ArrayList<String>();
+Map<String,List<ODataColumnsConfig>> dynamicColumnsList = new HashMap<String,List<ODataColumnsConfig>>();
 String maxLimit = "100";
 String driverClass = "";
 String jdbcUrl = "";
 String userName = "";
 String pswd = "";
 String passwordAlias1 = "";
+String jsonColumnsList = "";
 if (propertyIterator != null) {
     while (propertyIterator.hasNext()) {
         Property property = (Property) propertyIterator.next();
@@ -2532,6 +2536,19 @@ if (propertyIterator != null) {
                 maxLimit = dynamicODataConfig.getMaxLimit();
                 for(int count=0;count<dynamicOdataTableList.size();count++){
                 	dynamicTableList.add(dynamicOdataTableList.get(count).getTableName());
+                	List<ODataColumnsConfig> columnsList = dynamicOdataTableList.get(count).getColumns();
+                	String key = dynamicOdataTableList.get(count).getSchemaName()+"."+dynamicOdataTableList.get(count).getTableName();
+                	dynamicColumnsList.put(key,columnsList);
+                	Gson gson = new Gson();
+    	            jsonColumnsList = gson.toJson(dynamicColumnsList);
+    	            String colConfTmp = "";
+    	            for(int iter=0;iter<columnsList.size();iter++){
+    	            	colConfTmp += (iter != 0 ? ";" : "");
+    	            	colConfTmp += columnsList.get(iter).getColumnName()+","+ columnsList.get(iter).getType();
+    	            }
+    	            %>
+    	            <input type="hidden" name="ODataColumnsConfig" id="ColConfig_<%=key %>" value="<%=key+"::"+colConfTmp%>" />
+    	            <%
                 }
             }
         }
@@ -2540,8 +2557,7 @@ if (propertyIterator != null) {
 %>
 
 <% if("RDBMS".equals(dataSourceType) || "Cassandra".equals(dataSourceType) || "CARBON_DATASOURCE".equals(dataSourceType)) { %>
-<tr>
-    <td class="leftCol-small" style="white-space: nowrap;">
+<tr>""    <td class="leftCol-small" style="white-space: nowrap;">
         Enable OData</td>
     <td>
         <input type="checkbox" name="isOData" id="isOData" value="isOData" <%=(isOData==true ? "checked" : "") %> onclick="reloadOdataConfig(<%=createView%>,'<%=DBConstants.RDBMS.DRIVER_CLASSNAME%>','<%=DBConstants.RDBMS.URL%>','<%=DBConstants.RDBMS.USERNAME%>','<%=DBConstants.RDBMS.PASSWORD%>');">
@@ -2573,6 +2589,7 @@ if (propertyIterator != null) {
 <% if("RDBMS".equals(dataSourceType) || "Cassandra".equals(dataSourceType) ) { %>
 <table id="advancedTable" class="styledLeft noBorders" cellspacing="0" width="100%">
     <%
+           boolean schemaSupport = true;
            if (propertyIterator != null) {
                String backendServerURL = CarbonUIUtil
            			.getServerURL(config.getServletContext(), session);
@@ -2586,10 +2603,14 @@ if (propertyIterator != null) {
            	String [] schemaList = {};
            	if( driverClass != "" && jdbcUrl != "" && userName != "" ){
            		schemaList = client.getdbSchemaListUsingParams(driverClass, jdbcUrl, userName, pswd, passwordAlias1);
-           		if(schemaList==null) schemaList = new String[1];
+           		if(schemaList==null) schemaSupport = false; //schemaList = new String[1];
            		tableList2 = client.generateTableList(driverClass, jdbcUrl, userName, pswd, passwordAlias1,schemaList,"TABLE" );
            		viewsList2 = client.generateTableList(driverClass, jdbcUrl, userName, pswd, passwordAlias1,schemaList,"VIEW" );
-           		if(schemaList.length==1){schemaList[0] = DBConstants.NO_SCHEMA;} // support dbs that don't use schema
+           		System.out.println(schemaList);
+           		if(!schemaSupport){ 
+           			schemaList = new String[1];
+  					schemaList[0] = DBConstants.NO_SCHEMA; // support dbs that don't use schema
+     			} 
            	}
 	    	
 	    	%>
@@ -2606,7 +2627,7 @@ if (propertyIterator != null) {
 		    	<td><input class="button" type="button" value="<fmt:message key="odata.select.all"/>"
                onclick="select_unselect();return false;"/></td>
                <td><fmt:message key="odata.choose.schema"/>:</td>
-               <td><select id="schema_list" name="schema_list" onchange="reloadOdataObjects('<%=DBConstants.RDBMS.DRIVER_CLASSNAME%>','<%=DBConstants.RDBMS.URL%>','<%=DBConstants.RDBMS.USERNAME%>','<%=DBConstants.RDBMS.PASSWORD%>')">
+               <td><select id="schema_list" name="schema_list" onchange="reloadOdataObjects()">
                            <% for(int i=0;i<schemaList.length;i++){%>
                            		<option value="<%=schemaList[i] %>"><%=schemaList[i] %></option>
                            <%} %>
@@ -2614,7 +2635,10 @@ if (propertyIterator != null) {
                </td>
 		    </tr>
 	    </table>
-	    <% for(int j=0;j<schemaList.length;j++){
+	    <% 
+	    Map<String,List<String>> tableListAll = new HashMap<String,List<String>>();
+	    Map<String,List<String>> viewsListAll = new HashMap<String,List<String>>();
+	    for(int j=0;j<schemaList.length;j++){
 	    	String [] tableArray = {};
 	    	String [] viewsArray = {};
 	    	for(int k=0;k<tableList2.length;k++){
@@ -2630,8 +2654,10 @@ if (propertyIterator != null) {
 	    			break;
 	    		}
 	    	}
-	   		List<String> tableList = new ArrayList<String>(Arrays.asList(tableArray ));
+	    	List<String> tableList = new ArrayList<String>(Arrays.asList(tableArray ));
 	    	List<String> viewsList = new ArrayList<String>(Arrays.asList(viewsArray ));
+	    	tableListAll.put(schemaList[j],tableList);
+	    	viewsListAll.put(schemaList[j],viewsList);
 	    	%>
 	    <div id="<%= schemaList[j] %>" style="display:<%= ((j==0) ? "inline" : "none")%>">
 	    <div class="tab">
@@ -2644,24 +2670,24 @@ if (propertyIterator != null) {
 			  <p><table>
 	    		<% for(int i=0;i<tableList.size();i=i+5){%>
 		    	<tr>
-	    			<td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+"_"+schemaList[j] %>" value="<%=tableList.get(i)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(tableList.get(i))  ? "checked='checked'" : ""  %>/></td>
+	    			<td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+"_"+schemaList[j] %>" value="<%=tableList.get(i)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(tableList.get(i))  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'opttables')"/></td>
 	    			<td><label for="tablesOdata<%=i+"_"+schemaList[j] %>" ><%=tableList.get(i) %></label></td>
 	    			<td></td><td></td>
                     <% if (i+1<tableList.size() ) { %>
-                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+1 +"_"+schemaList[j]%>" value="<%=tableList.get(i+1)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(tableList.get(i+1))  ? "checked='checked'" : ""  %>/></td>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+1 +"_"+schemaList[j]%>" value="<%=tableList.get(i+1)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(tableList.get(i+1))  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'opttables')"/></td>
 	    			<td><label for="tablesOdata<%=i+1 +"_"+schemaList[j]%>"><%=tableList.get(i+1) %></label></td>
 	    			<td></td><td></td>
                     <%} if (i+2<tableList.size() ) {%>
-                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+2 +"_"+schemaList[j]%>" value="<%=tableList.get(i+2)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(tableList.get(i+2))  ? "checked='checked'" : ""  %>/></td>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+2 +"_"+schemaList[j]%>" value="<%=tableList.get(i+2)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(tableList.get(i+2))  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'opttables')"/></td>
 	    			<td><label for="tablesOdata<%=i+2+"_"+schemaList[j]%>"><%=tableList.get(i+2) %></label></td>
 	    			<td></td><td></td>
 	    			<% }%>
 	    			<% if (i+3<tableList.size() ) { %>
-                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+3 +"_"+schemaList[j]%>" value="<%=tableList.get(i+3)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(tableList.get(i+3))  ? "checked='checked'" : ""  %>/></td>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+3 +"_"+schemaList[j]%>" value="<%=tableList.get(i+3)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(tableList.get(i+3))  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'opttables')"/></td>
 	    			<td><label for="tablesOdata<%=i+3 +"_"+schemaList[j]%>"><%=tableList.get(i+3) %></label></td>
 	    			<td></td><td></td>
                     <%} if (i+4<tableList.size() ) {%>
-                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+4 +"_"+schemaList[j]%>" value="<%=tableList.get(i+4)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(tableList.get(i+4))  ? "checked='checked'" : ""  %>/></td>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+4 +"_"+schemaList[j]%>" value="<%=tableList.get(i+4)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(tableList.get(i+4))  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'opttables')"/></td>
 	    			<td><label for="tablesOdata<%=i+4 +"_"+schemaList[j]%>"><%=tableList.get(i+4) %></label></td>
 	    			<td></td><td></td>
 	    			<% }%>
@@ -2678,24 +2704,24 @@ if (propertyIterator != null) {
 			  <table>
 	    		<% for(int i=0;i<viewsList.size();i=i+5){%>
 		    	<tr>
-	    			<td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i %>" value="<%=viewsList.get(i)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i))  ? "checked='checked'" : ""  %>/></td>
+	    			<td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i %>" value="<%=viewsList.get(i)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i))  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'optviews')"/></td>
 	    			<td><label for="tablesOdata<%=i %>" ><%=viewsList.get(i) %></label></td>
 	    			<td></td><td></td>
                     <% if (i+1<viewsList.size() ) { %>
-                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+1 %>" value="<%=viewsList.get(i+1)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i+1))  ? "checked='checked'" : ""  %>/></td>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+1 %>" value="<%=viewsList.get(i+1)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i+1))  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'optviews')"/></td>
 	    			<td><label for="tablesOdata<%=i+1 %>"><%=viewsList.get(i+1) %></label></td>
 	    			<td></td><td></td>
                     <%} if (i+2<viewsList.size() ) {%>
-                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+2 %>" value="<%=viewsList.get(i+2)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i+2))  ? "checked='checked'" : ""  %>/></td>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+2 %>" value="<%=viewsList.get(i+2)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i+2))  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'optviews')"/></td>
 	    			<td><label for="tablesOdata<%=i+2 %>"><%=viewsList.get(i+2) %></label></td>
 	    			<td></td><td></td>
 	    			<% }%>
 	    			<% if (i+3<viewsList.size() ) { %>
-                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+3 %>" value="<%=viewsList.get(i+3)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i+3))  ? "checked='checked'" : ""  %>/></td>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+3 %>" value="<%=viewsList.get(i+3)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i+3))  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'optviews')"/></td>
 	    			<td><label for="tablesOdata<%=i+3 %>"><%=viewsList.get(i+3) %></label></td>
 	    			<td></td><td></td>
                     <%} if (i+4<viewsList.size() ) {%>
-                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+4 %>" value="<%=viewsList.get(i+4)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i+4))  ? "checked='checked'" : ""  %>/></td>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+4 %>" value="<%=viewsList.get(i+4)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i+4))  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'optviews')"/></td>
 	    			<td><label for="tablesOdata<%=i+4 %>"><%=viewsList.get(i+4) %></label></td>
 	    			<td></td><td></td>
 	    			<% }%>
@@ -2723,13 +2749,49 @@ if (propertyIterator != null) {
 		    	<td><input class="button" type="button" value="<fmt:message key="odata.select.all.columns"/>"
                onclick="select_unselect_columns();return false;"/></td>
                <td><fmt:message key="odata.choose.table"/>:</td>
-               <td><select id="columns_list" name="columns_list" onchange="">
+               <td><select id="tables_list" name="tables_list" onchange="reloadOdataColumns()" >
                            <option value=""><fmt:message key="odata.table.none"/></option>
+                           <optgroup label="Tables" id="opttables">
+                           <% for(String schema : tableListAll.keySet() ){
+                        	   List<String> tbls = tableListAll.get(schema);
+                        	   String prefix = schema+".";
+                        	   if (!schemaSupport) prefix = "";
+	                           for(int i=0;i<tbls.size();i++){%>
+		                           <script type="text/javascript">
+				    		    		var selectedTable = <%=dynamicTableList.contains(tbls.get(i))%>;
+				    		    		if(selectedTable){
+				    		    			var option   = document.createElement("option");
+				    		    			option.text  = "<%=prefix + tbls.get(i)%>";
+				    		    			option.value = "<%=schema+"." + tbls.get(i)%>";
+				    		    			document.getElementById("opttables").append(option);
+			    		    		}
+			    		    	</script>
+		    		    	<%}
+		    		    	}%>
+		    		    	</optgroup>
+		    		    	<optgroup label="Views" id="optviews">
+		    		    	<% for(String schema : viewsListAll.keySet() ){
+	                        	   List<String> views = viewsListAll.get(schema);
+	                        	   String prefix = schema+".";
+	                        	   if (!schemaSupport) prefix = "";
+	                        	   for(int i=0;i<views.size();i++){%>
+		                           <script type="text/javascript">
+				    		    		var selectedTable = <%=dynamicTableList.contains(views.get(i))%>;
+				    		    		if(selectedTable){
+				    		    			var option   = document.createElement("option");
+				    		    			option.text  = "<%=prefix + views.get(i)%>";
+				    		    			option.value = "<%=schema+"." + views.get(i)%>";
+				    		    			document.getElementById("optviews").append(option);
+				    		    		}
+				    		    	</script>
+		    		    	<%}
+		    		    	}%>
+		    		    	</optgroup>
                     </select>
                </td>
 		    </tr>
 	    </table>
-	    	 
+	    <div id="columns_content"  class='tab'></div>
 	    </td>
     </tr>
     <%  }%>
@@ -3014,6 +3076,64 @@ if (propertyIterator != null) {
         <input class="button" type="button" value="<fmt:message key="datasource.test.connection"/>"
                onclick="testConnection();return false;"/>
         <script type="text/javascript">
+	        function reloadOdataObjects(){
+	        	var obj=document.getElementById('schema_list');
+	        	var schemaSelected = obj[obj.selectedIndex].value;
+	            for(var i = 0;i<obj.options.length;i++){
+	            	document.getElementById(obj.item(i).value).style.display="none";
+	            }
+	            document.getElementById(schemaSelected).style.display="inline";
+	            openTabContent(event, 'Tables'+obj.selectedIndex);
+	            return false;
+	        }
+
+        
+	        function displayMsgTables(msg) {
+	        	var objTable=document.getElementById('tables_list');
+	        	var tableSelectedAll = objTable[objTable.selectedIndex].value.split(".");
+	        	var tableSelected = tableSelectedAll[1];
+	        	var schemaSelected = tableSelectedAll[0];
+	        	
+	        	document.getElementById("columns_content").innerHTML =msg;
+	        	
+	        	var json = '<%=jsonColumnsList%>';
+	        	var allCols = JSON.parse(json);
+	        	var selectedCols = allCols[objTable[objTable.selectedIndex].value];
+	        	for(var i=0 ; i<selectedCols.length; i++){
+	        		document.getElementById("columnsList_"+selectedCols[i]["columnName"]).checked =true;
+	        		console.log(selectedCols[i]);
+	        		if(selectedCols[i]["type"] != "" && selectedCols[i]["type"] != null)
+	        			document.getElementById("typesList_"+selectedCols[i]["columnName"]).value = selectedCols[i]["type"];
+	        	}
+	        }
+	        
+	        function reloadOdataColumns() {
+	        	var objTable=document.getElementById('tables_list');
+	        	console.log(objTable[objTable.selectedIndex].value);
+	        	var tableSelectedAll = objTable[objTable.selectedIndex].value.split(".");
+	        	var tableSelected = tableSelectedAll[1];
+	        	var schemaSelected = tableSelectedAll[0];
+	        	
+	            var driverClassName = document.getElementById('<%=RDBMS.DRIVER_CLASSNAME%>').value;
+	        	var urlValue = document.getElementById('<%=RDBMS.URL%>').value;
+	        	var usernameValue = document.getElementById('<%=RDBMS.USERNAME%>').value;
+	        	var passwValue = document.getElementById('<%=RDBMS.PASSWORD%>').value;
+	            var useAlias = document.getElementById('useSecretAliasValue').value;
+	            var dataToBeSent = {};
+	            var pwdalias="";
+	            if (useAlias == 'true') {
+	            	if (document.getElementById('pwdalias') != null) {
+	            		pwdalias = document.getElementById('pwdalias').value;
+	            	}
+	                var url = 'getColumnsList_ajaxprocessor.jsp?tablename='+tableSelected+'&driver=' + encodeURIComponent(driverClassName) + '&jdbcUrl=' + encodeURIComponent(urlValue) + '&userName=' + encodeURIComponent(usernameValue) + '&password=' + encodeURIComponent(passwValue) + '&passwordAlias=' +pwdalias + '&schema=' +schemaSelected ;
+	            } else {
+	            	var url = 'getColumnsList_ajaxprocessor.jsp?tablename='+tableSelected+'&driver=' + encodeURIComponent(driverClassName) + '&jdbcUrl=' + encodeURIComponent(urlValue) + '&userName=' + encodeURIComponent(usernameValue) + '&password=' + encodeURIComponent(passwValue) + '&schema=' +schemaSelected ;
+	            }
+	            
+	            jQuery('#connectionTestMsgDiv').load(url, dataToBeSent, displayMsgTables);
+	            return false;
+	        }
+
             function displayMsg(msg) {
             	var successMsg  =  new RegExp("^Database connection is successful with driver class");
             	if (msg.search(successMsg)==-1) //if match failed

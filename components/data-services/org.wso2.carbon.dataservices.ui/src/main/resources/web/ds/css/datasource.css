@@ -2,6 +2,8 @@
 .tab {
     overflow: hidden;
     border: 1px solid #ccc;
+    margin-left:10px;
+    margin-right:10px;
     background-image: -webkit-gradient( linear, left top, left bottom, from( #f2f2f2 ), to( #ffffff ) );
 }
 
@@ -33,4 +35,12 @@
     padding: 6px 12px;
     border: 1px solid #ccc;
     border-top: none;
+    margin-left:10px;
+    margin-right:10px;
+}
+
+.headerCols {
+	padding-left:8px;
+	padding-right:8px;
+	border-bottom: 1px solid #ccc;
 }

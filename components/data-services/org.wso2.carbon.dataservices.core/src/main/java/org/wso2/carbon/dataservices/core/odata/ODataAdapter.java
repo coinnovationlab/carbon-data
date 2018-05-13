@@ -93,6 +93,7 @@ import org.apache.olingo.server.core.uri.parser.UriParserException;
 import org.wso2.carbon.dataservices.common.DBConstants;
 import org.wso2.carbon.dataservices.core.DataServiceFault;
 import org.wso2.carbon.dataservices.core.engine.DataEntry;
+import org.wso2.carbon.dataservices.core.odata.DataColumn.ODataDataType;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -1061,7 +1062,8 @@ public class ODataAdapter implements ServiceHandler {
                 Entity entity = new Entity();
                 for (DataColumn column : this.dataHandler.getTableMetadata().get(tableName).values()) {
                     String columnName = column.getColumnName();
-                    entity.addProperty(createPrimitive(column.getColumnType(), columnName, entry.getValue(columnName)));
+                    ODataDataType columnType = DataColumn.ODataDataType.INT16;//column.getColumnType()
+                    entity.addProperty(createPrimitive(columnType, columnName, entry.getValue(columnName)));
                 }
                 //Set ETag to the entity
                 EdmEntityType entityType = this.serviceMetadata.getEdm()

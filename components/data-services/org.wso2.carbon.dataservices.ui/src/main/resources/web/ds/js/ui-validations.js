@@ -1374,6 +1374,28 @@ function select_unselect_columns(){
 	
 }
 
+function addTableToList(object,type){
+	var selected = object.value.split("::");
+	var tablename= selected[0];
+	var schema = selected[1];
+	var currItem = schema+"."+tablename;
+	if(object.checked){
+		var option   = document.createElement("option");
+		option.text  = currItem;
+		option.value = currItem;
+		document.getElementById(type).appendChild(option);
+	}else{
+		var obj = document.getElementById('tables_list');
+        for(var i = 0;i<obj.options.length;i++){
+        	if(obj.item(i).value==currItem){
+        		obj.remove(i);
+        		break;
+        	}
+        }
+        document.getElementById("ColConfig_"+currItem).value=currItem+"::";
+	}
+}
+
 function changeXADataSourceEngine (obj, document) {
  	var selectedType =  obj[obj.selectedIndex].value;
  	var driverClass = selectedType.substring(0, selectedType.indexOf("#"));
@@ -2008,6 +2030,31 @@ function showAdvancedConfigODataTablesColumns(){
 	  }
 }
 
+function saveColState(key){
+
+	var objs = document.getElementsByName("columnsList");
+	var i,val,valTmp="",type ;
+	for(i=0;i<objs.length;i++){
+		if(objs[i].checked){
+			val = objs[i].value.split("::");// get column name from chkb value
+			type = document.getElementById("typesList_"+val[0]).value;
+			valTmp += (valTmp!=="" ? ";" : "");
+			valTmp += val[0]+","+type;
+		}
+	}
+	if(document.getElementById("ColConfig_"+key) != null && document.getElementById("ColConfig_"+key) !=undefined){
+		document.getElementById("ColConfig_"+key).value=key+"::"+valTmp;
+	}
+	else{
+		var inputElem = document.createElement('input');
+	    inputElem.type = "hidden";
+	    inputElem.name = "ODataColumnsConfig";
+	    inputElem.id = "ColConfig_"+key;
+	    inputElem.value = key+"::"+valTmp;
+	    document.getElementById("columns_content").appendChild(inputElem);
+	}
+}
+
 function openTabContent(evt, tabName) {
     var i, tabcontent, tablinks;
     tabcontent = document.getElementsByClassName("tabcontent");
@@ -2026,47 +2073,6 @@ function openTabContent(evt, tabName) {
     }
 }
 
-function reloadOdataObjects(driver,url,username,passw){
-	
-	var obj=document.getElementById('schema_list');
-	var schemaSelected = obj[obj.selectedIndex].value;
-    var driverClassName = document.getElementById(driver).value;
-	var urlValue = document.getElementById(url).value;
-	var usernameValue = document.getElementById(username).value;
-	var passwValue = document.getElementById(passw).value;
-    var useAlias = document.getElementById('useSecretAliasValue').value;
-    var pwdalias="";
-    if (useAlias == 'true') {
-    	if (document.getElementById('pwdalias') != null) {
-    		pwdalias = document.getElementById('pwdalias').value;
-    	}
-        var url = '../ds/getTablesList.jsp?driver=' + encodeURIComponent(driverClassName) + '&jdbcUrl=' + encodeURIComponent(urlValue) + '&userName=' + encodeURIComponent(usernameValue) + '&password=' + encodeURIComponent(passwValue) + '&passwordAlias=' +pwdalias + '&schema=' +schemaSelected ;
-    } else {
-    	var url = '../ds/getTablesList.jsp?driver=' + encodeURIComponent(driverClassName) + '&jdbcUrl=' + encodeURIComponent(urlValue) + '&userName=' + encodeURIComponent(usernameValue) + '&password=' + encodeURIComponent(passwValue) + '&schema=' +schemaSelected ;
-    }
-    //var selectedODataEntities = document.getElementById("selectedODataEntities").value;
-    for(var i = 0;i<obj.options.length;i++){
-    	document.getElementById(obj.item(i).value).style.display="none";
-    }
-    document.getElementById(schemaSelected).style.display="inline";
-    openTabContent(event, 'Tables'+obj.selectedIndex);
-    /*jQuery.ajax({
-            url: url,
-            type: 'POST',
-            async: false,
-            cache: false,
-            data: selectedODataEntities,
-            processData: false,
-            timeout: 5000,
-            error: function() {
-            	CARBON.showWarningDialog("error");
-            },
-            contentType: 'application/json',
-            success: function(msg) {
-                    console.log(msg);
-            }
-        });*/
-}
 function deleteNewPropertyField(i) {
     var propertyNameRaw = document.getElementById("propertyNameRaw" + i);
     if (propertyNameRaw != undefined && propertyNameRaw != null) {

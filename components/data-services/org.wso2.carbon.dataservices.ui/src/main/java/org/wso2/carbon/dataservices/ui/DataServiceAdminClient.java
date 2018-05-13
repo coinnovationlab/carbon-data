@@ -26,6 +26,7 @@ import org.wso2.carbon.dataservices.ui.stub.DataServiceAdminExceptionException;
 import org.wso2.carbon.dataservices.ui.stub.DataServiceAdminStub;
 import org.wso2.carbon.dataservices.ui.stub.admin.core.xsd.PaginatedTableInfo;
 import org.wso2.carbon.dataservices.ui.stub.admin.core.xsd.GeneratedListTables;
+import org.wso2.carbon.dataservices.ui.stub.admin.core.xsd.ColumnsList;
 
 import java.rmi.RemoteException;
 import java.util.HashMap;
@@ -126,6 +127,14 @@ public class DataServiceAdminClient {
     	
     	GeneratedListTables[] response = {} ;
 		response = stub.generateTableList(driverClass, jdbcURL, username, password, passwordAlias,schemas, type);
+		return response;
+    }
+    
+    public ColumnsList[] generateTableColumnsList(String driverClass, String jdbcURL, String username,
+            String password, String passwordAlias, String schemas, String tablename) throws RemoteException, DataServiceAdminExceptionException {
+    	
+    	ColumnsList[] response = {} ;
+		response = stub.generateTableColumnsList(driverClass, jdbcURL, username, password, passwordAlias,schemas, tablename);
 		return response;
     }
  

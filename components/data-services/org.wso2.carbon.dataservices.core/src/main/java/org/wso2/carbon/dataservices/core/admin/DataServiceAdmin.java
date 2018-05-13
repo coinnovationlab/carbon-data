@@ -49,6 +49,7 @@ import org.wso2.carbon.dataservices.core.engine.DataServiceSerializer;
 import org.wso2.carbon.dataservices.core.odata.ODataServiceFault;
 import org.wso2.carbon.dataservices.core.script.DSGenerator;
 import org.wso2.carbon.dataservices.core.script.GeneratedListTables;
+import org.wso2.carbon.dataservices.core.script.ColumnsList;
 import org.wso2.carbon.dataservices.core.script.PaginatedTableInfo;
 import org.wso2.carbon.dataservices.core.sqlparser.SQLParserUtil;
 import org.wso2.carbon.utils.Pageable;
@@ -394,12 +395,10 @@ public class DataServiceAdmin extends AbstractAdmin {
                generatedListTables.add(genTablesInstance);
            } else if(schemas.length >0) {
         	   for(int i=0; i<schemas.length;i++) {
-        		   //System.out.println("schema:  "+schemas[i]+" "+schemas.length);
         		   rs = meta.getTables(null, schemas[i], null, new String[] { objectType });
         		   tableList = new ArrayList<String>();
         		   while (rs.next()) {
                        String tableName = rs.getString(TABLE_NAME);
-                       //System.out.println("table:  "+tableName);
                        tableList.add(tableName);
                    }
         		   genTablesInstance= new GeneratedListTables();
@@ -407,7 +406,6 @@ public class DataServiceAdmin extends AbstractAdmin {
         		   String [] tablesArray = tableList.toArray(new String[tableList.size()]);
                    genTablesInstance.setTables(tablesArray);
                    generatedListTables.add(genTablesInstance);
-                   //System.out.println("second time: "+generatedListTables.get(0).getSchemaName());
         	   }
            } else {
         	   rs = meta.getTables(null, null, null, new String[] { objectType });
@@ -420,7 +418,6 @@ public class DataServiceAdmin extends AbstractAdmin {
                genTablesInstance.setTables(tablesArray);
                generatedListTables.add(genTablesInstance);
            }  
-           //System.out.println(generatedListTables.get(4).getTables()[0]);
            return generatedListTables;
        } catch (Exception e) {
            throw new Exception("Error in reading tables from the database. :" + e.getMessage());
@@ -431,6 +428,78 @@ public class DataServiceAdmin extends AbstractAdmin {
        }
    }
    
+   /**
+    * This method creates a list of columns of the related table.
+    *
+    * @return Table List of the DB
+	 * @throws Exception 
+    */
+   public List<ColumnsList> generateTableColumnsList(String driverClass, String jdbcURL, String username,
+			String password, String passwordAlias, String schema, String tablename) throws Exception {
+       List<String> tableList = new ArrayList<String>();
+       List<ColumnsList> generatedColumnsList = new ArrayList<ColumnsList>();
+       ColumnsList genColumnsInstance= new ColumnsList();
+       Connection connection = null;
+       ResultSet rs = null;
+       String message;
+       int tenantId =
+				PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
+		try {
+			PrivilegedCarbonContext.startTenantFlow();
+			PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(tenantId);
+			String resolvePwd;
+			if (driverClass == null || driverClass.length() == 0) {
+				message = "Driver class is missing";
+				if (log.isDebugEnabled()) {
+					log.debug(message);
+				}
+			}
+			if (jdbcURL == null || jdbcURL.length() == 0) {
+				message = "Driver connection URL is missing";
+				if (log.isDebugEnabled()) {
+					log.debug(message);
+				}
+			}
+
+			if (null != passwordAlias && !passwordAlias.isEmpty()) {
+				resolvePwd = DBUtils.loadFromSecureVault(passwordAlias);
+			} else {
+				resolvePwd = password;
+			}
+			
+			if (null != username && !username.isEmpty()) {
+				connection = DriverManager.getConnection(jdbcURL, username, resolvePwd);
+				message = "Database connection is successful with driver class " + driverClass + " , jdbc url " +
+				          jdbcURL + " and user name " + username;
+			} else {
+				connection = DriverManager.getConnection(jdbcURL);
+				message = "Database connection is successful with driver class " + driverClass + " , jdbc url " +
+				          jdbcURL;
+		   }
+           DatabaseMetaData meta = connection.getMetaData();
+           schema = (schema==DBConstants.NO_SCHEMA) ? null : schema; // support dbs that don't use schema
+           ResultSet resultSet = meta.getColumns(null, schema, tablename, null);
+           while (resultSet.next()) {
+             String name = resultSet.getString("COLUMN_NAME");
+             String type = resultSet.getString("TYPE_NAME");
+             int size = resultSet.getInt("COLUMN_SIZE");
+             genColumnsInstance = new ColumnsList();
+             genColumnsInstance.setName(name);
+             genColumnsInstance.setType(type);
+             genColumnsInstance.setSize(size);
+             generatedColumnsList.add(genColumnsInstance);
+             System.out.println("Column name: [" + name + "]; type: [" + type + "]; size: [" + size + "]");
+           } 
+           return generatedColumnsList;
+       } catch (Exception e) {
+           throw new Exception("Error in reading tables from the database. :" + e.getMessage());
+       } finally {
+           releaseResources(rs, null);
+           releaseConnection(connection);
+           PrivilegedCarbonContext.endTenantFlow();
+       }
+   }
+
    private void releaseResources(ResultSet resultSet, Statement statement) {
 	    /* close the result set */
        if (resultSet != null) {

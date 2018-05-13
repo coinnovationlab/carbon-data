@@ -47,9 +47,11 @@ public class ConfigurationBasedAuthenticator implements DynamicUserAuthenticator
 						"for dynamic auth configuration:- \n" + xmlConfig);
 			}
 			this.credentialsMap = new HashMap<String, String[]>();
-			for (Entry entry : conf.getEntries()) {
-				this.credentialsMap.put(entry.getRequest(), 
-						new String[] { entry.getUsername(), entry.getPassword() });
+			if(conf != null) { // try to avoid null exception DS Code: UNKNOWN_ERROR
+				for (Entry entry : conf.getEntries()) {
+					this.credentialsMap.put(entry.getRequest(), 
+							new String[] { entry.getUsername(), entry.getPassword() });
+				}
 			}
 		} catch (Exception e) {
 			throw new DataServiceFault(e, 

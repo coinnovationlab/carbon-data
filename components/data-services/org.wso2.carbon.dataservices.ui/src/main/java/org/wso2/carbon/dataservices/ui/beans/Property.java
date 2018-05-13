@@ -20,6 +20,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
 import org.wso2.carbon.dataservices.common.conf.DynamicAuthConfiguration;
 import org.wso2.carbon.dataservices.common.conf.DynamicODataConfig;
+import org.wso2.carbon.dataservices.common.conf.ODataColumnsConfig;
 import org.wso2.carbon.dataservices.common.conf.ODataTableSchemaConfig;
 
 import java.util.ArrayList;
@@ -129,9 +130,21 @@ public class Property extends DataServiceConfigurationElement{
                     for (ODataTableSchemaConfig table : dynamicTableEntries) {
                         if(table.getTableName() != null && table.getSchemaName() != null) {
 	                    	OMElement dynamicUserEntryEle = fac.createOMElement("tblname", null);
-	                        dynamicUserEntryEle.setText(table.getTableName());
+	                        String tblname = table.getTableName();
 	                        String schemaName = table.getSchemaName();
 	                        dynamicUserEntryEle.addAttribute("schema", schemaName, null);
+	                        dynamicUserEntryEle.addAttribute("name", tblname, null);
+	                        
+	                        if(table.getColumns() != null) {
+	                        	List<ODataColumnsConfig> columns = table.getColumns();
+	                        	for(ODataColumnsConfig column : columns) {
+	                        		OMElement colEle = fac.createOMElement("column", null);
+	                        		colEle.setText(column.getColumnName());
+	                        		if(column.getType() != null)
+	                        			colEle.addAttribute("type", column.getType(), null);
+	                        		dynamicUserEntryEle.addChild(colEle);
+	                        	}
+	                        }
 	                        propEl.addChild(dynamicUserEntryEle);
                         }
                     }
