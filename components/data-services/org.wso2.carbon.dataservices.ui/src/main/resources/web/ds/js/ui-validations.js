@@ -1370,7 +1370,6 @@ function select_unselect (type) {
 		if(type=="tablesOdata"){ // when selecting massively the tables need also to update the combobox of tables/views inside columns config
 			// going back- td/tr/tbody/table/div
 			var parentId = all_chkb[i].parentElement.parentElement.parentElement.parentElement.parentElement.id; // the id of the div containing chkb
-			console.log("parent id " + parentId);
 			var elType = (parentId.indexOf("Views") !== -1  ? "optviews" : "opttables");
 			addTableToList(all_chkb[i], elType );
 		}
@@ -1410,7 +1409,7 @@ function changeXADataSourceEngine (obj, document) {
     var url = selectedType.substring(selectedType.indexOf("#") + 1, selectedType.length);
  	document.getElementById('org.wso2.ws.dataservice.xa_datasource_class').value = driverClass;
     document.getElementById('URL').value = url;
- }
+}
 
 function changeXAType(obj, document) {
 	var selectedDS = document.getElementById('datasourceId').value;

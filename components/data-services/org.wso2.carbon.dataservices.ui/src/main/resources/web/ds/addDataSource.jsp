@@ -2623,8 +2623,6 @@ if (propertyIterator != null) {
 	    <td>
 	    <table>
 		    <tr>
-		    	<td><input class="button" type="button" value="<fmt:message key="odata.select.all"/>"
-               onclick="select_unselect('tablesOdata');return false;"/></td>
                <td><fmt:message key="odata.choose.schema"/>:</td>
                <td><select id="schema_list" name="schema_list" onchange="reloadOdataObjects()">
                            <% for(int i=0;i<schemaList.length;i++){%>
@@ -2632,6 +2630,11 @@ if (propertyIterator != null) {
                            <%} %>
                     </select>
                </td>
+		    </tr>
+		    <tr>
+		    	<td colspan="2">
+		    		<input class="button" type="button" value="<fmt:message key="odata.select.all"/>" onclick="select_unselect('tablesOdata');return false;"/>
+                </td>
 		    </tr>
 	    </table>
 	    <% 
@@ -2745,9 +2748,7 @@ if (propertyIterator != null) {
 	    <td>
 	    <table>
 		    <tr>
-		    	<td><input class="button" type="button" value="<fmt:message key="odata.select.all.columns"/>"
-               onclick="select_unselect('columnsList');return false;"/></td>
-               <td><fmt:message key="odata.choose.table"/>:</td>
+		       <td><fmt:message key="odata.choose.table"/>:</td>
                <td><select id="tables_list" name="tables_list" onchange="reloadOdataColumns()" >
                            <option value=""><fmt:message key="odata.table.none"/></option>
                            <optgroup label="Tables" id="opttables">
@@ -2788,6 +2789,10 @@ if (propertyIterator != null) {
 		    		    	</optgroup>
                     </select>
                </td>
+		    </tr>
+			    <td colspan="2">
+			    	<input class="button" type="button" value="<fmt:message key="odata.select.all.columns"/>" onclick="select_unselect('columnsList');return false;"/>
+			    </td>
 		    </tr>
 	    </table>
 	    <div id="columns_content"  class='tab'></div>
