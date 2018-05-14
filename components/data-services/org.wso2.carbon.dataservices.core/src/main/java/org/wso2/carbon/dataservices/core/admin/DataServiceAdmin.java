@@ -46,7 +46,9 @@ import org.wso2.carbon.dataservices.core.description.config.SQLCarbonDataSourceC
 import org.wso2.carbon.dataservices.core.description.query.QueryFactory;
 import org.wso2.carbon.dataservices.core.engine.DataService;
 import org.wso2.carbon.dataservices.core.engine.DataServiceSerializer;
+import org.wso2.carbon.dataservices.core.odata.DataColumn.ODataDataType;
 import org.wso2.carbon.dataservices.core.odata.ODataServiceFault;
+import org.wso2.carbon.dataservices.core.odata.RDBMSDataHandler;
 import org.wso2.carbon.dataservices.core.script.DSGenerator;
 import org.wso2.carbon.dataservices.core.script.GeneratedListTables;
 import org.wso2.carbon.dataservices.core.script.ColumnsList;
@@ -68,6 +70,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -482,13 +485,15 @@ public class DataServiceAdmin extends AbstractAdmin {
            while (resultSet.next()) {
              String name = resultSet.getString("COLUMN_NAME");
              String type = resultSet.getString("TYPE_NAME");
+             int type3 = resultSet.getInt("DATA_TYPE");
+             ODataDataType dtType = getODataDataType(type3);
              int size = resultSet.getInt("COLUMN_SIZE");
              genColumnsInstance = new ColumnsList();
              genColumnsInstance.setName(name);
-             genColumnsInstance.setType(type);
+             genColumnsInstance.setType(dtType.toString());
              genColumnsInstance.setSize(size);
              generatedColumnsList.add(genColumnsInstance);
-             System.out.println("Column name: [" + name + "]; type: [" + type + "]; size: [" + size + "]");
+             System.out.println("Column name: [" + name + "]; type: [" + type + "] ; type3: [" + type3 + "] ; size: [" + dtType + "]");
            } 
            return generatedColumnsList;
        } catch (Exception e) {
@@ -498,6 +503,82 @@ public class DataServiceAdmin extends AbstractAdmin {
            releaseConnection(connection);
            PrivilegedCarbonContext.endTenantFlow();
        }
+   }
+
+   private ODataDataType getODataDataType(int columnType) {
+       ODataDataType dataType;
+       switch (columnType) {
+           case Types.INTEGER:
+               dataType = ODataDataType.INT32;
+               break;
+           case Types.TINYINT:
+				/* fall through */
+           case Types.SMALLINT:
+               dataType = ODataDataType.INT16;
+               break;
+           case Types.DOUBLE:
+               dataType = ODataDataType.DOUBLE;
+               break;
+           case Types.VARCHAR:
+				/* fall through */
+           case Types.CHAR:
+				/* fall through */
+           case Types.LONGVARCHAR:
+				/* fall through */
+           case Types.CLOB:
+				/* fall through */
+           case Types.LONGNVARCHAR:
+				/* fall through */
+           case Types.NCHAR:
+				/* fall through */
+           case Types.NVARCHAR:
+				/* fall through */
+           case Types.NCLOB:
+				/* fall through */
+           case Types.SQLXML:
+               dataType = ODataDataType.STRING;
+               break;
+           case Types.BOOLEAN:
+				/* fall through */
+           case Types.BIT:
+               dataType = ODataDataType.BOOLEAN;
+               break;
+           case Types.BLOB:
+				/* fall through */
+           case Types.BINARY:
+				/* fall through */
+           case Types.LONGVARBINARY:
+				/* fall through */
+           case Types.VARBINARY:
+               dataType = ODataDataType.BINARY;
+               break;
+           case Types.DATE:
+               dataType = ODataDataType.DATE;
+               break;
+           case Types.DECIMAL:
+				/* fall through */
+           case Types.NUMERIC:
+               dataType = ODataDataType.DECIMAL;
+               break;
+           case Types.FLOAT:
+				/* fall through */
+           case Types.REAL:
+               dataType = ODataDataType.SINGLE;
+               break;
+           case Types.TIME:
+               dataType = ODataDataType.TIMEOFDAY;
+               break;
+           case Types.BIGINT:
+               dataType = ODataDataType.INT64;
+               break;
+           case Types.TIMESTAMP:
+               dataType = ODataDataType.DATE_TIMEOFFSET;
+               break;
+           default:
+               dataType = ODataDataType.STRING;
+               break;
+       }
+       return dataType;
    }
 
    private void releaseResources(ResultSet resultSet, Statement statement) {

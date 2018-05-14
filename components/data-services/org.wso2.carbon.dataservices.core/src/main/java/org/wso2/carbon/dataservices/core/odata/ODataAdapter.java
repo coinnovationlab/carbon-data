@@ -1062,7 +1062,7 @@ public class ODataAdapter implements ServiceHandler {
                 Entity entity = new Entity();
                 for (DataColumn column : this.dataHandler.getTableMetadata().get(tableName).values()) {
                     String columnName = column.getColumnName();
-                    ODataDataType columnType = DataColumn.ODataDataType.INT16;//column.getColumnType()
+                    ODataDataType columnType = column.getColumnType();
                     entity.addProperty(createPrimitive(columnType, columnName, entry.getValue(columnName)));
                 }
                 //Set ETag to the entity

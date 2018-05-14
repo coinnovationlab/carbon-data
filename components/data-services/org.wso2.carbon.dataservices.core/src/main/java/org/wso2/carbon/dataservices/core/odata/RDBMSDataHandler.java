@@ -38,6 +38,7 @@ import org.apache.olingo.server.api.uri.queryoption.expression.Expression;
 import org.apache.olingo.server.api.uri.queryoption.expression.ExpressionVisitException;
 import org.wso2.carbon.dataservices.common.DBConstants;
 import org.wso2.carbon.dataservices.common.conf.DynamicODataConfig;
+import org.wso2.carbon.dataservices.common.conf.ODataColumnsConfig;
 import org.wso2.carbon.dataservices.core.DBUtils;
 import org.wso2.carbon.dataservices.core.DataServiceFault;
 import org.wso2.carbon.dataservices.core.engine.DataEntry;
@@ -112,6 +113,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
     private List<String> tableList;
     private List<String> oDataTableList;
     private Map<String,String> oDataTableSchema = new HashMap<String,String>();
+    private Map<String,List<ODataColumnsConfig>> oDataColumnsConfig = new HashMap<String,List<ODataColumnsConfig>>();
     private int oDataMaxLimit;
 
     public static final String TABLE_NAME = "TABLE_NAME";
@@ -146,12 +148,28 @@ public class RDBMSDataHandler implements ODataDataHandler {
 	            DynamicODataConfig dynamicODataTableConfiguration = new DynamicODataConfig();
 	            Iterator<OMElement> dynamicODataTablesConfigs = dynTableODataConfEl.getChildrenWithName(new QName("tblname"));
 	            this.oDataMaxLimit = Integer.parseInt(dynTableODataConfEl.getAttributeValue(new QName("maxLimit")) );
+	            ODataColumnsConfig columnsConf = new ODataColumnsConfig();
+	            List<ODataColumnsConfig> columnsConfAll = new ArrayList<ODataColumnsConfig>();
 	            while (dynamicODataTablesConfigs.hasNext()) {
 	                OMElement dynamicOdataConfig = dynamicODataTablesConfigs.next();
-	                String tblname = dynamicOdataConfig.getText();
+	                String tblname = dynamicOdataConfig.getAttributeValue(new QName("name"));
 	                String schemaname = dynamicOdataConfig.getAttributeValue(new QName("schema"));
 	                dynamicTableList.add(tblname);
 	                this.oDataTableSchema.put(tblname, schemaname);
+	                String key = schemaname+"."+tblname;
+	                //TODO
+	                Iterator<OMElement> dynamicColConfigs = dynamicOdataConfig.getChildrenWithName(new QName("column"));
+	                columnsConfAll = new ArrayList<ODataColumnsConfig>();
+	                while (dynamicColConfigs.hasNext()) {
+		                OMElement dynamicColConfig = dynamicColConfigs.next();
+		                String type = dynamicColConfig.getAttributeValue(new QName("type"));
+		                String colName = dynamicColConfig.getText();
+		                columnsConf = new ODataColumnsConfig();
+		                columnsConf.setColumnName(colName);
+		                columnsConf.setType(type);
+		                columnsConfAll.add(columnsConf);
+		            }
+	                this.oDataColumnsConfig.put(key,columnsConfAll);
 	            }
 	        }
             this.oDataTableList=dynamicTableList;
@@ -1235,40 +1253,57 @@ public class RDBMSDataHandler implements ODataDataHandler {
             throws ODataServiceFault {
         ResultSet resultSet = null;
         Map<String, DataColumn> columnMap = new HashMap<>();
+        String name = "";
+        String type ="";
         try {
+        	int j;
+        	String schema = this.oDataTableSchema.get(tableName);
+        	List<ODataColumnsConfig> definedCols = this.oDataColumnsConfig.get(schema+"."+tableName);
+        	Map<String,String> colTypeMap = new HashMap<String,String>();
+        	if(definedCols != null) {
+	        	for(j=0;j<definedCols.size();j++) {
+	        		name = definedCols.get(j).getColumnName();
+	        		type = definedCols.get(j).getType();
+	        		colTypeMap.put(name, type);
+	        	}
+        	}
             resultSet = meta.getColumns(null, null, tableName, null);
             int i = 1;
             while (resultSet.next()) {
-                String columnName = resultSet.getString("COLUMN_NAME");
-                int columnType = resultSet.getInt("DATA_TYPE");
-                int size = resultSet.getInt("COLUMN_SIZE");
-                boolean nullable = resultSet.getBoolean("NULLABLE");
-                String columnDefaultVal = resultSet.getString("COLUMN_DEF");
-                String autoIncrement = resultSet.getString("IS_AUTOINCREMENT").toLowerCase();
-                boolean isAutoIncrement = false;
-                if (autoIncrement.contains("yes") || autoIncrement.contains("true")) {
-                    isAutoIncrement = true;
-                }
-                DataColumn column = new DataColumn(columnName, getODataDataType(columnType), i, nullable, size,
-                                                   isAutoIncrement);
-                if (null != columnDefaultVal) {
-                    column.setDefaultValue(columnDefaultVal);
-                }
-                if (Types.DOUBLE == columnType || Types.FLOAT == columnType || Types.DECIMAL == columnType ||
-                    Types.NUMERIC == columnType || Types.REAL == columnType) {
-                    int scale = resultSet.getInt("DECIMAL_DIGITS");
-                    column.setPrecision(size);
-                    if (scale == 0) {
-                        //setting default scale as 5
-                        scale = 5;
-                        column.setScale(scale);
-                    } else {
-                        column.setScale(scale);
-                    }
-                }
-                columnMap.put(columnName, column);
-                addDataType(tableName, columnName, columnType);
-                i++;
+            	String columnName = resultSet.getString("COLUMN_NAME");
+            	if(colTypeMap.keySet().contains(columnName)) {
+	                int columnType = resultSet.getInt("DATA_TYPE");
+	                ODataDataType dataType = ODataDataType.valueOf(colTypeMap.get(columnName));
+	                int size = resultSet.getInt("COLUMN_SIZE");
+	                boolean nullable = resultSet.getBoolean("NULLABLE");
+	                String columnDefaultVal = resultSet.getString("COLUMN_DEF");
+	                String autoIncrement = resultSet.getString("IS_AUTOINCREMENT").toLowerCase();
+	                boolean isAutoIncrement = false;
+	                if (autoIncrement.contains("yes") || autoIncrement.contains("true")) {
+	                    isAutoIncrement = true;
+	                }
+	                //getODataDataType(columnType)
+	                DataColumn column = new DataColumn(columnName, dataType, i, nullable, size,
+	                                                   isAutoIncrement);
+	                if (null != columnDefaultVal) {
+	                    column.setDefaultValue(columnDefaultVal);
+	                }
+	                if (Types.DOUBLE == columnType || Types.FLOAT == columnType || Types.DECIMAL == columnType ||
+	                    Types.NUMERIC == columnType || Types.REAL == columnType) {
+	                    int scale = resultSet.getInt("DECIMAL_DIGITS");
+	                    column.setPrecision(size);
+	                    if (scale == 0) {
+	                        //setting default scale as 5
+	                        scale = 5;
+	                        column.setScale(scale);
+	                    } else {
+	                        column.setScale(scale);
+	                    }
+	                }
+	                columnMap.put(columnName, column);
+	                addDataType(tableName, columnName, columnType);
+	                i++;
+            	}	
             }
             return columnMap;
         } catch (SQLException e) {

@@ -1356,8 +1356,8 @@ function reloadOdataConfig (createOp,driver,url,username,passw) {
 	}
 }
 
-function select_unselect () {
-	var all_chkb = document.getElementsByName("tablesOdata");
+function select_unselect (type) {
+	var all_chkb = document.getElementsByName(type);
 	var nr_checked=0;
 	for(var i=0;i<all_chkb.length;i++) {
 		if(all_chkb[i].checked){
@@ -1367,11 +1367,18 @@ function select_unselect () {
 	var checked = nr_checked == all_chkb.length ? false : true;
 	for(var i=0;i<all_chkb.length;i++) {
 		all_chkb[i].checked=checked;
+		if(type=="tablesOdata"){ // when selecting massively the tables need also to update the combobox of tables/views inside columns config
+			// going back- td/tr/tbody/table/div
+			var parentId = all_chkb[i].parentElement.parentElement.parentElement.parentElement.parentElement.id; // the id of the div containing chkb
+			console.log("parent id " + parentId);
+			var elType = (parentId.indexOf("Views") !== -1  ? "optviews" : "opttables");
+			addTableToList(all_chkb[i], elType );
+		}
+		else {// columns OData
+			var key = document.getElementById("tables_list")[document.getElementById("tables_list").selectedIndex].value;
+			saveColState(key);
+		}
 	}
-}
-
-function select_unselect_columns(){
-	
 }
 
 function addTableToList(object,type){
@@ -1389,10 +1396,11 @@ function addTableToList(object,type){
         for(var i = 0;i<obj.options.length;i++){
         	if(obj.item(i).value==currItem){
         		obj.remove(i);
-        		break;
         	}
         }
-        document.getElementById("ColConfig_"+currItem).value=currItem+"::";
+        if(document.getElementById("ColConfig_"+currItem) != null && document.getElementById("ColConfig_"+currItem) != undefined){
+        	document.getElementById("ColConfig_"+currItem).value=currItem+"::";
+        }
 	}
 }
 
@@ -2051,7 +2059,7 @@ function saveColState(key){
 	    inputElem.name = "ODataColumnsConfig";
 	    inputElem.id = "ColConfig_"+key;
 	    inputElem.value = key+"::"+valTmp;
-	    document.getElementById("columns_content").appendChild(inputElem);
+	    document.getElementById("advancedConfigODataTablesColumns").appendChild(inputElem);
 	}
 }
 

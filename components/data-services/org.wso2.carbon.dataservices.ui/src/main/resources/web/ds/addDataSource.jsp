@@ -48,7 +48,6 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.HashMap" %>
-<%@ page import="com.google.gson.Gson" %>
 <%@ page import="org.wso2.carbon.dataservices.ui.stub.admin.core.xsd.GeneratedListTables" %>
 
 
@@ -2513,7 +2512,6 @@ String jdbcUrl = "";
 String userName = "";
 String pswd = "";
 String passwordAlias1 = "";
-String jsonColumnsList = "";
 if (propertyIterator != null) {
     while (propertyIterator.hasNext()) {
         Property property = (Property) propertyIterator.next();
@@ -2539,12 +2537,13 @@ if (propertyIterator != null) {
                 	List<ODataColumnsConfig> columnsList = dynamicOdataTableList.get(count).getColumns();
                 	String key = dynamicOdataTableList.get(count).getSchemaName()+"."+dynamicOdataTableList.get(count).getTableName();
                 	dynamicColumnsList.put(key,columnsList);
-                	Gson gson = new Gson();
-    	            jsonColumnsList = gson.toJson(dynamicColumnsList);
+                	
     	            String colConfTmp = "";
-    	            for(int iter=0;iter<columnsList.size();iter++){
-    	            	colConfTmp += (iter != 0 ? ";" : "");
-    	            	colConfTmp += columnsList.get(iter).getColumnName()+","+ columnsList.get(iter).getType();
+    	            if(columnsList != null){
+	    	            for(int iter=0;iter<columnsList.size();iter++){
+	    	            	colConfTmp += (iter != 0 ? ";" : "");
+	    	            	colConfTmp += columnsList.get(iter).getColumnName()+","+ columnsList.get(iter).getType();
+	    	            }
     	            }
     	            %>
     	            <input type="hidden" name="ODataColumnsConfig" id="ColConfig_<%=key %>" value="<%=key+"::"+colConfTmp%>" />
@@ -2625,7 +2624,7 @@ if (propertyIterator != null) {
 	    <table>
 		    <tr>
 		    	<td><input class="button" type="button" value="<fmt:message key="odata.select.all"/>"
-               onclick="select_unselect();return false;"/></td>
+               onclick="select_unselect('tablesOdata');return false;"/></td>
                <td><fmt:message key="odata.choose.schema"/>:</td>
                <td><select id="schema_list" name="schema_list" onchange="reloadOdataObjects()">
                            <% for(int i=0;i<schemaList.length;i++){%>
@@ -2747,7 +2746,7 @@ if (propertyIterator != null) {
 	    <table>
 		    <tr>
 		    	<td><input class="button" type="button" value="<fmt:message key="odata.select.all.columns"/>"
-               onclick="select_unselect_columns();return false;"/></td>
+               onclick="select_unselect('columnsList');return false;"/></td>
                <td><fmt:message key="odata.choose.table"/>:</td>
                <td><select id="tables_list" name="tables_list" onchange="reloadOdataColumns()" >
                            <option value=""><fmt:message key="odata.table.none"/></option>
@@ -3086,7 +3085,6 @@ if (propertyIterator != null) {
 	            openTabContent(event, 'Tables'+obj.selectedIndex);
 	            return false;
 	        }
-
         
 	        function displayMsgTables(msg) {
 	        	var objTable=document.getElementById('tables_list');
@@ -3096,20 +3094,29 @@ if (propertyIterator != null) {
 	        	
 	        	document.getElementById("columns_content").innerHTML =msg;
 	        	
-	        	var json = '<%=jsonColumnsList%>';
-	        	var allCols = JSON.parse(json);
-	        	var selectedCols = allCols[objTable[objTable.selectedIndex].value];
-	        	for(var i=0 ; i<selectedCols.length; i++){
-	        		document.getElementById("columnsList_"+selectedCols[i]["columnName"]).checked =true;
-	        		console.log(selectedCols[i]);
-	        		if(selectedCols[i]["type"] != "" && selectedCols[i]["type"] != null)
-	        			document.getElementById("typesList_"+selectedCols[i]["columnName"]).value = selectedCols[i]["type"];
+	        	var key = objTable[objTable.selectedIndex].value;
+	        	var objColConf = document.getElementById("ColConfig_"+key);
+	        	if(objColConf !== undefined && objColConf != null){
+	        		var valTemp = objColConf.value.split("::");
+	        		if(valTemp.length >1 && valTemp[1] != ""){
+	        			var selectedCols = valTemp[1].split(";");
+		        		var name,type,colTemp;
+		        		
+		        		for(var i=0 ; i<selectedCols.length; i++){
+		        			colTemp = selectedCols[i].split(",");
+		        			name = colTemp[0];
+		        			type = colTemp[1];
+			        		document.getElementById("columnsList_" + name).checked =true;
+			        		if(type != "" && type != null && type != undefined)
+			        			document.getElementById("typesList_" + name).value = type;
+			        	}
+	        		}
+	        		
 	        	}
 	        }
 	        
 	        function reloadOdataColumns() {
 	        	var objTable=document.getElementById('tables_list');
-	        	console.log(objTable[objTable.selectedIndex].value);
 	        	var tableSelectedAll = objTable[objTable.selectedIndex].value.split(".");
 	        	var tableSelected = tableSelectedAll[1];
 	        	var schemaSelected = tableSelectedAll[0];

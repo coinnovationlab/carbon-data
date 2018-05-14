@@ -6,7 +6,6 @@ import javax.xml.bind.annotation.XmlElement;
 public class ODataColumnsConfig {
 	
 	private String type;
-	private String size;
 	private String columnName;
 	
 	@XmlAttribute(name = "type", required = true)
