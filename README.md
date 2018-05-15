@@ -26,6 +26,10 @@ Service Stubs, Components and Features of each module contains in this repo.
 
 * OData - Implement ExpressionVisitor Olingo interface in order to elaborate SQL queries.
 * Performance tunings regarding OData requests in order to limit the amount of records being retrieved.
+* Extend OData configurations related to finlering tables to be exposed over odata.
+* Extend OData configurations related to filtering columns to be exposed over odata and possibility to change their type.
+* Bug fixes regarding MSSQL query formatting including schema parameter.
+
 
 ## How to Contribute
 * Please report issues at [DSS JIRA] (https://wso2.org/jira/browse/DS).

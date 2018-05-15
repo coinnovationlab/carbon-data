@@ -493,7 +493,6 @@ public class DataServiceAdmin extends AbstractAdmin {
              genColumnsInstance.setType(dtType.toString());
              genColumnsInstance.setSize(size);
              generatedColumnsList.add(genColumnsInstance);
-             System.out.println("Column name: [" + name + "]; type: [" + type + "] ; type3: [" + type3 + "] ; size: [" + dtType + "]");
            } 
            return generatedColumnsList;
        } catch (Exception e) {

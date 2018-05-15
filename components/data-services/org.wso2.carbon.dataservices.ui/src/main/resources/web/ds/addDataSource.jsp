@@ -3099,7 +3099,6 @@ if (propertyIterator != null) {
 	        	       	
 	        	var key = objTable[objTable.selectedIndex].value;
 	        	var objColConf = document.getElementById("ColConfig_"+key);
-	        	console.log(key);console.log(objColConf);
 	        	if(objColConf !== undefined && objColConf != null){
 	        		var valTemp = objColConf.value.split("::");
 	        		if(valTemp.length >1 && valTemp[1] != ""){

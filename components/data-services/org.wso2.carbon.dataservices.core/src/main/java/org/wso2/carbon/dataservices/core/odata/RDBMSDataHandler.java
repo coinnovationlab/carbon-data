@@ -1282,7 +1282,6 @@ public class RDBMSDataHandler implements ODataDataHandler {
 	                if (autoIncrement.contains("yes") || autoIncrement.contains("true")) {
 	                    isAutoIncrement = true;
 	                }
-	                //getODataDataType(columnType)
 	                DataColumn column = new DataColumn(columnName, dataType, i, nullable, size,
 	                                                   isAutoIncrement);
 	                if (null != columnDefaultVal) {
