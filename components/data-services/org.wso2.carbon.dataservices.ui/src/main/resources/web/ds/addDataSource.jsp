@@ -2749,7 +2749,7 @@ if (propertyIterator != null) {
 	    <table>
 		    <tr>
 		       <td><fmt:message key="odata.choose.table"/>:</td>
-               <td><select id="tables_list" name="tables_list" onchange="reloadOdataColumns()" >
+               <td><select id="tables_list" name="tables_list" onchange="reloadOdataColumns(this[this.selectedIndex].value)" >
                            <option value=""><fmt:message key="odata.table.none"/></option>
                            <optgroup label="Tables" id="opttables">
                            <% for(String schema : tableListAll.keySet() ){
@@ -3096,11 +3096,10 @@ if (propertyIterator != null) {
 	        	var tableSelectedAll = objTable[objTable.selectedIndex].value.split(".");
 	        	var tableSelected = tableSelectedAll[1];
 	        	var schemaSelected = tableSelectedAll[0];
-	        	
-	        	document.getElementById("columns_content").innerHTML =msg;
-	        	
+	        	       	
 	        	var key = objTable[objTable.selectedIndex].value;
 	        	var objColConf = document.getElementById("ColConfig_"+key);
+	        	console.log(key);console.log(objColConf);
 	        	if(objColConf !== undefined && objColConf != null){
 	        		var valTemp = objColConf.value.split("::");
 	        		if(valTemp.length >1 && valTemp[1] != ""){
@@ -3111,20 +3110,26 @@ if (propertyIterator != null) {
 		        			colTemp = selectedCols[i].split(",");
 		        			name = colTemp[0];
 		        			type = colTemp[1];
-			        		document.getElementById("columnsList_" + name).checked =true;
-			        		if(type != "" && type != null && type != undefined)
+		        			if(document.getElementById("columnsList_" + name) != null && document.getElementById("columnsList_" + name) != undefined){
+		        				document.getElementById("columnsList_" + name).checked =true;
+		        			}
+			        		if(type != "" && type != null && type != undefined && document.getElementById("typesList_" + name) != null && document.getElementById("typesList_" + name) != undefined)
 			        			document.getElementById("typesList_" + name).value = type;
 			        	}
+	        		}else{
+	        			select_unselect("columnsList") ; //by default all columns selected if there is an empty config(only selected table without columns)
 	        		}
-	        		
-	        	}
+	        	}else{
+        			select_unselect("columnsList") ; //by default all columns selected if there is no previous config
+        		}
 	        }
 	        
-	        function reloadOdataColumns() {
-	        	var objTable=document.getElementById('tables_list');
-	        	var tableSelectedAll = objTable[objTable.selectedIndex].value.split(".");
+	        function reloadOdataColumns(key) {
+	        	//var objTable=document.getElementById('tables_list');
+	        	var tableSelectedAll = key.split(".");// objTable[objTable.selectedIndex].value.split(".");
 	        	var tableSelected = tableSelectedAll[1];
 	        	var schemaSelected = tableSelectedAll[0];
+	        	document.getElementById("tables_list").value = key;
 	        	
 	            var driverClassName = document.getElementById('<%=RDBMS.DRIVER_CLASSNAME%>').value;
 	        	var urlValue = document.getElementById('<%=RDBMS.URL%>').value;
@@ -3142,7 +3147,7 @@ if (propertyIterator != null) {
 	            	var url = 'getColumnsList_ajaxprocessor.jsp?tablename='+tableSelected+'&driver=' + encodeURIComponent(driverClassName) + '&jdbcUrl=' + encodeURIComponent(urlValue) + '&userName=' + encodeURIComponent(usernameValue) + '&password=' + encodeURIComponent(passwValue) + '&schema=' +schemaSelected ;
 	            }
 	            
-	            jQuery('#connectionTestMsgDiv').load(url, dataToBeSent, displayMsgTables);
+	            jQuery('#columns_content').load(url, dataToBeSent, displayMsgTables);
 	            return false;
 	        }
 

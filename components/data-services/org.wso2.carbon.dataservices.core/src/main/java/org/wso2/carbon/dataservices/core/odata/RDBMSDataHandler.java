@@ -1271,9 +1271,9 @@ public class RDBMSDataHandler implements ODataDataHandler {
             int i = 1;
             while (resultSet.next()) {
             	String columnName = resultSet.getString("COLUMN_NAME");
-            	if(colTypeMap.keySet().contains(columnName)) {
+            	if(colTypeMap.keySet().contains(columnName) || colTypeMap.size()==0) { // if no columns specified show all table's columns, otherwise show only the specified ones
 	                int columnType = resultSet.getInt("DATA_TYPE");
-	                ODataDataType dataType = ODataDataType.valueOf(colTypeMap.get(columnName));
+	                ODataDataType dataType = (colTypeMap.size()==0 ? getODataDataType(columnType) : ODataDataType.valueOf(colTypeMap.get(columnName)) );
 	                int size = resultSet.getInt("COLUMN_SIZE");
 	                boolean nullable = resultSet.getBoolean("NULLABLE");
 	                String columnDefaultVal = resultSet.getString("COLUMN_DEF");

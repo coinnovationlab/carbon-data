@@ -99,7 +99,7 @@ public class Property extends DataServiceConfigurationElement{
                 OMElement dynamicUserAuthConfigEle = fac.createOMElement("configuration", null);
                 DynamicAuthConfiguration dynamicAuthConfiguration = (DynamicAuthConfiguration) this.getValue();
                 List<DynamicAuthConfiguration.Entry> dynamicUserEntries = dynamicAuthConfiguration.getEntries();
-                if (dynamicUserEntries != null) {
+                if (dynamicUserEntries != null && dynamicUserEntries.size()>0) {
                     for (DynamicAuthConfiguration.Entry userEntry : dynamicUserEntries) {
                         OMElement dynamicUserEntryEle = fac.createOMElement("entry", null);
                         dynamicUserEntryEle.addAttribute("request", userEntry.getRequest(), null);

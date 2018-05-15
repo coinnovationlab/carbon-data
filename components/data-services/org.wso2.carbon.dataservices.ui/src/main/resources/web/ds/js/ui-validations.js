@@ -1390,13 +1390,10 @@ function addTableToList(object,type){
 		option.text  = currItem;
 		option.value = currItem;
 		document.getElementById(type).appendChild(option);
+		//reloadOdataColumns(currItem); //by default load and set selected all columns of the chosen table
 	}else{
-		var obj = document.getElementById('tables_list');
-        for(var i = 0;i<obj.options.length;i++){
-        	if(obj.item(i).value==currItem){
-        		obj.remove(i);
-        	}
-        }
+		jQuery("#tables_list option[value='" + currItem + "']").remove();
+		//remove also the config in hidden input
         if(document.getElementById("ColConfig_"+currItem) != null && document.getElementById("ColConfig_"+currItem) != undefined){
         	document.getElementById("ColConfig_"+currItem).value=currItem+"::";
         }
