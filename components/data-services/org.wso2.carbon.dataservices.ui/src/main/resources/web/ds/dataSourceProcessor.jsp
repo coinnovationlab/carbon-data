@@ -470,28 +470,30 @@
                         		   ODataColumnsConfig odataColumns = new ODataColumnsConfig();
                         		   List<ODataColumnsConfig> cln = new ArrayList<ODataColumnsConfig>();
                                	   String [] chkbColumnsNames = request.getParameterValues("ODataColumnsConfig");
-                        		   for(String column : chkbColumnsNames){
-                        			   String [] arrayColTblSchema = column.split("::");
-                        			   if(arrayColTblSchema.length > 1){
-	                        			   String key = arrayColTblSchema[0];
-	                        			   cln = new ArrayList<ODataColumnsConfig>();
-	                        			   if(arrayColTblSchema[1] != "" && arrayColTblSchema[1] != null){
-		                        			   String [] cols = arrayColTblSchema[1].split(";");
-		                        			   for(int cnt=0;cnt<cols.length;cnt++){
-		                        				   String [] colType= cols[cnt].split(",");
-		                        				   String columnName = colType[0];
-		                        				   String typeName = colType[1];
-		                        				   odataColumns = new ODataColumnsConfig();
-		                            			   odataColumns.setColumnName(columnName);
-		                            			   if(typeName != "" && typeName != null){
-		                            				   odataColumns.setType(typeName);
-		                            			   }
-		                            			   cln.add(odataColumns);
+                               	   if(chkbColumnsNames != null){
+	                        		   for(String column : chkbColumnsNames){
+	                        			   String [] arrayColTblSchema = column.split("::");
+	                        			   if(arrayColTblSchema.length > 1){
+		                        			   String key = arrayColTblSchema[0];
+		                        			   cln = new ArrayList<ODataColumnsConfig>();
+		                        			   if(arrayColTblSchema[1] != "" && arrayColTblSchema[1] != null){
+			                        			   String [] cols = arrayColTblSchema[1].split(";");
+			                        			   for(int cnt=0;cnt<cols.length;cnt++){
+			                        				   String [] colType= cols[cnt].split(",");
+			                        				   String columnName = colType[0];
+			                        				   String typeName = colType[1];
+			                        				   odataColumns = new ODataColumnsConfig();
+			                            			   odataColumns.setColumnName(columnName);
+			                            			   if(typeName != "" && typeName != null){
+			                            				   odataColumns.setType(typeName);
+			                            			   }
+			                            			   cln.add(odataColumns);
+			                        			   }
 		                        			   }
-	                        			   }
-	                        			   columnsConfig.put(key,cln);
+		                        			   columnsConfig.put(key,cln);
+		                        		   }
 	                        		   }
-                        		   }
+	                        	   }
 	                            	String [] chkbTblNames = request.getParameterValues("tablesOdata");
 	                            	ODataTableSchemaConfig odataTableSchema = new ODataTableSchemaConfig();
 	                                for (String tblnameSchema : chkbTblNames) {
