@@ -18,7 +18,9 @@
  */
 package org.wso2.carbon.dataservices.common;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -126,7 +128,15 @@ public final class DBConstants {
     public enum AutoCommit {
         DEFAULT, AUTO_COMMIT_ON, AUTO_COMMIT_OFF;
     }
-
+    
+    public static List<String> getSupportedODataDBTypes(){
+    	List<String> supportedODataDBTypes = new ArrayList<String>();
+        supportedODataDBTypes.add(DBConstants.DataSourceTypes.RDBMS);
+        supportedODataDBTypes.add(DBConstants.DataSourceTypes.CASSANDRA);
+        supportedODataDBTypes.add(DBConstants.DataSourceTypes.MONGODB);
+    	return supportedODataDBTypes;
+    }
+    
     /**
      * Constants related to data types.
      */
@@ -775,6 +785,9 @@ public final class DBConstants {
         public static final String ENABLESEC = "enableSec";
         public static final String CONFIG = "config";
         public static final String ENABLE_ODATA = "enableOData";
+        public static final String ISPUBLIC_ODATA = "isPublic";
+        public static final String CREATOR = "creator";
+        public static final String CREATE_VIEW = "createView";
         public static final String QUERY = "query";
         public static final String OPERATION = "operation";
         public static final String RESOURCE = "resource";

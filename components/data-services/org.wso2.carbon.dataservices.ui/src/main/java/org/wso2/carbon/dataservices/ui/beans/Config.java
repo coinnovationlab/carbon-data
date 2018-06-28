@@ -40,6 +40,12 @@ public class Config extends DataServiceConfigurationElement {
     private boolean useSecretAliasForPassword;
 
     private boolean exposeAsODataService;
+    
+    private boolean isPublic;
+    
+    private String opMode;
+    
+    private String creator;
 
     public void setProperties(ArrayList<Property> properties) {
         this.properties = new ArrayList<Property>();
@@ -164,7 +170,30 @@ public class Config extends DataServiceConfigurationElement {
         exposeAsODataService = value;
     }
 
+    public boolean isPublicODataService() {
+        return isPublic;
+    }
+    
+    public void setPublicOData(boolean value) {
+    	isPublic = value;
+    }
 
+    public String getOpMode() {
+        return opMode;
+    }
+
+    public void setOpMode(String value) {
+        opMode = value;
+    }
+    
+    public String getCreator() {
+        return creator;
+    }
+
+    public void setCreator(String value) {
+    	creator = value;
+    }
+    
     public boolean isUseSecretAliasForPassword() {
 		return useSecretAliasForPassword;
 	}
@@ -183,6 +212,10 @@ public class Config extends DataServiceConfigurationElement {
         if (this.getId() != null) {
             confEl.addAttribute("id", this.getId(), null);
             confEl.addAttribute(DBSFields.ENABLE_ODATA, String.valueOf(exposeAsODataService), null);
+            if(String.valueOf(isPublic) != null)
+            	confEl.addAttribute(DBSFields.ISPUBLIC_ODATA, String.valueOf(isPublic), null);
+            if(creator != null)
+            	confEl.addAttribute(DBSFields.CREATOR, creator, null);
         }
         /* build properties */
         Iterator<Property> iterator = this.getProperties().iterator();

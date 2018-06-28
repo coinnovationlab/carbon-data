@@ -35,9 +35,9 @@ import java.util.Map;
  */
 public class RDBMSConfig extends JDBCPoolSQLConfig {
 
-	public RDBMSConfig(DataService dataService, String configId, Map<String, String> properties, boolean odataEnable)
+	public RDBMSConfig(DataService dataService, String configId, Map<String, String> properties, boolean odataEnable, boolean isPublicOData, String creator)
 			throws DataServiceFault {
-		super(dataService, configId, DataSourceTypes.RDBMS, properties, odataEnable);
+		super(dataService, configId, DataSourceTypes.RDBMS, properties, odataEnable, isPublicOData, creator);
 		if (!dataService.isServiceInactive()) {
 			try {
 				this.initSQLDataSource();
@@ -49,7 +49,7 @@ public class RDBMSConfig extends JDBCPoolSQLConfig {
 
 	public RDBMSConfig(DataService dataService, String configId, Map<String, String> properties)
 			throws DataServiceFault {
-		super(dataService, configId, DataSourceTypes.RDBMS, properties, false);
+		super(dataService, configId, DataSourceTypes.RDBMS, properties, false, false, "");
 		if (!dataService.isServiceInactive()) {
 			try {
 				this.initSQLDataSource();

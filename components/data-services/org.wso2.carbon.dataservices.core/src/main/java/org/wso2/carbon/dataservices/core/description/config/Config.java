@@ -38,7 +38,21 @@ public abstract class Config {
 	private DataService dataService;
 
 	private boolean oDataEnabled;
+	
+	private boolean isOdataPublic;
+	
+	private String creator;
 
+	public Config(DataService dataService, String configId, String type, Map<String, String> properties, boolean oDataEnabled, boolean oDataIsPublic, String creator) {
+		this.dataService = dataService;
+		this.configId = configId;
+		this.type = type;
+		this.properties = properties;
+		this.oDataEnabled = oDataEnabled;
+		this.isOdataPublic = oDataIsPublic;
+		this.creator = creator;
+	}
+	
 	public Config(DataService dataService, String configId, String type, Map<String, String> properties, boolean oDataEnabled) {
 		this.dataService = dataService;
 		this.configId = configId;
@@ -80,6 +94,14 @@ public abstract class Config {
 
 	public boolean isODataEnabled() {
 		return oDataEnabled;
+	}
+	
+	public boolean IsOdataPublic() {
+		return isOdataPublic;
+	}
+	
+	public String getCreator() {
+		return creator;
 	}
 
 	public abstract boolean isResultSetFieldsCaseSensitive();

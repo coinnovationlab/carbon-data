@@ -63,6 +63,7 @@
                         <Import-Package>
                             !org.wso2.carbon.dataservices.odata.endpoint.*,
                             org.wso2.carbon.dataservices.core.*;version="${project.version}",
+                            org.wso2.carbon.dataservices.core.security.filter.*;version="${project.version}",
                             javax.servlet.http;version="${javax.servlet.imp.pkg.version}",
                             org.apache.commons.logging;version="${carbon.commons.logging.imp.pkg.version}",
                             org.wso2.carbon.core.multitenancy.utils;version="${carbon.kernel.imp.pkg.version}"

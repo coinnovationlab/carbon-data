@@ -48,8 +48,8 @@ public class JDBCPoolSQLConfig extends SQLConfig {
 	private DataSource dataSource;
 
 	public JDBCPoolSQLConfig(DataService dataService, String configId, String type, Map<String, String> properties,
-	                         boolean odataEnable) throws DataServiceFault {
-		super(dataService, configId, type, RDBMSUtils.convertConfigPropsFromV2toV3(properties), odataEnable);
+	                         boolean odataEnable, boolean isPublicOData, String creator) throws DataServiceFault {
+		super(dataService, configId, type, RDBMSUtils.convertConfigPropsFromV2toV3(properties), odataEnable, isPublicOData, creator);
 	}
 	
 	@Override

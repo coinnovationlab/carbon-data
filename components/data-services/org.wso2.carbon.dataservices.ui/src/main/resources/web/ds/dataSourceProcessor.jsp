@@ -73,6 +73,14 @@
     } else {
         isOData = false;
     }
+    Boolean isPublicOData;
+    if (null != request.getParameter("isPublicOData")) {
+    	isPublicOData = true;
+    } else {
+    	isPublicOData = false;
+    }
+    String creator = request.getParameter("Creator");
+    System.out.println(" ispublic Creator: "+isPublicOData+" "+creator);
     String driverClass = request.getParameter(DBConstants.RDBMS.DRIVER_CLASSNAME);
     String jdbcUrl = request.getParameter(DBConstants.RDBMS.URL);
     String dsUserName = request.getParameter(DBConstants.RDBMS.USERNAME);
@@ -280,6 +288,10 @@
                     dataService.removeConfig(dsConfig);
                 }
             } else {
+            	if(DBConstants.getSupportedODataDBTypes().contains(datasourceType)){
+            		dsConfig.setPublicOData(isPublicOData);
+            	}
+                dsConfig.setCreator(creator);
                 if (DBConstants.DataSourceTypes.RDBMS.equals(datasourceType)) {
                     if (isXAType) {
                     	if (useSecretAliasForPassword) {
@@ -510,7 +522,7 @@
                         	   }
                         	   if(request.getParameter("ODataMaxLimit") != null && !request.getParameter("ODataMaxLimit").trim().equals("0") && !request.getParameter("ODataMaxLimit").trim().equals("") ){
 	                            	dynamicODataConfig.setMaxLimit(request.getParameter("ODataMaxLimit"));
-                       	   }
+                       	   	   }
                             }
                         }
                     }
@@ -519,7 +531,6 @@
                     } else {
                         dsConfig.removeProperty(DBConstants.RDBMS.DYNAMIC_USER_AUTH_MAPPING);
                     }
-                    System.out.println("OData Table size" + dynamicTableList.size());
                     if (dynamicTableList.size() > 0) {
                         updateConfiguration(dsConfig, DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING, dynamicODataConfig);
                     } else {

@@ -135,8 +135,8 @@ function getUseSecretAliasValueForProperty(chkbox, id) {
 }
 
 </script>
-
 <%!
+
 private boolean isFieldMandatory(String propertName) {
 	if (propertName.equals(DBConstants.RDBMS.DRIVER_CLASSNAME)) {
 		return true;
@@ -199,6 +199,8 @@ private boolean isFieldMandatory(String propertName) {
 }
 
 Boolean isOData = false;
+boolean isPublic = false;
+String user_logged_in = "";
 
 private Config addNotAvailableFunctions(Config config,String selectedType, HttpServletRequest request) {
     String xaVal = request.getParameter ("xaVal");
@@ -206,7 +208,15 @@ private Config addNotAvailableFunctions(Config config,String selectedType, HttpS
     String url = request.getParameter (DBConstants.RDBMS.URL) ==  null ? "" : request.getParameter (DBConstants.RDBMS.URL);
     String username = request.getParameter (DBConstants.RDBMS.USERNAME) ==  null ? "" : request.getParameter (DBConstants.RDBMS.USERNAME);
     String passw = request.getParameter (DBConstants.RDBMS.PASSWORD) ==  null ? "" : request.getParameter (DBConstants.RDBMS.PASSWORD);
-	if (DBConstants.DataSourceTypes.RDBMS.equals(selectedType)) {
+    if(DBConstants.getSupportedODataDBTypes().contains(selectedType)){
+		if (config.isPublicODataService() == true) {
+			isPublic = true;
+		 } else {
+			isPublic = false;
+		 }
+	}
+    user_logged_in = config.getCreator();
+    if (DBConstants.DataSourceTypes.RDBMS.equals(selectedType)) {
 		 if (config.getPropertyValue(DBConstants.RDBMS.DRIVER_CLASSNAME) == null || request.getParameter (DBConstants.RDBMS.DRIVER_CLASSNAME) != null) {
 			 config.removeProperty(DBConstants.RDBMS.DRIVER_CLASSNAME);
 			 config.addProperty(DBConstants.RDBMS.DRIVER_CLASSNAME, driver);
@@ -733,6 +743,7 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
 
 
 <%
+
 	//retrieve values from the data service session
 	String protectedTokens = dataService.getProtectedTokens();
 	String passwordProvider = dataService.getPasswordProvider();
@@ -788,6 +799,7 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
                     newConfig.addProperty(DBConstants.RDBMS.PASSWORD, "");
 					newConfig.addProperty(DBConstants.RDBMS.DATASOURCE_CLASSNAME, "");
 					newConfig.setExposeAsOData(false);
+					newConfig.setPublicOData(false);
                         ArrayList<Property> property = new ArrayList<Property>();
                         //property.add(new Property("URL", ""));
                         //property.add(new Property("User", ""));
@@ -2483,10 +2495,14 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
 Boolean createView = false;
 if (configId != null && configId.trim().length() > 0) {
     Config dsConfig = dataService.getConfig(configId);
+    String user_logged_in = "";
 
     if (dsConfig == null || (dsConfig != null && !flag.equals("edit"))) {
         dsConfig = newConfig;
         createView = true;
+        user_logged_in = (String) session.getAttribute("loggedInUser");
+        dsConfig.setOpMode(DBConstants.DBSFields.CREATE_VIEW);
+        dsConfig.setCreator(user_logged_in);
     }
     if (dsConfig != null) {
         dataSourceType = dsConfig.getDataSourceType();
@@ -2554,8 +2570,9 @@ if (propertyIterator != null) {
     }
 }
 %>
+<input type="hidden" name="Creator" value="<%=user_logged_in%>" />
 
-<% if("RDBMS".equals(dataSourceType) || "Cassandra".equals(dataSourceType) || "CARBON_DATASOURCE".equals(dataSourceType)) { %>
+<% if(DBConstants.getSupportedODataDBTypes().contains(dataSourceType) || "CARBON_DATASOURCE".equals(dataSourceType)) { %>
 <tr>""    <td class="leftCol-small" style="white-space: nowrap;">
         Enable OData</td>
     <td>
@@ -2564,10 +2581,12 @@ if (propertyIterator != null) {
 </tr>
 <tr>
 	<td class="leftCol-small" style="white-space: nowrap;">
-        Max Limit OData Records
+        <fmt:message key="odata.config.max.records"/>
     </td>
     <td>
         <input type="text" name="ODataMaxLimit" id="ODataMaxLimit" value="<%=maxLimit %>" >
+        <input type="checkbox" id="isPublicOData" name="isPublicOData" onclick="setPublicOData('')" <%=(isPublic==true ? "checked" : "") %>/>
+        <label for="isPublicOData" ><fmt:message key="odata.config.is.public"/></label>
     </td>
 </tr>
 <% } %>
@@ -2585,7 +2604,7 @@ if (propertyIterator != null) {
 <%} %>
 </table>
 
-<% if("RDBMS".equals(dataSourceType) || "Cassandra".equals(dataSourceType) ) { %>
+<% if( DBConstants.getSupportedODataDBTypes().contains(dataSourceType) ) { %>
 <table id="advancedTable" class="styledLeft noBorders" cellspacing="0" width="100%">
     <%
            boolean schemaSupport = true;

@@ -56,8 +56,10 @@ public class ConfigFactory {
 		String configId = getConfigId(configEl);
 		String configType = getConfigType(properties);
 		boolean odataEnable = isODataEnable(configEl);
+		boolean isPublicOData= isPublicOData(configEl);
+		String creator = getCreator(configEl);
 		if (DataSourceTypes.RDBMS.equals(configType)) {
-			return getRDBMSConfig(dataService, configId, properties, odataEnable);
+			return getRDBMSConfig(dataService, configId, properties, odataEnable,isPublicOData,creator);
 		} else if (DataSourceTypes.JNDI.equals(configType)) {
 			return getJNDIConfig(dataService, configId, properties, odataEnable);
 		} else if (DataSourceTypes.MONGODB.equals(configType)) {
@@ -88,8 +90,8 @@ public class ConfigFactory {
 	}
 
 	private static RDBMSConfig getRDBMSConfig(DataService dataService, String configId, Map<String, String> properties,
-	                                          boolean odataEnable) throws DataServiceFault {
-		RDBMSConfig config = new RDBMSConfig(dataService, configId, properties, odataEnable);
+	                                          boolean odataEnable, boolean isPublicOData, String creator) throws DataServiceFault {
+		RDBMSConfig config = new RDBMSConfig(dataService, configId, properties, odataEnable, isPublicOData, creator);
 		return config;
 	}
 
@@ -199,6 +201,24 @@ public class ConfigFactory {
 			return false;
 		} else {
 			return Boolean.valueOf(odataConfig);
+		}
+	}
+	
+	private static boolean isPublicOData(OMElement configEl) {
+		String odataConfig = configEl.getAttributeValue(new QName(DBSFields.ISPUBLIC_ODATA));
+		if (odataConfig == null) {
+			return false;
+		} else {
+			return Boolean.valueOf(odataConfig);
+		}
+	}
+	
+	private static String  getCreator(OMElement configEl) {
+		String creatorConfig = configEl.getAttributeValue(new QName(DBSFields.CREATOR));
+		if (creatorConfig == null) {
+			return "";
+		} else {
+			return creatorConfig;
 		}
 	}
 
