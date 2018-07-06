@@ -25,6 +25,7 @@ import org.apache.axis2.description.AxisOperation;
 import org.apache.axis2.description.AxisService;
 import org.wso2.carbon.dataservices.common.DBConstants;
 import org.wso2.carbon.dataservices.common.DBConstants.BoxcarringOps;
+import org.wso2.carbon.dataservices.common.DBConstants.FaultCodes;
 import org.wso2.carbon.dataservices.core.DBUtils;
 import org.wso2.carbon.dataservices.core.DSSessionManager;
 import org.wso2.carbon.dataservices.core.DataServiceFault;
@@ -32,7 +33,10 @@ import org.wso2.carbon.dataservices.core.DataServiceUser;
 import org.wso2.carbon.dataservices.core.engine.CallableRequest;
 import org.wso2.carbon.dataservices.core.engine.DataService;
 import org.wso2.carbon.dataservices.core.engine.ParamValue;
+import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilter;
+import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.xml.namespace.QName;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,6 +75,9 @@ public abstract class DataServiceRequest {
 	 * Disable streaming flag
 	 */
 	private boolean disableStreaming;
+	protected static MessageContext messageContext;
+	private static final String HTTP_SERVLET_REQUEST = "transport.http.servletRequest";
+	
 	
 	protected DataServiceRequest(DataService dataService, String requestName) 
 	        throws DataServiceFault {
@@ -81,6 +88,17 @@ public abstract class DataServiceRequest {
 			throw new DataServiceFault("A data service request named '" + requestName + 
 					"' does not exist in data service '" + dataService.getName() + "'");
 		}
+		String configId = this.getDataService().getCallableRequest(this.getRequestName()).getCallQuery().getQuery().getConfigId();
+        boolean isOdataPublic = this.getDataService().getConfig(configId).IsOdataPublic();
+        HttpServletRequest obj = (HttpServletRequest) messageContext.
+                getProperty(HTTP_SERVLET_REQUEST);
+		String tenantDomain = MultitenantUtils.getTenantDomain(obj);
+		boolean isUserAllowed = ServicesSecurityFilter.securityFilter(obj,tenantDomain);
+        if(!isOdataPublic && !isUserAllowed) {
+        	throw new DataServiceFault(FaultCodes.UNAUTHORIZED_ERROR,"The data service request named '" + requestName + 
+					"' need the proper authorization in order to be accessed.");
+
+        }
 		this.disableStreaming = this.dataService.getCallableRequest(
 				this.requestName).isDisableStreamingEffective();
 	}
@@ -92,6 +110,8 @@ public abstract class DataServiceRequest {
 		OMElement inputMessage = msgContext.getEnvelope().getBody().getFirstElement();
 		/* get operation/request name */
 		String requestName = axisOp.getName().getLocalPart();
+		messageContext = msgContext;
+		
 		/* retrieve the DataService object representing the current data service */
 		DataService dataService = (DataService) axisService.getParameter(
 				DBConstants.DATA_SERVICE_OBJECT).getValue();

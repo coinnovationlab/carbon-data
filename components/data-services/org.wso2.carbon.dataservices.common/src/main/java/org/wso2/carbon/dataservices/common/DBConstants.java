@@ -100,6 +100,7 @@ public final class DBConstants {
         public static String VALIDATION_ERROR = "VALIDATION_ERROR";
         public static String INCOMPATIBLE_PARAMETERS_ERROR = "INCOMPATIBLE_PARAMETERS_ERROR";
         public static String UNKNOWN_ERROR = "UNKNOWN_ERROR";
+        public static String UNAUTHORIZED_ERROR = "The service is not Public.You are not authorized to access this service.";
     }
 
     /**
