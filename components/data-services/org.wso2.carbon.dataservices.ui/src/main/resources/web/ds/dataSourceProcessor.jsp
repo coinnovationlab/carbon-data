@@ -79,7 +79,7 @@
     } else {
     	isPublicOData = false;
     }
-    String creator = request.getParameter("Creator");
+    String creator = "not_important_at_the_moment";//request.getParameter("Creator");
     System.out.println(" ispublic Creator: "+isPublicOData+" "+creator);
     String driverClass = request.getParameter(DBConstants.RDBMS.DRIVER_CLASSNAME);
     String jdbcUrl = request.getParameter(DBConstants.RDBMS.URL);

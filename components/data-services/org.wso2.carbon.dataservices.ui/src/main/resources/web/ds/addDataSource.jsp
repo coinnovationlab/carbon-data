@@ -2585,8 +2585,14 @@ if (propertyIterator != null) {
     </td>
     <td>
         <input type="text" name="ODataMaxLimit" id="ODataMaxLimit" value="<%=maxLimit %>" >
+    </td>
+</tr>
+<tr>
+	<td class="leftCol-small" style="white-space: nowrap;">
+        <fmt:message key="odata.config.is.public"/>
+    </td>
+    <td>
         <input type="checkbox" id="isPublicOData" name="isPublicOData" onclick="setPublicOData('')" <%=(isPublic==true ? "checked" : "") %>/>
-        <label for="isPublicOData" ><fmt:message key="odata.config.is.public"/></label>
     </td>
 </tr>
 <% } %>

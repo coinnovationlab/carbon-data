@@ -118,6 +118,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
 
     public static final String TABLE_NAME = "TABLE_NAME";
     public static final String TABLE = "TABLE";
+    public static final String VIEW = "VIEW";
     public static final String ORACLE_SERVER = "oracle";
     public static final String MSSQL_SERVER = "microsoft sql server";
     public static final String MYSQL = "mysql";
@@ -150,11 +151,15 @@ public class RDBMSDataHandler implements ODataDataHandler {
 	            this.oDataMaxLimit = Integer.parseInt(dynTableODataConfEl.getAttributeValue(new QName("maxLimit")) );
 	            ODataColumnsConfig columnsConf = new ODataColumnsConfig();
 	            List<ODataColumnsConfig> columnsConfAll = new ArrayList<ODataColumnsConfig>();
+	            System.out.println("Odataaa tablessssssss:");
+	            System.out.println(dynamicODataTablesConfigs.toString());
 	            while (dynamicODataTablesConfigs.hasNext()) {
 	                OMElement dynamicOdataConfig = dynamicODataTablesConfigs.next();
 	                String tblname = dynamicOdataConfig.getAttributeValue(new QName("name"));
 	                String schemaname = dynamicOdataConfig.getAttributeValue(new QName("schema"));
 	                dynamicTableList.add(tblname);
+	                System.out.println("tablenameeeeeee");
+	                System.out.println(tblname);
 	                this.oDataTableSchema.put(tblname, schemaname);
 	                String key = schemaname+"."+tblname;
 	                //TODO
@@ -1353,9 +1358,9 @@ public class RDBMSDataHandler implements ODataDataHandler {
             connection = initializeConnection();
             DatabaseMetaData meta = connection.getMetaData();
             if (meta.getDatabaseProductName().toLowerCase().contains(ORACLE_SERVER)) {
-                rs = meta.getTables(null, meta.getUserName(), null, new String[] { TABLE });
+                rs = meta.getTables(null, meta.getUserName(), null, new String[] { TABLE, VIEW });
             } else {
-                rs = meta.getTables(null, null, null, new String[] { TABLE });
+                rs = meta.getTables(null, null, null, new String[] { TABLE, VIEW });
             }
             while (rs.next()) {
                 String tableName = rs.getString(TABLE_NAME);
