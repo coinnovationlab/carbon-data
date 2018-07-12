@@ -151,15 +151,11 @@ public class RDBMSDataHandler implements ODataDataHandler {
 	            this.oDataMaxLimit = Integer.parseInt(dynTableODataConfEl.getAttributeValue(new QName("maxLimit")) );
 	            ODataColumnsConfig columnsConf = new ODataColumnsConfig();
 	            List<ODataColumnsConfig> columnsConfAll = new ArrayList<ODataColumnsConfig>();
-	            System.out.println("Odataaa tablessssssss:");
-	            System.out.println(dynamicODataTablesConfigs.toString());
 	            while (dynamicODataTablesConfigs.hasNext()) {
 	                OMElement dynamicOdataConfig = dynamicODataTablesConfigs.next();
 	                String tblname = dynamicOdataConfig.getAttributeValue(new QName("name"));
 	                String schemaname = dynamicOdataConfig.getAttributeValue(new QName("schema"));
 	                dynamicTableList.add(tblname);
-	                System.out.println("tablenameeeeeee");
-	                System.out.println(tblname);
 	                this.oDataTableSchema.put(tblname, schemaname);
 	                String key = schemaname+"."+tblname;
 	                //TODO

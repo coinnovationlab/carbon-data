@@ -71,7 +71,7 @@ public class ODataEndpoint {
                     log.debug(serviceRootPath + " Service invoked.");
                 }
                 boolean isPublicOData = handler.isPublicOdata();
-                boolean isUserAllowed = ServicesSecurityFilter.securityFilter(request,tenantDomain);
+                boolean isUserAllowed = ServicesSecurityFilter.securityFilter(request,response,tenantDomain);
                 if(isPublicOData || (!isPublicOData && isUserAllowed)) {
                 	handler.process(request, response, serviceRootPath);
                 }else {

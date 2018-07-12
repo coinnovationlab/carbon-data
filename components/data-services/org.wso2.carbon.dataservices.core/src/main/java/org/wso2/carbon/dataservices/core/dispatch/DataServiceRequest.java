@@ -37,6 +37,7 @@ import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilter;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.xml.namespace.QName;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -77,6 +78,7 @@ public abstract class DataServiceRequest {
 	private boolean disableStreaming;
 	protected static MessageContext messageContext;
 	private static final String HTTP_SERVLET_REQUEST = "transport.http.servletRequest";
+	private static final String HTTP_SERVLET_RESPONSE = "transport.http.servletResponse";
 	
 	
 	protected DataServiceRequest(DataService dataService, String requestName) 
@@ -92,12 +94,16 @@ public abstract class DataServiceRequest {
         boolean isOdataPublic = this.getDataService().getConfig(configId).IsOdataPublic();
         HttpServletRequest obj = (HttpServletRequest) messageContext.
                 getProperty(HTTP_SERVLET_REQUEST);
+        HttpServletResponse response = (HttpServletResponse) messageContext.
+                getProperty(HTTP_SERVLET_RESPONSE);
 		String tenantDomain = MultitenantUtils.getTenantDomain(obj);
-		boolean isUserAllowed = ServicesSecurityFilter.securityFilter(obj,tenantDomain);
-        if(!isOdataPublic && !isUserAllowed) {
-        	throw new DataServiceFault(FaultCodes.UNAUTHORIZED_ERROR,"The data service request named '" + requestName + 
-					"' need the proper authorization in order to be accessed.");
-
+		
+        if(!isOdataPublic) {
+        	boolean isUserAllowed = ServicesSecurityFilter.securityFilter(obj,response,tenantDomain);
+        	if(!isUserAllowed) {
+        		throw new DataServiceFault(FaultCodes.UNAUTHORIZED_ERROR,"The data service request named '" + requestName + 
+    					"' need the proper authorization in order to be accessed.");
+        	}
         }
 		this.disableStreaming = this.dataService.getCallableRequest(
 				this.requestName).isDisableStreamingEffective();
