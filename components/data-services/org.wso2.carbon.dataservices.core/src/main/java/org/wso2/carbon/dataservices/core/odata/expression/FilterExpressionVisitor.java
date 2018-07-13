@@ -31,6 +31,7 @@ import org.apache.olingo.server.api.uri.queryoption.expression.Member;
 import org.apache.olingo.server.api.uri.queryoption.expression.MethodKind;
 import org.apache.olingo.server.api.uri.queryoption.expression.UnaryOperatorKind;
 import org.wso2.carbon.dataservices.core.odata.ODataConstants;
+import org.wso2.carbon.dataservices.core.odata.ODataServiceFault;
 import org.wso2.carbon.dataservices.core.odata.RDBMSDataHandler;
 import org.wso2.carbon.dataservices.core.odata.expression.operand.TypedOperand;
 import org.wso2.carbon.dataservices.core.odata.expression.operand.VisitorOperand;
@@ -38,6 +39,8 @@ import org.wso2.carbon.dataservices.core.odata.expression.operand.VisitorOperand
 public class FilterExpressionVisitor implements ExpressionVisitor<Object> {
 	
 	private static final Log log = LogFactory.getLog(FilterExpressionVisitor.class);
+	private String dbType;
+	public static final String POSTGRESQL = "postgresql";
 
 	private static final HashMap<BinaryOperatorKind, String> BINARY_OPERATORS = new HashMap<BinaryOperatorKind, String>() {{
 		
@@ -59,8 +62,8 @@ public class FilterExpressionVisitor implements ExpressionVisitor<Object> {
         put(BinaryOperatorKind.LT, " < ");    
     }};
     
-    public FilterExpressionVisitor() {
-        
+    public FilterExpressionVisitor(String dbType) {
+    	this.dbType = dbType;
     }
     
 	@Override
@@ -78,6 +81,10 @@ public class FilterExpressionVisitor implements ExpressionVisitor<Object> {
                     operator == BinaryOperatorKind.HAS ?
                             HttpStatusCode.NOT_IMPLEMENTED.getStatusCode() :
                             HttpStatusCode.BAD_REQUEST.getStatusCode(), Locale.ENGLISH);
+        }
+        if(right.toString().contains("/") || right.toString().contains("-")) {
+        	//date comparison
+        	right = "'"+right+"'";
         }
         return left + strOperator + right;
 	}
@@ -161,17 +168,17 @@ public class FilterExpressionVisitor implements ExpressionVisitor<Object> {
 	            return "length("+ firsEntityParam +")";
 	            
 	        case YEAR:
-	            return "year("+ firsEntityParam +")";
+	            return dateMethodCall("year",firsEntityParam); 
 	        case MONTH:
-	            return "month("+ firsEntityParam +")";
+	            return dateMethodCall("month",firsEntityParam);
 	        case DAY:
-	            return "day("+ firsEntityParam +")";
+	            return dateMethodCall("day",firsEntityParam);
 	        case HOUR:
-	            return "hour("+ firsEntityParam +")";
+	            return dateMethodCall("hour",firsEntityParam);
 	        case MINUTE:
-	            return "minute("+ firsEntityParam +")";
+	            return dateMethodCall("minute",firsEntityParam);
 	        case SECOND:
-	            return "second("+ firsEntityParam +")";
+	            return dateMethodCall("second",firsEntityParam);
 	        case ROUND:
 	            return "round("+ firsEntityParam +")";
 	        case FLOOR:
@@ -183,6 +190,20 @@ public class FilterExpressionVisitor implements ExpressionVisitor<Object> {
 	    }
 	}
 
+	private String dateMethodCall(String type,Object value) {
+		String query = "";
+		log.info("database type: "+this.dbType);
+		
+		switch(this.dbType) {
+	    	case POSTGRESQL: 
+	    		query = "extract("+type+" from "+value+")";
+	    		break;
+	    	default: 
+	    		query = type+"("+ value +")";
+	    }
+		return query;
+	}
+	
 	@Override
 	public String visitTypeLiteral(EdmType arg0) throws ExpressionVisitException, ODataApplicationException {
 		return throwNotImplemented("visitTypeLiteral");

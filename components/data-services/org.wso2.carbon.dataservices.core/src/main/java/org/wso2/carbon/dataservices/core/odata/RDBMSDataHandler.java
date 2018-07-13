@@ -115,6 +115,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
     private Map<String,String> oDataTableSchema = new HashMap<String,String>();
     private Map<String,List<ODataColumnsConfig>> oDataColumnsConfig = new HashMap<String,List<ODataColumnsConfig>>();
     private int oDataMaxLimit;
+    private String dbType;
 
     public static final String TABLE_NAME = "TABLE_NAME";
     public static final String TABLE = "TABLE";
@@ -176,6 +177,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
             this.oDataTableList=dynamicTableList;
             this.tableList = generateTableList(dynamicTableList);
             this.rdbmsDataTypes = new HashMap<>(this.tableList.size());
+            this.dbType = getDBType();
         }
         catch (XMLStreamException e) {
         	
@@ -464,9 +466,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
         	order= " order by " + String.join(", ", orderBy);
         }
         if (filterOption != null) {
-        	Expression exp = filterOption.getExpression();
-        	where = " where " + filterOption.getExpression().accept(new FilterExpressionVisitor());
-        	log.info(exp);
+        	where = handleFilterExpression(filterOption);
         }
         log.info("limit: " + limit + " offset: " + offset+ " orderBy: " + order + " where: " + where);
         try {
@@ -491,36 +491,51 @@ public class RDBMSDataHandler implements ODataDataHandler {
         }
     }
 
-    public String queryBasedOnDBType(String select, String where, int row_count, int offset, String orderBy) throws ODataServiceFault {
-        Connection connection = null;
+    public String getDBType() throws ODataServiceFault {
+    	Connection connection = null;
         DatabaseMetaData meta = null;
-        String query= "";
+        String dbType= "";
         try {
             connection = initializeConnection();
             meta = connection.getMetaData();
-            String dbType=meta.getDatabaseProductName().toLowerCase();
-            switch(dbType) {
-            	case ORACLE_SERVER: 
-            		query = queryGeneratorOracle(select, where, row_count, offset, orderBy); 
-            		break; 
-            	case MSSQL_SERVER: 
-            		query = queryGeneratorMSSql(select, where, row_count, offset, orderBy); 
-            		break; 
-            	case POSTGRESQL: 
-            		/* fall through */
-            	case MYSQL: 
-            		query = queryGeneratorSQL(select, where, row_count, offset, orderBy); 
-            		break;
-        		default: 
-        			throw new ODataServiceFault("DB Type not supported. " );
-            }
-        	return query;
+            dbType=meta.getDatabaseProductName().toLowerCase();
+        	return dbType;
         } catch (SQLException e) {
             throw new ODataServiceFault(e, "Error occurred while detecting db type :" +
                                            e.getMessage());
         } finally {
             releaseConnection(connection);            
         }
+    }
+    
+    public String handleFilterExpression(FilterOption filterOption) throws ExpressionVisitException, ODataApplicationException {
+    	String where = "";
+    	Expression exp = filterOption.getExpression();
+    	log.info(exp);
+    	where = " where " + filterOption.getExpression().accept(new FilterExpressionVisitor(dbType));
+    	return where;
+    }
+    
+    public String queryBasedOnDBType(String select, String where, int row_count, int offset, String orderBy) throws ODataServiceFault {
+        String query= "";
+        String dbType=this.dbType;
+        switch(dbType) {
+        	case ORACLE_SERVER: 
+        		query = queryGeneratorOracle(select, where, row_count, offset, orderBy); 
+        		break; 
+        	case MSSQL_SERVER: 
+        		query = queryGeneratorMSSql(select, where, row_count, offset, orderBy); 
+        		break; 
+        	case POSTGRESQL: 
+        		/* fall through */
+        	case MYSQL: 
+        		query = queryGeneratorSQL(select, where, row_count, offset, orderBy); 
+        		break;
+    		default: 
+    			throw new ODataServiceFault("DB Type not supported. " );
+        }
+    	return query;
+        
     }
     
     /*
@@ -585,7 +600,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
     	for (int i = 0; i < orderByOption.getOrders().size(); i++) {
     		final OrderByItem item = orderByOption.getOrders().get(i);
     		direction = item.isDescending() ? " DESC" : " ASC";
-    		String column = (String) item.getExpression().accept(new FilterExpressionVisitor());
+    		String column = (String) item.getExpression().accept(new FilterExpressionVisitor(this.dbType));
     		orders.add(column + direction);
         }
     	String [] order = orders.toArray(new String [orders.size()]);
@@ -603,7 +618,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
     	CountOption countOption = uriInfo.getCountOption();
     	FilterOption filterOption = uriInfo.getFilterOption();
     	if (filterOption != null) {
-        	where = " where " + filterOption.getExpression().accept(new FilterExpressionVisitor());
+        	where = " where " + filterOption.getExpression().accept(new FilterExpressionVisitor(this.dbType));
         }
     	Boolean count = countOption.getValue();
     	Connection connection = null;
