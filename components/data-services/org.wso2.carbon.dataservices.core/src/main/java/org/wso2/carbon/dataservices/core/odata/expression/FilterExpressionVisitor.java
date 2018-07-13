@@ -1,6 +1,7 @@
 package org.wso2.carbon.dataservices.core.odata.expression;
 
 import java.math.BigInteger;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -13,6 +14,7 @@ import org.apache.olingo.commons.api.edm.EdmEnumType;
 import org.apache.olingo.commons.api.edm.EdmProperty;
 import org.apache.olingo.commons.api.edm.EdmType;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
+import org.apache.olingo.commons.core.edm.primitivetype.EdmDate;
 import org.apache.olingo.commons.core.edm.primitivetype.EdmDecimal;
 import org.apache.olingo.commons.core.edm.primitivetype.EdmDouble;
 import org.apache.olingo.commons.core.edm.primitivetype.EdmInt32;
@@ -35,6 +37,7 @@ import org.wso2.carbon.dataservices.core.odata.ODataServiceFault;
 import org.wso2.carbon.dataservices.core.odata.RDBMSDataHandler;
 import org.wso2.carbon.dataservices.core.odata.expression.operand.TypedOperand;
 import org.wso2.carbon.dataservices.core.odata.expression.operand.VisitorOperand;
+import org.wso2.carbon.dataservices.core.odata.expression.operation.BinaryOperator;
 
 public class FilterExpressionVisitor implements ExpressionVisitor<Object> {
 	
@@ -58,7 +61,7 @@ public class FilterExpressionVisitor implements ExpressionVisitor<Object> {
         put(BinaryOperatorKind.NE, " <> ");
         put(BinaryOperatorKind.GE, " >= ");
         put(BinaryOperatorKind.GT, " > ");
-        put(BinaryOperatorKind.LE, " =< ");
+        put(BinaryOperatorKind.LE, " <= ");
         put(BinaryOperatorKind.LT, " < ");    
     }};
     
@@ -82,11 +85,7 @@ public class FilterExpressionVisitor implements ExpressionVisitor<Object> {
                             HttpStatusCode.NOT_IMPLEMENTED.getStatusCode() :
                             HttpStatusCode.BAD_REQUEST.getStatusCode(), Locale.ENGLISH);
         }
-        if(right.toString().contains("/") || right.toString().contains("-")) {
-        	//date comparison
-        	right = "'"+right+"'";
-        }
-        return left + strOperator + right;
+    	return left + strOperator + right;
 	}
 
 	@Override
@@ -114,6 +113,9 @@ public class FilterExpressionVisitor implements ExpressionVisitor<Object> {
 	    }
 	    else if(literal.getType() instanceof EdmDouble) {
 	    	literalValue = Double.parseDouble((String) literalValue);
+	    }
+	    else if(literal.getType() instanceof EdmDate) {
+	    	literalValue = "'"+literalValue+"'";
 	    }
 		return literalValue;
 	}

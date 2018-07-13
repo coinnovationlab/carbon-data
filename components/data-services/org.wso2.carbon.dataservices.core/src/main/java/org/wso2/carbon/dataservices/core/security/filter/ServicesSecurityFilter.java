@@ -340,20 +340,15 @@ public class ServicesSecurityFilter {
     }
     
     private static void storeSSOTokenCookie(String securityTokenID, String securityTokenExpire, HttpServletRequest req, HttpServletResponse resp) {
-		Cookie securityTokenCookie = getSSOTokenCookie(req,SECURITY_FILTER_TOKEN_ID);
-		Cookie securityTokenCookieExpiration = getSSOTokenCookie(req,SECURITY_FILTER_TOKEN_EXPIRE);
-		Cookie securityTokenCookieGenerationTime = getSSOTokenCookie(req,SECURITY_FILTER_TOKEN_GENERATION_TIME);
-		if (securityTokenCookie == null) {
-			securityTokenCookie = new Cookie(SECURITY_FILTER_TOKEN_ID, securityTokenID);
-			securityTokenCookie.setSecure(true);
-			securityTokenCookieExpiration = new Cookie(SECURITY_FILTER_TOKEN_EXPIRE, securityTokenExpire);
-			securityTokenCookieExpiration.setSecure(true);
-			securityTokenCookieGenerationTime = new Cookie(SECURITY_FILTER_TOKEN_GENERATION_TIME, LocalDateTime.now().toString());
-			securityTokenCookieGenerationTime.setSecure(true);
-			log.info("setting cookies: "+SECURITY_FILTER_TOKEN_ID+": "+securityTokenCookie.getValue());
-			log.info("setting cookies: "+SECURITY_FILTER_TOKEN_GENERATION_TIME+": "+securityTokenCookieGenerationTime.getValue());
-			log.info("setting cookies: "+SECURITY_FILTER_TOKEN_EXPIRE+": "+securityTokenCookieExpiration.getValue());
-		}
+		Cookie securityTokenCookie = new Cookie(SECURITY_FILTER_TOKEN_ID, securityTokenID);
+		securityTokenCookie.setSecure(true);
+		Cookie securityTokenCookieExpiration = new Cookie(SECURITY_FILTER_TOKEN_EXPIRE, securityTokenExpire);
+		securityTokenCookieExpiration.setSecure(true);
+		Cookie securityTokenCookieGenerationTime = new Cookie(SECURITY_FILTER_TOKEN_GENERATION_TIME, LocalDateTime.now().toString());
+		securityTokenCookieGenerationTime.setSecure(true);
+		log.info("setting cookies: "+SECURITY_FILTER_TOKEN_ID+": "+securityTokenCookie.getValue());
+		log.info("setting cookies: "+SECURITY_FILTER_TOKEN_GENERATION_TIME+": "+securityTokenCookieGenerationTime.getValue());
+		log.info("setting cookies: "+SECURITY_FILTER_TOKEN_EXPIRE+": "+securityTokenCookieExpiration.getValue());
 		resp.addCookie(securityTokenCookie);
 		resp.addCookie(securityTokenCookieExpiration);
 		resp.addCookie(securityTokenCookieGenerationTime);
