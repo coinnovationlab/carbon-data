@@ -1,6 +1,5 @@
 package org.wso2.carbon.dataservices.core.odata.expression;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -13,8 +12,6 @@ import org.wso2.carbon.dataservices.core.odata.CassandraUtils;
 
 public class CassandraDBFilterExpressionVisitor extends FilterExpressionVisitor {
 
-	//private ArrayList<String> columnsWithConditions = new ArrayList<>();
-	
 	@Override
 	public Object visitBinaryOperator(BinaryOperatorKind operator, Object left, Object right)
 	       				throws ExpressionVisitException, ODataApplicationException {
@@ -25,11 +22,8 @@ public class CassandraDBFilterExpressionVisitor extends FilterExpressionVisitor 
 					HttpStatusCode.BAD_REQUEST.getStatusCode(), Locale.ENGLISH);
 		}
 		
-		if (left instanceof String && !((String) left).startsWith("\"")) { // In some queries (e.g. WHERE conditions with AND), this check is needed to avoid inserting erroneous quotes 
+		if (left instanceof String && !((String) left).startsWith("\"")) // In some queries (e.g. WHERE conditions with AND), this check is needed to avoid inserting erroneous quotes 
         	left = "\"" + left + "\""; // Cassandra is case sensitive, yet it converts column names to lower case unless they're within double quotes
-        	/*if (!columnsWithConditions.contains((String) left))
-        		columnsWithConditions.add((String) left);*/
-		}
 		right = CassandraUtils.oDataConversionForDBQuery(right); // adapt type from OData notation
 		
 		return left + strOperator + right;
@@ -46,8 +40,4 @@ public class CassandraDBFilterExpressionVisitor extends FilterExpressionVisitor 
 						HttpStatusCode.BAD_REQUEST.getStatusCode(), Locale.ENGLISH);
 		}
 	}
-	
-	/*public ArrayList<String> getColumnsWithConditions() {
-		return columnsWithConditions;
-	}*/
 }

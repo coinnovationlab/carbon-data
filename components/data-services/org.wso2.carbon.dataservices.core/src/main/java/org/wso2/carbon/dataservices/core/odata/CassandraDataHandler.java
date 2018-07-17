@@ -38,8 +38,10 @@ import org.wso2.carbon.dataservices.core.odata.expression.CassandraDBFilterExpre
 import org.apache.olingo.server.api.ODataApplicationException;
 import org.apache.olingo.server.api.uri.UriInfo;
 import org.apache.olingo.server.api.uri.queryoption.CountOption;
+import org.apache.olingo.server.api.uri.queryoption.ExpandOption;
 import org.apache.olingo.server.api.uri.queryoption.FilterOption;
 import org.apache.olingo.server.api.uri.queryoption.OrderByOption;
+import org.apache.olingo.server.api.uri.queryoption.SelectOption;
 import org.apache.olingo.server.api.uri.queryoption.SkipOption;
 import org.apache.olingo.server.api.uri.queryoption.TopOption;
 import org.apache.olingo.server.api.uri.queryoption.expression.ExpressionVisitException;
@@ -138,8 +140,8 @@ public class CassandraDataHandler implements ODataDataHandler {
     }
     
     public String generateCassandraQuery(String tableName, UriInfo uriInfo) throws ExpressionVisitException, ODataApplicationException, ODataServiceFault {
-    	//SelectOption selectOpt = uriInfo.getSelectOption();
-    	//ExpandOption expandOpt = uriInfo.getExpandOption();
+    	SelectOption selectOpt = uriInfo.getSelectOption();
+    	ExpandOption expandOpt = uriInfo.getExpandOption();
     	FilterOption filterOpt = uriInfo.getFilterOption();
     	TopOption topOpt = uriInfo.getTopOption();
     	OrderByOption orderByOpt = uriInfo.getOrderByOption();
@@ -148,12 +150,12 @@ public class CassandraDataHandler implements ODataDataHandler {
     	
     	String query = "SELECT ";
     	String select = "*";
-    	/*if (selectOpt != null && expandOpt == null) {
+    	if (selectOpt != null && expandOpt == null) { //TODO $expand?
     		select = selectOpt.getText();
     		if (select.contains("*")) {
     			select = "*";
     		} else {
-    			List<String> selectList = Arrays.asList(select.split(","));
+    			String[] selectArr = select.split(",");
         		select = "";
         		for (int i = 0; i < selectArr.length; i++) {
         			if (!((String) selectArr[i]).startsWith("\""))  {
@@ -164,8 +166,7 @@ public class CassandraDataHandler implements ODataDataHandler {
         				select += ",";
         		}
     		}
-    		System.out.println("select is: " + selectOpt.getText());
-    	}*/
+    	}
     	query += select + " FROM " + this.keyspace + "." + tableName;
     	if (filterOpt != null) {
     		CassandraDBFilterExpressionVisitor fev = new CassandraDBFilterExpressionVisitor();
@@ -175,13 +176,15 @@ public class CassandraDataHandler implements ODataDataHandler {
     		} catch (ExpressionVisitException e) {
     			// don't add a WHERE clause
     			System.out.println("ExpressionVisitException occurred: " + e);
+    			if (select != "*")
+    				throw new ODataServiceFault("Crashed to avoid inconsistency with SELECT clause");
     		} catch (ODataApplicationException e) {
     			// don't add a WHERE clause
     			System.out.println("ODataApplicationException occurred: " + e);
+    			if (select != "*")
+    				throw new ODataServiceFault("Crashed to avoid inconsistency with SELECT clause");
     		}
     	}
-    	/*if (orderByOpt != null)
-    		query += " ORDER BY " + String.join(", ", ODataUtils.getOrderBy(orderByOpt));*/
     	if (topOpt != null && orderByOpt == null && countOpt == null) { // OData $top option
     		int limit;
     		if (skipOpt != null) { // if $skip is present, add its value to $top's

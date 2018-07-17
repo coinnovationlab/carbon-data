@@ -317,9 +317,10 @@ public class ODataAdapter implements ServiceHandler {
             SkipOption skipOption = uriInfo.getSkipOption();
             TopOption topOption = uriInfo.getTopOption();
             SkipTokenOption skipTokenOption = uriInfo.getSkipTokenOption();
-            if (filterOption != null) {
+            // non vogliamo filter implementato in memoria, ma al momento conservare questo pezzo commentato
+            /*if (filterOption != null) {
                 //QueryHandler.applyFilterSystemQuery(filterOption, details.entitySet, edmEntitySet);
-                try { // pensare a come separare questo pezzo di codice senza modificare il file QueryHandler
+                try { 
                 	EntityCollection ec = details.entitySet;
                     final Iterator<Entity> iter = ec.getEntities().iterator();
                     Entity ent;
@@ -344,7 +345,7 @@ public class ODataAdapter implements ServiceHandler {
                     throw new ODataApplicationException("Exception in filter evaluation",
                                                         HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), Locale.ROOT);
                 }
-            }
+            }*/
             if (countOption != null) {
             	// can't we just extract the number of rows with details.entitySet.getEntities().size()?
             	int countRecords = getCountCollection(uriInfo,edmEntitySet.getName());
