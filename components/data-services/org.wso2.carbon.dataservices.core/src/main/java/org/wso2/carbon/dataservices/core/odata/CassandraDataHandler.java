@@ -34,8 +34,14 @@ import org.wso2.carbon.dataservices.common.DBConstants;
 import org.wso2.carbon.dataservices.core.DBUtils;
 import org.wso2.carbon.dataservices.core.DataServiceFault;
 import org.wso2.carbon.dataservices.core.odata.DataColumn.ODataDataType;
+import org.wso2.carbon.dataservices.core.odata.expression.CassandraDBFilterExpressionVisitor;
 import org.apache.olingo.server.api.ODataApplicationException;
 import org.apache.olingo.server.api.uri.UriInfo;
+import org.apache.olingo.server.api.uri.queryoption.CountOption;
+import org.apache.olingo.server.api.uri.queryoption.FilterOption;
+import org.apache.olingo.server.api.uri.queryoption.OrderByOption;
+import org.apache.olingo.server.api.uri.queryoption.SkipOption;
+import org.apache.olingo.server.api.uri.queryoption.TopOption;
 import org.apache.olingo.server.api.uri.queryoption.expression.ExpressionVisitException;
 
 
@@ -117,8 +123,9 @@ public class CassandraDataHandler implements ODataDataHandler {
     }
 
     @Override
-    public List<ODataEntry> readTable(String tableName,UriInfo uriInfo) throws ODataServiceFault {
-        Statement statement = new SimpleStatement("Select * from " + this.keyspace + "." + tableName);
+    public List<ODataEntry> readTable(String tableName,UriInfo uriInfo) throws ODataServiceFault, ExpressionVisitException, ODataApplicationException {
+        Statement statement = new SimpleStatement(generateCassandraQuery(tableName, uriInfo)); // executes a query with improved performance
+        
         ResultSet resultSet = this.session.execute(statement);
         Iterator<Row> iterator = resultSet.iterator();
         List<ODataEntry> entryList = new ArrayList<>();
@@ -128,6 +135,72 @@ public class CassandraDataHandler implements ODataDataHandler {
             entryList.add(dataEntry);
         }
         return entryList;
+    }
+    
+    public String generateCassandraQuery(String tableName, UriInfo uriInfo) throws ExpressionVisitException, ODataApplicationException, ODataServiceFault {
+    	//SelectOption selectOpt = uriInfo.getSelectOption();
+    	//ExpandOption expandOpt = uriInfo.getExpandOption();
+    	FilterOption filterOpt = uriInfo.getFilterOption();
+    	TopOption topOpt = uriInfo.getTopOption();
+    	OrderByOption orderByOpt = uriInfo.getOrderByOption();
+    	CountOption countOpt = uriInfo.getCountOption();
+    	SkipOption skipOpt = uriInfo.getSkipOption();
+    	
+    	String query = "SELECT ";
+    	String select = "*";
+    	/*if (selectOpt != null && expandOpt == null) {
+    		select = selectOpt.getText();
+    		if (select.contains("*")) {
+    			select = "*";
+    		} else {
+    			List<String> selectList = Arrays.asList(select.split(","));
+        		select = "";
+        		for (int i = 0; i < selectArr.length; i++) {
+        			if (!((String) selectArr[i]).startsWith("\""))  {
+        				selectArr[i] = "\"" + selectArr[i] + "\""; // Cassandra is case sensitive, yet it converts column names to lower case unless they're within double quotes
+        			}
+        			select += selectArr[i];
+        			if (i < selectArr.length - 1)
+        				select += ",";
+        		}
+    		}
+    		System.out.println("select is: " + selectOpt.getText());
+    	}*/
+    	query += select + " FROM " + this.keyspace + "." + tableName;
+    	if (filterOpt != null) {
+    		CassandraDBFilterExpressionVisitor fev = new CassandraDBFilterExpressionVisitor();
+    		try {
+    			String where = " WHERE " + filterOpt.getExpression().accept(fev);
+    			query += where;
+    		} catch (ExpressionVisitException e) {
+    			// don't add a WHERE clause
+    			System.out.println("ExpressionVisitException occurred: " + e);
+    		} catch (ODataApplicationException e) {
+    			// don't add a WHERE clause
+    			System.out.println("ODataApplicationException occurred: " + e);
+    		}
+    	}
+    	/*if (orderByOpt != null)
+    		query += " ORDER BY " + String.join(", ", ODataUtils.getOrderBy(orderByOpt));*/
+    	if (topOpt != null && orderByOpt == null && countOpt == null) { // OData $top option
+    		int limit;
+    		if (skipOpt != null) { // if $skip is present, add its value to $top's
+    			limit = topOpt.getValue() + skipOpt.getValue();
+    		} else { // if $skip is absent, simply take the value of $top
+    			limit = topOpt.getValue();
+    		}
+    		query += " LIMIT " + limit; // records to extract
+    	} else if (topOpt != null) { // $top should be applied after $orderby and $count, but it is currently impossible to do so in the DB query
+    		throw new ODataServiceFault("$top is currently not supported for Cassandra when used together with one of the following: $orderby, $count");
+    	}
+    	if (filterOpt != null) { // necessary for some WHERE conditions
+    		query += " ALLOW FILTERING";
+    	}
+    	
+    	query += ";";
+    	
+    	System.out.println("DB Query is: " + query);
+    	return query;
     }
 
     @Override
@@ -406,8 +479,11 @@ public class CassandraDataHandler implements ODataDataHandler {
                     case TEXT:
                         paramValue = row.getString(i);
                         break;
+                    case TIME:
+                    	paramValue = row.isNull(i) ? null : ConverterUtil.convertToString(row.getTime(i));
+                        break;
                     case TIMESTAMP:
-                        paramValue = row.isNull(i) ? null : ConverterUtil.convertToString(row.getDate(i));
+                        paramValue = row.isNull(i) ? null : CassandraUtils.SDF.format(row.getTimestamp(i));
                         break;
                     case UUID:
                         paramValue = row.isNull(i) ? null : ConverterUtil.convertToString(row.getUUID(i));

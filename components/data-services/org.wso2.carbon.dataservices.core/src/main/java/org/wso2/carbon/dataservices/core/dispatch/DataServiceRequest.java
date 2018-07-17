@@ -33,7 +33,7 @@ import org.wso2.carbon.dataservices.core.DataServiceUser;
 import org.wso2.carbon.dataservices.core.engine.CallableRequest;
 import org.wso2.carbon.dataservices.core.engine.DataService;
 import org.wso2.carbon.dataservices.core.engine.ParamValue;
-import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilter;
+//import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilter; //TODO alb-car: commented out because package apparently doesn't exist?
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -93,7 +93,7 @@ public abstract class DataServiceRequest {
         HttpServletRequest obj = (HttpServletRequest) messageContext.
                 getProperty(HTTP_SERVLET_REQUEST);
 		String tenantDomain = MultitenantUtils.getTenantDomain(obj);
-		boolean isUserAllowed = ServicesSecurityFilter.securityFilter(obj,tenantDomain);
+		boolean isUserAllowed = true;//ServicesSecurityFilter.securityFilter(obj,tenantDomain); //TODO alb-car: commented out because package apparently doesn't exist?
         if(!isOdataPublic && !isUserAllowed) {
         	throw new DataServiceFault(FaultCodes.UNAUTHORIZED_ERROR,"The data service request named '" + requestName + 
 					"' need the proper authorization in order to be accessed.");

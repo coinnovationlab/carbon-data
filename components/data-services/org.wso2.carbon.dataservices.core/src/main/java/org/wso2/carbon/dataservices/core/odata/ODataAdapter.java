@@ -18,20 +18,25 @@
 
 package org.wso2.carbon.dataservices.core.odata;
 
+import org.apache.axis2.databinding.types.Time;
 import org.apache.axis2.databinding.utils.ConverterUtil;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.olingo.commons.api.Constants;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.data.Link;
 import org.apache.olingo.commons.api.data.Property;
 import org.apache.olingo.commons.api.data.ValueType;
 import org.apache.olingo.commons.api.edm.EdmBindingTarget;
+import org.apache.olingo.commons.api.edm.EdmElement;
 import org.apache.olingo.commons.api.edm.EdmEntitySet;
 import org.apache.olingo.commons.api.edm.EdmEntityType;
 import org.apache.olingo.commons.api.edm.EdmKeyPropertyRef;
+import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
+import org.apache.olingo.commons.api.edm.EdmNavigationPropertyBinding;
 import org.apache.olingo.commons.api.edm.EdmPrimitiveType;
 import org.apache.olingo.commons.api.edm.EdmPrimitiveTypeException;
 import org.apache.olingo.commons.api.edm.EdmPrimitiveTypeKind;
@@ -63,6 +68,8 @@ import org.apache.olingo.server.api.uri.UriResourceEntitySet;
 import org.apache.olingo.server.api.uri.UriResourceFunction;
 import org.apache.olingo.server.api.uri.UriResourceNavigation;
 import org.apache.olingo.server.api.uri.queryoption.CountOption;
+import org.apache.olingo.server.api.uri.queryoption.ExpandItem;
+import org.apache.olingo.server.api.uri.queryoption.ExpandOption;
 import org.apache.olingo.server.api.uri.queryoption.FilterOption;
 import org.apache.olingo.server.api.uri.queryoption.OrderByOption;
 import org.apache.olingo.server.api.uri.queryoption.SkipOption;
@@ -94,6 +101,10 @@ import org.wso2.carbon.dataservices.common.DBConstants;
 import org.wso2.carbon.dataservices.core.DataServiceFault;
 import org.wso2.carbon.dataservices.core.engine.DataEntry;
 import org.wso2.carbon.dataservices.core.odata.DataColumn.ODataDataType;
+import org.wso2.carbon.dataservices.core.odata.expression.CassandraFilterExpressionVisitor;
+import org.wso2.carbon.dataservices.core.odata.expression.ExpressionVisitorImpl;
+import org.wso2.carbon.dataservices.core.odata.expression.operand.TypedOperand;
+import org.wso2.carbon.dataservices.core.odata.expression.operand.VisitorOperand;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -103,8 +114,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Types;
 import java.text.ParseException;
+import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -187,10 +201,11 @@ public class ODataAdapter implements ServiceHandler {
      * @throws ODataApplicationException
      */
     private EntityDetails process(final DataRequest request) throws ODataApplicationException {
-        EntityCollection entitySet = null;
+    	EntityCollection entitySet = null;
         Entity entity = null;
         EdmEntityType entityType;
         Entity parentEntity;
+        EdmEntitySet edmEntitySet;
         EntityDetails details = new EntityDetails();
         String baseURL = request.getODataRequest().getRawBaseUri();
         UriInfo uriInfo = request.getUriInfo();
@@ -200,7 +215,7 @@ public class ODataAdapter implements ServiceHandler {
                 throw new ODataApplicationException("Singletons are not supported.",
                                                     HttpStatusCode.NOT_ACCEPTABLE.getStatusCode(), Locale.ENGLISH);
             } else {
-                final EdmEntitySet edmEntitySet = request.getEntitySet();
+                edmEntitySet = request.getEntitySet();
                 entityType = edmEntitySet.getEntityType();
                 List<UriParameter> keys = request.getKeyPredicates();
                 if (keys != null && !keys.isEmpty()) {
@@ -217,13 +232,74 @@ public class ODataAdapter implements ServiceHandler {
 					}
                 }
             }
+            // START
+            ExpandOption expandOption = uriInfo.getExpandOption();
+            if (expandOption != null) {
+                // retrieve the EdmNavigationProperty from the expand expression.
+                EdmNavigationProperty edmNavigationProperty = null;
+                List<ExpandItem> expandItems = expandOption.getExpandItems();
+                for (ExpandItem expandItem : expandItems) {
+                    if (expandItem.isStar()) {
+                        List<EdmNavigationPropertyBinding> bindings = edmEntitySet.getNavigationPropertyBindings();
+                        // check if navigation bindings exist.
+                        if (!bindings.isEmpty()) {
+                            EdmNavigationPropertyBinding binding = bindings.get(0);
+                            EdmElement property = edmEntitySet.getEntityType().getProperty(binding.getPath());
+                            if (property instanceof EdmNavigationProperty) {
+                                edmNavigationProperty = (EdmNavigationProperty) property;
+                            }
+                        }
+                    } else {
+                        UriResource uriResource = expandItem.getResourcePath().getUriResourceParts().get(0);
+                        if (uriResource instanceof UriResourceNavigation) {
+                            edmNavigationProperty = ((UriResourceNavigation) uriResource).getProperty();
+                        }
+                    }
+                    // handle $expand.
+                    if (edmNavigationProperty != null) {
+                        String navPropName = edmNavigationProperty.getName();
+                        List<Entity> entityList;
+                        if (entitySet != null) {
+                            entityList = entitySet.getEntities();
+                        } else {
+                            entityList = Collections.singletonList(entity);
+                        }
+                        for (Entity entityObject : entityList) {
+                            Link link = new Link();
+                            link.setTitle(navPropName);
+                            link.setType(Constants.ENTITY_NAVIGATION_LINK_TYPE);
+                            link.setRel(Constants.NS_ASSOCIATION_LINK_REL + navPropName);
+                            if (edmNavigationProperty.isCollection()) {
+                                EntityCollection expandEntityCollection = getNavigableEntitySet(this.serviceMetadata,
+                                                                                                entityObject,
+                                                                                                edmNavigationProperty,
+                                                                                                baseURL);
+                                link.setInlineEntitySet(expandEntityCollection);
+                                if (expandEntityCollection != null) {
+                                    link.setHref(expandEntityCollection.getId().toASCIIString());
+                                }
+                            } else {
+                                Entity expandEntity = getNavigableEntity(serviceMetadata, entityObject,
+                                                                         edmNavigationProperty, baseURL);
+                                link.setInlineEntity(expandEntity);
+                                if (expandEntity != null) {
+                                    link.setHref(expandEntity.getId().toASCIIString());
+                                }
+                            }
+                            // set the link containing the expanded data to the current entity.
+                            entityObject.getNavigationLinks().add(link);
+                        }
+                    }
+                }
+            }
+            //END
             if (!request.getNavigations().isEmpty() && entity != null) {
                 for (UriResourceNavigation nav : request.getNavigations()) {
                     if (nav.isCollection()) {
-                        entitySet = getNavigableEntitySet(this.serviceMetadata, entity, nav, baseURL);
+                        entitySet = getNavigableEntitySet(this.serviceMetadata, entity, nav.getProperty(), baseURL);
                     } else {
                         parentEntity = entity;
-                        entity = getNavigableEntity(serviceMetadata, parentEntity, nav, baseURL);
+                        entity = getNavigableEntity(serviceMetadata, parentEntity, nav.getProperty(), baseURL);
                     }
                     entityType = nav.getProperty().getType();
                 }
@@ -234,22 +310,55 @@ public class ODataAdapter implements ServiceHandler {
             details.entityType = entityType;
             // According to the odatav4 spec we have to perform these queries according to the following order
             
-            EdmEntitySet edmEntitySet = getEdmEntitySet(uriInfo);
+            //EdmEntitySet edmEntitySet = getEdmEntitySet(uriInfo);
             FilterOption filterOption = uriInfo.getFilterOption();
             CountOption countOption = uriInfo.getCountOption();
             OrderByOption orderByOption = uriInfo.getOrderByOption();
             SkipOption skipOption = uriInfo.getSkipOption();
             TopOption topOption = uriInfo.getTopOption();
             SkipTokenOption skipTokenOption = uriInfo.getSkipTokenOption();
-            /*if (filterOption != null) {
-                QueryHandler.applyFilterSystemQuery(filterOption, details.entitySet, edmEntitySet);
-            }*/
+            if (filterOption != null) {
+                //QueryHandler.applyFilterSystemQuery(filterOption, details.entitySet, edmEntitySet);
+                try { // pensare a come separare questo pezzo di codice senza modificare il file QueryHandler
+                	EntityCollection ec = details.entitySet;
+                    final Iterator<Entity> iter = ec.getEntities().iterator();
+                    Entity ent;
+                    while (iter.hasNext()) {
+                    	ent = iter.next();
+                        final VisitorOperand operand =
+                                filterOption.getExpression().accept(new CassandraFilterExpressionVisitor(ent, edmEntitySet));
+                        final TypedOperand typedOperand = operand.asTypedOperand();
+                        if (typedOperand.is(ODataConstants.primitiveBoolean)) {
+                            if (Boolean.FALSE.equals(typedOperand.getTypedValue(Boolean.class))) {
+                                iter.remove();
+                                System.out.println("Removed.");
+                            }
+                        } else {
+                            throw new ODataApplicationException(
+                                    "Invalid filter expression. Filter expressions must return a value of " +
+                                    "type Edm.Boolean", HttpStatusCode.BAD_REQUEST.getStatusCode(), Locale.ROOT);
+                        }
+                    }
+
+                } catch (ExpressionVisitException e) {
+                    throw new ODataApplicationException("Exception in filter evaluation",
+                                                        HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), Locale.ROOT);
+                }
+            }
             if (countOption != null) {
+            	// can't we just extract the number of rows with details.entitySet.getEntities().size()?
             	int countRecords = getCountCollection(uriInfo,edmEntitySet.getName());
                 //QueryHandler.applyCountSystemQueryOption(countOption, details.entitySet);
                 QueryHandler.applyCountOption(countOption, entitySet, countRecords);
+                
+                // this is only needed for Cassandra, how to make it execute only for Cassandra?
+                if (details.entitySet != null && details.entitySet.getEntities() != null) {
+                	// should be moved up
+                	int entity_count = details.entitySet.getEntities().size(); // gets the number of rows
+                	details.entitySet.setCount(new Integer(entity_count)); // sets the count it just obtained
+                }
             }
-            /*
+            
             if (orderByOption != null) {
                 QueryHandler.applyOrderByOption(orderByOption, details.entitySet, edmEntitySet);
             }
@@ -264,7 +373,8 @@ public class ODataAdapter implements ServiceHandler {
                                                                            .getHeaders(HttpHeader.PREFER))
                                       .getMaxPageSize();
                 QueryHandler.applyServerSidePaging(skipTokenOption, details.entitySet, edmEntitySet, baseURL, pageSize);
-            }*/
+            }
+            
             return details;
         } catch (ODataServiceFault | ExpressionVisitException dataServiceFault) {
             log.error("Error in processing the read request. : " + dataServiceFault.getMessage(), dataServiceFault);
@@ -1504,10 +1614,10 @@ public class ODataAdapter implements ServiceHandler {
      * @throws ODataServiceFault
      */
     private EntityCollection getNavigableEntitySet(ServiceMetadata metadata, Entity parentEntity,
-                                                   UriResourceNavigation navigation, String url)
+    		EdmNavigationProperty edmNavigationProperty, String url)
             throws ODataServiceFault, ODataApplicationException {
         EdmEntityType type = metadata.getEdm().getEntityType(new FullQualifiedName(parentEntity.getType()));
-        String linkName = navigation.getProperty().getName();
+        String linkName = edmNavigationProperty.getName();
         EntityCollection results;
         List<Property> properties = new ArrayList<>();
         Map<String, EdmProperty> propertyMap = new HashMap<>();
@@ -1540,10 +1650,10 @@ public class ODataAdapter implements ServiceHandler {
      * @throws ODataServiceFault
      * @see ODataDataHandler#getNavigationProperties()
      */
-    private Entity getNavigableEntity(ServiceMetadata metadata, Entity parentEntity, UriResourceNavigation navigation,
+    private Entity getNavigableEntity(ServiceMetadata metadata, Entity parentEntity, EdmNavigationProperty edmNavigationProperty,
                                       String baseUrl) throws ODataApplicationException, ODataServiceFault {
         EdmEntityType type = metadata.getEdm().getEntityType(new FullQualifiedName(parentEntity.getType()));
-        String linkName = navigation.getProperty().getName();
+        String linkName = edmNavigationProperty.getName();
         List<Property> properties = new ArrayList<>();
         Map<String, EdmProperty> propertyMap = new HashMap<>();
         for (NavigationKeys keys : this.dataHandler.getNavigationProperties().get(linkName)
@@ -1646,8 +1756,8 @@ public class ODataAdapter implements ServiceHandler {
                     break;
                 case DECIMAL:
                     property.setType(EdmPrimitiveTypeKind.Decimal.getFullQualifiedName());
-                    property.setPrecision(column.getPrecision());
-                    property.setScale(column.getScale());
+                    property.setPrecision(Float.toString(Float.MAX_VALUE).length()); // Cassandra: maximum number of digits a float is capable of having
+                    property.setScale(Float.toString(Float.MAX_VALUE).length()); // Cassandra: make it match maximum number of digits
                     property.setNullable(column.isNullable());
                     property.setMaxLength(column.getMaxLength());
                     break;
@@ -1659,7 +1769,8 @@ public class ODataAdapter implements ServiceHandler {
                     property.setScale(column.getScale());
                     break;
                 case TIMEOFDAY:
-                    property.setType(EdmPrimitiveTypeKind.TimeOfDay.getFullQualifiedName());
+                	property.setType(EdmPrimitiveTypeKind.TimeOfDay.getFullQualifiedName());
+                    property.setPrecision(3); // Cassandra: Time is converted to Calendar, which stores date and time down to the milliseconds
                     property.setNullable(column.isNullable());
                     property.setMaxLength(column.getMaxLength());
                     break;
@@ -1669,9 +1780,11 @@ public class ODataAdapter implements ServiceHandler {
                     property.setMaxLength(column.getMaxLength());
                     break;
                 case DATE_TIMEOFFSET:
-                    property.setType(EdmPrimitiveTypeKind.DateTimeOffset.getFullQualifiedName());
+                	property.setType(EdmPrimitiveTypeKind.DateTimeOffset.getFullQualifiedName());
                     property.setNullable(column.isNullable());
                     property.setMaxLength(column.getMaxLength());
+                    // Setting as 9 to support nano second representations from certain databases.
+                    property.setPrecision(9);
                     break;
                 case GUID:
                     property.setType(EdmPrimitiveTypeKind.Guid.getFullQualifiedName());
@@ -1855,8 +1968,8 @@ public class ODataAdapter implements ServiceHandler {
                 value = paramValue == null ? null : ConverterUtil.convertToFloat(paramValue);
                 break;
             case TIMEOFDAY:
-                propertyType = EdmPrimitiveTypeKind.TimeOfDay.getFullQualifiedName().getFullQualifiedNameAsString();
-                value = paramValue == null ? null : ConverterUtil.convertToTime(paramValue).getAsCalendar();
+            	propertyType = EdmPrimitiveTypeKind.TimeOfDay.getFullQualifiedName().getFullQualifiedNameAsString();
+                value = paramValue == null ? null : new Time(LocalTime.ofNanoOfDay(Long.parseLong(paramValue)).toString()).getAsCalendar();
                 break;
             case INT64:
                 propertyType = EdmPrimitiveTypeKind.Int64.getFullQualifiedName().getFullQualifiedNameAsString();
