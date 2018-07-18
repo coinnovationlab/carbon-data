@@ -35,6 +35,7 @@ import org.wso2.carbon.dataservices.core.DBUtils;
 import org.wso2.carbon.dataservices.core.DataServiceFault;
 import org.wso2.carbon.dataservices.core.odata.DataColumn.ODataDataType;
 import org.wso2.carbon.dataservices.core.odata.expression.CassandraDBFilterExpressionVisitor;
+import org.apache.olingo.commons.api.http.HttpStatusCode;
 import org.apache.olingo.server.api.ODataApplicationException;
 import org.apache.olingo.server.api.uri.UriInfo;
 import org.apache.olingo.server.api.uri.queryoption.CountOption;
@@ -57,6 +58,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -126,7 +128,7 @@ public class CassandraDataHandler implements ODataDataHandler {
 
     @Override
     public List<ODataEntry> readTable(String tableName,UriInfo uriInfo) throws ODataServiceFault, ExpressionVisitException, ODataApplicationException {
-        Statement statement = new SimpleStatement(generateCassandraQuery(tableName, uriInfo)); // executes a query with improved performance
+        Statement statement = new SimpleStatement(generateCassandraQuery(tableName, uriInfo)); // generates the query to apply to the Cassandra database
         
         ResultSet resultSet = this.session.execute(statement);
         Iterator<Row> iterator = resultSet.iterator();
@@ -140,7 +142,7 @@ public class CassandraDataHandler implements ODataDataHandler {
     }
     
     public String generateCassandraQuery(String tableName, UriInfo uriInfo) throws ExpressionVisitException, ODataApplicationException, ODataServiceFault {
-    	SelectOption selectOpt = uriInfo.getSelectOption();
+    	SelectOption selectOpt = uriInfo.getSelectOption(); // extracts the various OData options
     	ExpandOption expandOpt = uriInfo.getExpandOption();
     	FilterOption filterOpt = uriInfo.getFilterOption();
     	TopOption topOpt = uriInfo.getTopOption();
@@ -148,42 +150,47 @@ public class CassandraDataHandler implements ODataDataHandler {
     	CountOption countOpt = uriInfo.getCountOption();
     	SkipOption skipOpt = uriInfo.getSkipOption();
     	
-    	String query = "SELECT ";
-    	String select = "*";
-    	if (selectOpt != null && expandOpt == null) { //TODO $expand?
+    	String query = "SELECT "; // The query that will be returned by this method
+    	String select = "*"; // starts with *, changes it later if necessary
+    	if (expandOpt != null) { // $expand is not supported, due to Cassandra's lack of foreign keys
+    		throw new ODataApplicationException("The OData query option $expand is not supported by Cassandra. ",
+					HttpStatusCode.BAD_REQUEST.getStatusCode(), Locale.ENGLISH);
+    	}
+    	if (selectOpt != null) { // OData $select option
     		select = selectOpt.getText();
-    		if (select.contains("*")) {
+    		if (select.contains("*")) { // if it contains *, it becomes SELECT * FROM
     			select = "*";
-    		} else {
+    		} else { // otherwise, only specific columns need to be selected
     			String[] selectArr = select.split(",");
         		select = "";
         		for (int i = 0; i < selectArr.length; i++) {
-        			if (!((String) selectArr[i]).startsWith("\""))  {
+        			if (!((String) selectArr[i]).startsWith("\""))  { // checks if double quotes are already present (should never happen)
         				selectArr[i] = "\"" + selectArr[i] + "\""; // Cassandra is case sensitive, yet it converts column names to lower case unless they're within double quotes
         			}
-        			select += selectArr[i];
-        			if (i < selectArr.length - 1)
+        			select += selectArr[i]; // adds the column to the list of columns to select
+        			if (i < selectArr.length - 1) // if it's not the last one, separates it from the next one with a comma
         				select += ",";
         		}
     		}
     	}
-    	query += select + " FROM " + this.keyspace + "." + tableName;
-    	if (filterOpt != null) {
+    	query += select + " FROM " + this.keyspace + "." + tableName; // the SELECT part is added
+    	if (filterOpt != null) { // OData $filter option
+    		// visitor to apply the WHERE part; many operators are not supported by Cassandra
     		CassandraDBFilterExpressionVisitor fev = new CassandraDBFilterExpressionVisitor();
-    		try {
-    			String where = " WHERE " + filterOpt.getExpression().accept(fev);
-    			query += where;
-    		} catch (ExpressionVisitException e) {
+    		//try {
+    		String where = " WHERE " + filterOpt.getExpression().accept(fev); // determines the WHERE part
+    		query += where; // the WHERE part is added
+    		/*} catch (ExpressionVisitException e) { // error thrown by the visitor
     			// don't add a WHERE clause
     			System.out.println("ExpressionVisitException occurred: " + e);
-    			if (select != "*")
+    			if (select != "*") // needs to crash or there will be inconsistencies
     				throw new ODataServiceFault("Crashed to avoid inconsistency with SELECT clause");
-    		} catch (ODataApplicationException e) {
+    		} catch (ODataApplicationException e) { // an operator is not supported
     			// don't add a WHERE clause
     			System.out.println("ODataApplicationException occurred: " + e);
-    			if (select != "*")
+    			if (select != "*") // needs to crash or there will be inconsistencies
     				throw new ODataServiceFault("Crashed to avoid inconsistency with SELECT clause");
-    		}
+    		}*/
     	}
     	if (topOpt != null && orderByOpt == null && countOpt == null) { // OData $top option
     		int limit;
@@ -200,10 +207,10 @@ public class CassandraDataHandler implements ODataDataHandler {
     		query += " ALLOW FILTERING";
     	}
     	
-    	query += ";";
+    	query += ";"; // semicolon at the end of the query
     	
     	System.out.println("DB Query is: " + query);
-    	return query;
+    	return query; // query is ready to be executed
     }
 
     @Override
@@ -483,9 +490,11 @@ public class CassandraDataHandler implements ODataDataHandler {
                         paramValue = row.getString(i);
                         break;
                     case TIME:
+                    	// There was no handler for this type in the previous implementation
                     	paramValue = row.isNull(i) ? null : ConverterUtil.convertToString(row.getTime(i));
                         break;
                     case TIMESTAMP:
+                    	// The previous implementation used getDate, which caused an exception
                         paramValue = row.isNull(i) ? null : CassandraUtils.SDF.format(row.getTimestamp(i));
                         break;
                     case UUID:

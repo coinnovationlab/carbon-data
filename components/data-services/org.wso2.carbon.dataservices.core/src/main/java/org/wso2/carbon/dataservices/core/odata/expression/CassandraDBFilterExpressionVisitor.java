@@ -16,7 +16,7 @@ public class CassandraDBFilterExpressionVisitor extends FilterExpressionVisitor 
 	public Object visitBinaryOperator(BinaryOperatorKind operator, Object left, Object right)
 	       				throws ExpressionVisitException, ODataApplicationException {
 			
-		String strOperator = CassandraUtils.getBinOperator(operator);
+		String strOperator = CassandraUtils.getBinOperator(operator); // retrieves a string that represents the operator
 		if (strOperator == null) { // operator is not supported
 			throw new ODataApplicationException("The following binary operator is currently not supported for Cassandra: " + operator.name(),
 					HttpStatusCode.BAD_REQUEST.getStatusCode(), Locale.ENGLISH);

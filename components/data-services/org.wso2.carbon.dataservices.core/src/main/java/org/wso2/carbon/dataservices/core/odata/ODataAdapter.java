@@ -24,19 +24,19 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.olingo.commons.api.Constants;
+//import org.apache.olingo.commons.api.Constants;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.data.Link;
 import org.apache.olingo.commons.api.data.Property;
 import org.apache.olingo.commons.api.data.ValueType;
 import org.apache.olingo.commons.api.edm.EdmBindingTarget;
-import org.apache.olingo.commons.api.edm.EdmElement;
+//import org.apache.olingo.commons.api.edm.EdmElement;
 import org.apache.olingo.commons.api.edm.EdmEntitySet;
 import org.apache.olingo.commons.api.edm.EdmEntityType;
 import org.apache.olingo.commons.api.edm.EdmKeyPropertyRef;
 import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
-import org.apache.olingo.commons.api.edm.EdmNavigationPropertyBinding;
+//import org.apache.olingo.commons.api.edm.EdmNavigationPropertyBinding;
 import org.apache.olingo.commons.api.edm.EdmPrimitiveType;
 import org.apache.olingo.commons.api.edm.EdmPrimitiveTypeException;
 import org.apache.olingo.commons.api.edm.EdmPrimitiveTypeKind;
@@ -68,9 +68,9 @@ import org.apache.olingo.server.api.uri.UriResourceEntitySet;
 import org.apache.olingo.server.api.uri.UriResourceFunction;
 import org.apache.olingo.server.api.uri.UriResourceNavigation;
 import org.apache.olingo.server.api.uri.queryoption.CountOption;
-import org.apache.olingo.server.api.uri.queryoption.ExpandItem;
-import org.apache.olingo.server.api.uri.queryoption.ExpandOption;
-import org.apache.olingo.server.api.uri.queryoption.FilterOption;
+//import org.apache.olingo.server.api.uri.queryoption.ExpandItem;
+//import org.apache.olingo.server.api.uri.queryoption.ExpandOption;
+//import org.apache.olingo.server.api.uri.queryoption.FilterOption;
 import org.apache.olingo.server.api.uri.queryoption.OrderByOption;
 import org.apache.olingo.server.api.uri.queryoption.SkipOption;
 import org.apache.olingo.server.api.uri.queryoption.SkipTokenOption;
@@ -101,10 +101,10 @@ import org.wso2.carbon.dataservices.common.DBConstants;
 import org.wso2.carbon.dataservices.core.DataServiceFault;
 import org.wso2.carbon.dataservices.core.engine.DataEntry;
 import org.wso2.carbon.dataservices.core.odata.DataColumn.ODataDataType;
-import org.wso2.carbon.dataservices.core.odata.expression.CassandraFilterExpressionVisitor;
-import org.wso2.carbon.dataservices.core.odata.expression.ExpressionVisitorImpl;
-import org.wso2.carbon.dataservices.core.odata.expression.operand.TypedOperand;
-import org.wso2.carbon.dataservices.core.odata.expression.operand.VisitorOperand;
+//import org.wso2.carbon.dataservices.core.odata.expression.CassandraFilterExpressionVisitor;
+//import org.wso2.carbon.dataservices.core.odata.expression.ExpressionVisitorImpl;
+//import org.wso2.carbon.dataservices.core.odata.expression.operand.TypedOperand;
+//import org.wso2.carbon.dataservices.core.odata.expression.operand.VisitorOperand;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -116,9 +116,9 @@ import java.sql.Types;
 import java.text.ParseException;
 import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.Collections;
+//import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
+//import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -232,7 +232,7 @@ public class ODataAdapter implements ServiceHandler {
 					}
                 }
             }
-            // START
+            /*
             ExpandOption expandOption = uriInfo.getExpandOption();
             if (expandOption != null) {
                 // retrieve the EdmNavigationProperty from the expand expression.
@@ -292,7 +292,7 @@ public class ODataAdapter implements ServiceHandler {
                     }
                 }
             }
-            //END
+            */
             if (!request.getNavigations().isEmpty() && entity != null) {
                 for (UriResourceNavigation nav : request.getNavigations()) {
                     if (nav.isCollection()) {
@@ -311,7 +311,7 @@ public class ODataAdapter implements ServiceHandler {
             // According to the odatav4 spec we have to perform these queries according to the following order
             
             //EdmEntitySet edmEntitySet = getEdmEntitySet(uriInfo);
-            FilterOption filterOption = uriInfo.getFilterOption();
+            //FilterOption filterOption = uriInfo.getFilterOption();
             CountOption countOption = uriInfo.getCountOption();
             OrderByOption orderByOption = uriInfo.getOrderByOption();
             SkipOption skipOption = uriInfo.getSkipOption();
@@ -1970,6 +1970,8 @@ public class ODataAdapter implements ServiceHandler {
                 break;
             case TIMEOFDAY:
             	propertyType = EdmPrimitiveTypeKind.TimeOfDay.getFullQualifiedName().getFullQualifiedNameAsString();
+            	// Converts the time to nanoseconds and afterwards to a Calendar type.
+            	// The previous implementation caused an exception for Cassandra.
                 value = paramValue == null ? null : new Time(LocalTime.ofNanoOfDay(Long.parseLong(paramValue)).toString()).getAsCalendar();
                 break;
             case INT64:
