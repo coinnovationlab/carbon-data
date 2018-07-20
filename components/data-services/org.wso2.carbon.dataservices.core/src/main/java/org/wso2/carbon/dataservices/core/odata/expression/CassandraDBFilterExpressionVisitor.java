@@ -34,7 +34,9 @@ public class CassandraDBFilterExpressionVisitor extends FilterExpressionVisitor 
 			throws ExpressionVisitException, ODataApplicationException {
 
 		switch(methodCall) {
-			// currently, no OData method is natively supported by Cassandra...
+			// List of methods natively supported by Cassandra
+			case NOW:
+				return "dateof(now())";
 			default:
 				throw new ODataApplicationException("The following method is currently not supported for Cassandra: " + methodCall.name(),
 						HttpStatusCode.BAD_REQUEST.getStatusCode(), Locale.ENGLISH);

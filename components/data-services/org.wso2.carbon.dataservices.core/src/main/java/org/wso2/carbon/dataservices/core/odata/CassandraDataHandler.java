@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.dataservices.core.odata;
 
+import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.ColumnDefinitions;
 import com.datastax.driver.core.ColumnMetadata;
 import com.datastax.driver.core.DataType;
@@ -30,6 +31,7 @@ import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.TableMetadata;
 import org.apache.axis2.databinding.utils.ConverterUtil;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.binary.Hex;
 import org.wso2.carbon.dataservices.common.DBConstants;
 import org.wso2.carbon.dataservices.core.DBUtils;
 import org.wso2.carbon.dataservices.core.DataServiceFault;
@@ -51,16 +53,21 @@ import org.apache.olingo.server.api.uri.queryoption.expression.ExpressionVisitEx
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+
+import javax.xml.bind.DatatypeConverter;
 
 /**
  * This class implements cassandra datasource related operations for ODataDataHandler.
@@ -222,6 +229,7 @@ public class CassandraDataHandler implements ODataDataHandler {
         List<Object> values = new ArrayList<>();
         for (String column : keys.getNames()) {
             if (this.tableMetaData.get(tableName).keySet().contains(column) && pKeys.contains(column)) {
+            	//keys.addValue(column, (String) CassandraUtils.oDataConversionForDBQuery(keys.getValue(column)));
                 bindParams(column, keys.getValue(column), values, cassandraTableMetaData);
             }
         }
@@ -230,6 +238,34 @@ public class CassandraDataHandler implements ODataDataHandler {
             statement = this.session.prepare(query);
             this.preparedStatementMap.put(query, statement);
         }
+        
+        System.out.println("Statement: " + statement.getQueryString());
+        Set<String> ss = keys.getNames();
+        System.out.println("Keys: ");
+        for (String skey : ss)
+        	System.out.println("Name: " + skey + ", Value: " + keys.getValue(skey));
+        Object[] objarr = values.toArray();
+        System.out.println("Objarr:");
+        for (Object o : objarr) {
+        	if (o instanceof ByteBuffer) {
+        		ByteBuffer bb = (ByteBuffer) o;
+        		System.out.println("ByteArr: " + bb.array() + ", converted: " + Hex.encodeHexString(bb.array()));
+        	} else {
+            	System.out.println("Obj: " + o);
+        	}
+        }
+        BoundStatement bs = statement.bind(values.toArray());
+        System.out.println("Value 0 is null: " + bs.isNull(0));
+        Object objr = bs.getObject(0);
+        if (objr instanceof byte[]) {
+        	System.out.println("ARR: " + (byte[]) objr + ", : " + Hex.encodeHexString((byte[]) objr));
+        } else {
+        	System.out.println("TYPE: " + objr.getClass());
+        	//System.out.println("ASCHARBUFFER: " + ((ByteBuffer) objr).asCharBuffer().toString());
+        	//System.out.println("FROMHEX: " + Hex.encodeHexString(((ByteBuffer) objr).array()));
+        	System.out.println("Session: " + this.session.getClass());
+        }
+        
         ResultSet resultSet = this.session.execute(statement.bind(values.toArray()));
         List<ODataEntry> entryList = new ArrayList<>();
         Iterator<Row> iterator = resultSet.iterator();
@@ -638,7 +674,13 @@ public class CassandraDataHandler implements ODataDataHandler {
                     values.add(value == null ? null : Integer.parseInt(value));
                     break;
                 case TIMESTAMP:
-                    values.add(value == null ? null : DBUtils.getTimestamp(value));
+                	System.out.println("Value: " + value);
+                	Date date = CassandraUtils.SDF.parse(value);
+                	System.out.println("Date: " + date);
+                	Timestamp t = new Timestamp(date.getTime());
+                	System.out.println("Timestamp: " + t);
+                	values.add(value == null ? null : t);
+                    //values.add(value == null ? null : DBUtils.getTimestamp(value));
                     break;
                 case TIME:
                     values.add(value == null ? null : DBUtils.getTime(value));
@@ -914,14 +956,20 @@ public class CassandraDataHandler implements ODataDataHandler {
     }
 
     private ByteBuffer base64DecodeByteBuffer(String data) throws ODataServiceFault {
-        try {
-            byte[] buff = Base64.decodeBase64(data.getBytes(DBConstants.DEFAULT_CHAR_SET_TYPE));
+        //try {
+        	// START
+        	data = (String) CassandraUtils.oDataConversionForDBQuery(data);
+        	data = data.substring(2);
+            //byte[] buff = Base64.decodeBase64(data.getBytes(DBConstants.DEFAULT_CHAR_SET_TYPE));
+            byte[] buff = DatatypeConverter.parseHexBinary(data);
+            System.out.println("buff: " + buff + ", converted: " + Hex.encodeHexString(buff));
+            // END
             ByteBuffer result = ByteBuffer.allocate(buff.length);
             result.put(buff);
             return result;
-        } catch (UnsupportedEncodingException e) {
-            throw new ODataServiceFault(e, "Error in decoding input base64 data: " + e.getMessage());
-        }
+        //} catch (UnsupportedEncodingException e) {
+        //    throw new ODataServiceFault(e, "Error in decoding input base64 data: " + e.getMessage());
+        //}
     }
 
 }

@@ -51,6 +51,7 @@ import org.apache.olingo.commons.api.format.ContentType;
 import org.apache.olingo.commons.api.http.HttpHeader;
 import org.apache.olingo.commons.api.http.HttpMethod;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
+import org.apache.olingo.commons.core.edm.primitivetype.EdmPrimitiveTypeFactory;
 import org.apache.olingo.server.api.OData;
 import org.apache.olingo.server.api.ODataApplicationException;
 import org.apache.olingo.server.api.ODataLibraryException;
@@ -112,16 +113,20 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.ParseException;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 //import java.util.Collections;
 import java.util.HashMap;
 //import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.UUID;
 
 /**
@@ -1154,6 +1159,27 @@ public class ODataAdapter implements ServiceHandler {
         log.error(error, oDataServerError.getException());
         errorResponse.writeError(oDataServerError);
     }
+    
+    protected static <T> Calendar createDateTime(final T value, final boolean isLocal) throws EdmPrimitiveTypeException {
+        Calendar dateTimeValue;
+        if (value instanceof Date) {
+          dateTimeValue = Calendar.getInstance(isLocal ? TimeZone.getDefault() : TimeZone.getTimeZone("GMT"));
+          dateTimeValue.setTime((Date) value);
+        } else if (value instanceof Calendar) {
+          dateTimeValue = (Calendar) ((Calendar) value).clone();
+        } else if (value instanceof Long) {
+          dateTimeValue = Calendar.getInstance(isLocal ? TimeZone.getDefault() : TimeZone.getTimeZone("GMT"));
+          dateTimeValue.setTimeInMillis((Long) value);
+        } else {
+          throw new EdmPrimitiveTypeException("The value type " + value.getClass() + " is not supported.");
+        }
+        return dateTimeValue;
+    }
+    
+    protected static void appendTwoDigits(final StringBuilder result, final int number) {
+        result.append((char) ('0' + number / 10));
+        result.append((char) ('0' + number % 10));
+    }
 
     /**
      * Returns entity collection from the data entry list to use in olingo.  .
@@ -1180,7 +1206,51 @@ public class ODataAdapter implements ServiceHandler {
                 EdmEntityType entityType = this.serviceMetadata.getEdm()
                                                                .getEntityType(new FullQualifiedName(this.namespace,
                                                                                                     tableName));
-                entity.setId(new URI(EntityResponse.buildLocation(baseURL, entity, entityType.getName(), entityType)));
+                for (String key : entityType.getKeyPredicateNames()) {
+                	EdmProperty edmp = (EdmProperty) entityType.getProperty(key);
+                	String pt = entity.getProperty(key).getType();
+                	Object pv = entity.getProperty(key).getValue();
+                	if(pt.startsWith("Edm.")) {
+                        pt = pt.substring(4);
+                	}
+                	EdmPrimitiveTypeKind kind = EdmPrimitiveTypeKind.valueOf(pt);
+                	EdmPrimitiveType ept = EdmPrimitiveTypeFactory.getInstance(kind);
+                	System.out.println("EDM type: " + ept.getClass());
+                	System.out.println("Precision: " + edmp.getPrecision() + ", Scale: " + edmp.getScale());
+                	System.out.println("Max length: " + edmp.getMaxLength());
+                	
+                	final Calendar dateTimeValue = createDateTime(pv, false);
+                	StringBuilder result = new StringBuilder();
+                    final int year = dateTimeValue.get(Calendar.YEAR);
+                    appendTwoDigits(result, year / 100);
+                    appendTwoDigits(result, year % 100);
+                    result.append('-');
+                    appendTwoDigits(result, dateTimeValue.get(Calendar.MONTH) + 1); // month is zero-based
+                    result.append('-');
+                    appendTwoDigits(result, dateTimeValue.get(Calendar.DAY_OF_MONTH));
+                    result.append('T');
+                    appendTwoDigits(result, dateTimeValue.get(Calendar.HOUR_OF_DAY));
+                    result.append(':');
+                    appendTwoDigits(result, dateTimeValue.get(Calendar.MINUTE));
+                    result.append(':');
+                    appendTwoDigits(result, dateTimeValue.get(Calendar.SECOND));
+                    
+                    final int fractionalSecs = pv instanceof Timestamp ?
+                            ((Timestamp) pv).getNanos() :
+                    dateTimeValue.get(Calendar.MILLISECOND);
+                            for (int d = 100 * 1; d > 0; d /= 10) {
+                                final byte digit = (byte) (fractionalSecs % (d * 10) / d);
+                                if (digit > 0 || fractionalSecs % d > 0) {
+                                  result.append((char) ('0' + digit));
+                                }
+                        }
+                            System.out.println("Result: " + result);
+                            System.out.println("FRACTIONALSECS: " + fractionalSecs);
+                }
+                String loc = CassandraUtils.buildLocation(baseURL, entity, entityType.getName(), entityType);
+                //String loc = EntityResponse.buildLocation(baseURL, entity, entityType.getName(), entityType);
+                entity.setId(new URI(loc));
+                //entity.setId(new URI(EntityResponse.buildLocation(baseURL, entity, entityType.getName(), entityType)));
                 entity.setETag(entry.getValue("ETag"));
                 entity.setType(new FullQualifiedName(this.namespace, tableName).getFullQualifiedNameAsString());
                 entitySet.getEntities().add(entity);
@@ -1448,7 +1518,17 @@ public class ODataAdapter implements ServiceHandler {
                 Object match = readPrimitiveValue(property, param.getText());
                 Property entityValue = entity.getProperty(param.getName());
                 if (match != null) {
-                    if (match.equals(entityValue.asPrimitive())) {
+                	System.out.println("Match class: " + match.getClass());
+                	System.out.println("Ent class: " + entityValue.asPrimitive().getClass());
+                	Boolean timerr = false;
+                	if (match instanceof Timestamp && entityValue.asPrimitive() instanceof Calendar) {
+                		long match_ms = ((Timestamp) match).getTime();
+                		long enti_ms = ((Calendar) entityValue.asPrimitive()).getTimeInMillis();
+                		if (match_ms == enti_ms)
+                			timerr = true;
+                	}
+                	if (timerr || match.equals(entityValue.asPrimitive())) {
+                    //if (match.equals(entityValue.asPrimitive())) {
                         list.add(entity);
                     }
                 } else {
