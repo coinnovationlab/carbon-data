@@ -35,13 +35,13 @@ import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
-public class ServicesSecurityFilter {
+public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 	
 	private static final Log log = LogFactory.getLog(ServicesSecurityFilter.class);
 	private static String SECURITY_FILTER_TOKEN_ID = "securityFilterTokenId";
 	private static String SECURITY_FILTER_TOKEN_EXPIRE = "securityFilterTokenExpire";
 	private static String SECURITY_FILTER_TOKEN_GENERATION_TIME = "securityFilterTokenGenerationTime";
-	private static final int MAX_EXPIRE = Integer.parseInt(authenticatorConfig(OAUTH2SSOAuthenticatorConstants.MAX_EXPIRE_SEC_TOKEN));
+	private static final int MAX_EXPIRE = Integer.parseInt(ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.MAX_EXPIRE_SEC_TOKEN));
 	/**
      * 
      * Retrieve the apikey parameter 
@@ -77,7 +77,8 @@ public class ServicesSecurityFilter {
      * @param tenantDomain
      * @return
      */
-    public static boolean securityFilter(HttpServletRequest request, HttpServletResponse resp, String tenantDomain) {
+    @Override
+    public boolean securityFilter(HttpServletRequest request, HttpServletResponse resp, String tenantDomain) {
     	boolean isAllowed = false;
     	try{
 	    	String authToken = getAuthHeaderToken(request);
@@ -117,10 +118,10 @@ public class ServicesSecurityFilter {
     private static boolean checkAACUserOfApiKey(String apiKey, String oDataTenant, HttpServletRequest request, HttpServletResponse resp) {
     	boolean checkApiKey = false;
     	try {
-    	String urlApiKeyCheck = authenticatorConfig(OAUTH2SSOAuthenticatorConstants.APIKEY_CHECK_URL)+ "/"+apiKey; 
+    	String urlApiKeyCheck = ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.APIKEY_CHECK_URL)+ "/"+apiKey; 
     	Map <String,Object> response = handleGetRequest(urlApiKeyCheck,null);
     	if(response != null) {
-    		String username = (String) response.get(authenticatorConfig(OAUTH2SSOAuthenticatorConstants.USER_NAME_FIELD));
+    		String username = (String) response.get(ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.USER_NAME_FIELD));
     		if(username != null ) {
 				String [] usernameArray = username.split("@");
 				int length = usernameArray.length;
@@ -165,10 +166,10 @@ public class ServicesSecurityFilter {
     private static boolean checkAACUserOfAuthToken(String authToken, String oDataTenant, HttpServletRequest request, HttpServletResponse resp) {
     	boolean checkAuthToken = false;
     	try {
-	    	String urlTokenApi = authenticatorConfig(OAUTH2SSOAuthenticatorConstants.CHECK_TOKEN_ENDPOINT_URL); 
+	    	String urlTokenApi = ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.CHECK_TOKEN_ENDPOINT_URL); 
 	    	Map <String,Object> response = handleGetRequest(urlTokenApi,authToken);
 			if(response != null) {
-				String username = (String) response.get(authenticatorConfig(OAUTH2SSOAuthenticatorConstants.USER_NAME_FIELD));
+				String username = (String) response.get(ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.USER_NAME_FIELD));
 				if(username != null) {
 					String [] usernameArray = username.split("@");
 					int length = usernameArray.length;
@@ -180,7 +181,7 @@ public class ServicesSecurityFilter {
 					if(existsInDSS) {
 						return true;
 					}else {
-						String urlRolesApi =  authenticatorConfig(OAUTH2SSOAuthenticatorConstants.ROLES_OF_TOKEN_URL);
+						String urlRolesApi =  ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.ROLES_OF_TOKEN_URL);
 						List<Map<String,Object>> rolesListResp =  handleGetRoles(urlRolesApi,authToken,request,resp);
 						boolean roleAccordingContext = elaborateRolesList(rolesListResp,oDataTenant);
 						if(roleAccordingContext) {
@@ -199,7 +200,7 @@ public class ServicesSecurityFilter {
     
     private static boolean compareContext(String userContext) {
     	boolean theyMatch = false;
-    	String definedContext = authenticatorConfig(OAUTH2SSOAuthenticatorConstants.ROLE_CONTEXT);
+    	String definedContext = ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.ROLE_CONTEXT);
     	theyMatch = definedContext.equalsIgnoreCase(userContext);
     	log.info("comparing context: "+ " defined:"+definedContext+" serviceTenantContext: "+userContext+" " +theyMatch);
     	return theyMatch;
@@ -221,6 +222,7 @@ public class ServicesSecurityFilter {
 			e.printStackTrace();
 			return exists;
 		}
+        log.info("User "+username+" exists in DSS. Tenant: "+tenantDomain);
     	return exists;
     }
     
@@ -267,23 +269,11 @@ public class ServicesSecurityFilter {
     	return null;
     }
     
-    private static String authenticatorConfig(String paramName) {
-    	AuthenticatorsConfiguration authenticatorsConfiguration = AuthenticatorsConfiguration.getInstance();
-        AuthenticatorsConfiguration.AuthenticatorConfig authenticatorConfig =
-                authenticatorsConfiguration.getAuthenticatorConfig(OAUTH2SSOAuthenticatorConstants.AUTHENTICATOR_NAME);
-        String paramValue = "";
-
-        if (authenticatorConfig != null) {
-            Map<String, String> configParameters = authenticatorConfig.getParameters();
-            paramValue = configParameters.get(paramName);
-        }
-        return paramValue;
-    }
-    
+   
     private static boolean elaborateRolesList(List<Map<String,Object>> rolesListResp, String serviceTenant) {
     	boolean containsProperRole = false;
-    	String definedContext = authenticatorConfig(OAUTH2SSOAuthenticatorConstants.ROLE_CONTEXT);
-    	String definedPrefix = authenticatorConfig(OAUTH2SSOAuthenticatorConstants.ROLE_PREFIX);
+    	String definedContext = ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.ROLE_CONTEXT);
+    	String definedPrefix = ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.ROLE_PREFIX);
     	int lngth = definedPrefix.length();
     	Map<String,Object> record;
     	String context,role,no_prefix;
@@ -311,10 +301,10 @@ public class ServicesSecurityFilter {
     	String clientToken = "";
     	boolean hasExpired = hasExpired(securityTokenCookieExpiration,securityTokenCookieGenerationTime);
     	if (securityTokenCookie == null || hasExpired) {
-	    	String url_token = authenticatorConfig(OAUTH2SSOAuthenticatorConstants.TOKEN_URL);
+	    	String url_token = ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.TOKEN_URL);
 	    	MultiValueMap<String,String> dataToBeSent = new LinkedMultiValueMap<String,String>();
-	    	dataToBeSent.add("client_id", authenticatorConfig(OAUTH2SSOAuthenticatorConstants.CLIENT_ID));
-	    	dataToBeSent.add("client_secret", authenticatorConfig(OAUTH2SSOAuthenticatorConstants.CLIENT_SECRET));
+	    	dataToBeSent.add("client_id", ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.CLIENT_ID));
+	    	dataToBeSent.add("client_secret", ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.CLIENT_SECRET));
 	    	dataToBeSent.add("grant_type", "client_credentials");
 	    	
 	    	HttpHeaders headers = new HttpHeaders();

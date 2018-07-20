@@ -24,6 +24,8 @@ import org.wso2.carbon.dataservices.core.odata.ODataServiceFault;
 import org.wso2.carbon.dataservices.core.odata.ODataServiceHandler;
 import org.wso2.carbon.dataservices.core.odata.ODataServiceRegistry;
 import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilter;
+import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilterInterface;
+import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilterUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -71,7 +73,9 @@ public class ODataEndpoint {
                     log.debug(serviceRootPath + " Service invoked.");
                 }
                 boolean isPublicOData = handler.isPublicOdata();
-                boolean isUserAllowed = ServicesSecurityFilter.securityFilter(request,response,tenantDomain);
+                ServicesSecurityFilterUtils secureUtils = new ServicesSecurityFilterUtils();
+                ServicesSecurityFilterInterface security = secureUtils.initializeSecurityFilter();
+                boolean isUserAllowed = security.securityFilter(request,response,tenantDomain);
                 if(isPublicOData || (!isPublicOData && isUserAllowed)) {
                 	handler.process(request, response, serviceRootPath);
                 }else {
@@ -92,7 +96,9 @@ public class ODataEndpoint {
             if (log.isDebugEnabled()) {
                 log.debug("Bad Request invoked. :" + e.getMessage());
             }
-        } finally {
+        } catch (Exception e) {
+			e.printStackTrace();
+		} finally {
             if (log.isDebugEnabled()) {
                 log.debug("OData Response send from DSS: Response body - " + response.toString() + ", ThreadID - " +
                           Thread.currentThread().getId());

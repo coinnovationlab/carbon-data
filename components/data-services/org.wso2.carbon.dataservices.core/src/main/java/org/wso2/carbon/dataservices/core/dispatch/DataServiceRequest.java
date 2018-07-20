@@ -34,6 +34,8 @@ import org.wso2.carbon.dataservices.core.engine.CallableRequest;
 import org.wso2.carbon.dataservices.core.engine.DataService;
 import org.wso2.carbon.dataservices.core.engine.ParamValue;
 import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilter;
+import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilterInterface;
+import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilterUtils;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -99,14 +101,16 @@ public abstract class DataServiceRequest {
 		String tenantDomain = MultitenantUtils.getTenantDomain(obj);
 		
         if(!isOdataPublic) {
-        	boolean isUserAllowed = ServicesSecurityFilter.securityFilter(obj,response,tenantDomain);
+        	ServicesSecurityFilterUtils secureUtils = new ServicesSecurityFilterUtils();
+        	ServicesSecurityFilterInterface security = secureUtils.initializeSecurityFilter();
+			boolean isUserAllowed = security.securityFilter(obj,response,tenantDomain);
         	if(!isUserAllowed) {
         		throw new DataServiceFault(FaultCodes.UNAUTHORIZED_ERROR,"The data service request named '" + requestName + 
     					"' need the proper authorization in order to be accessed.");
         	}
+        	this.disableStreaming = this.dataService.getCallableRequest(
+    				this.requestName).isDisableStreamingEffective();
         }
-		this.disableStreaming = this.dataService.getCallableRequest(
-				this.requestName).isDisableStreamingEffective();
 	}
 	
 	public static DataServiceRequest createDataServiceRequest(
