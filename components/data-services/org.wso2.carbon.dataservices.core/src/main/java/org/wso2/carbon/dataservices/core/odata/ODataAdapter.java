@@ -24,19 +24,15 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-//import org.apache.olingo.commons.api.Constants;
 import org.apache.olingo.commons.api.data.Entity;
 import org.apache.olingo.commons.api.data.EntityCollection;
 import org.apache.olingo.commons.api.data.Link;
 import org.apache.olingo.commons.api.data.Property;
 import org.apache.olingo.commons.api.data.ValueType;
 import org.apache.olingo.commons.api.edm.EdmBindingTarget;
-//import org.apache.olingo.commons.api.edm.EdmElement;
 import org.apache.olingo.commons.api.edm.EdmEntitySet;
 import org.apache.olingo.commons.api.edm.EdmEntityType;
 import org.apache.olingo.commons.api.edm.EdmKeyPropertyRef;
-import org.apache.olingo.commons.api.edm.EdmNavigationProperty;
-//import org.apache.olingo.commons.api.edm.EdmNavigationPropertyBinding;
 import org.apache.olingo.commons.api.edm.EdmPrimitiveType;
 import org.apache.olingo.commons.api.edm.EdmPrimitiveTypeException;
 import org.apache.olingo.commons.api.edm.EdmPrimitiveTypeKind;
@@ -51,7 +47,6 @@ import org.apache.olingo.commons.api.format.ContentType;
 import org.apache.olingo.commons.api.http.HttpHeader;
 import org.apache.olingo.commons.api.http.HttpMethod;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
-import org.apache.olingo.commons.core.edm.primitivetype.EdmPrimitiveTypeFactory;
 import org.apache.olingo.server.api.OData;
 import org.apache.olingo.server.api.ODataApplicationException;
 import org.apache.olingo.server.api.ODataLibraryException;
@@ -69,9 +64,7 @@ import org.apache.olingo.server.api.uri.UriResourceEntitySet;
 import org.apache.olingo.server.api.uri.UriResourceFunction;
 import org.apache.olingo.server.api.uri.UriResourceNavigation;
 import org.apache.olingo.server.api.uri.queryoption.CountOption;
-//import org.apache.olingo.server.api.uri.queryoption.ExpandItem;
-//import org.apache.olingo.server.api.uri.queryoption.ExpandOption;
-//import org.apache.olingo.server.api.uri.queryoption.FilterOption;
+import org.apache.olingo.server.api.uri.queryoption.FilterOption;
 import org.apache.olingo.server.api.uri.queryoption.OrderByOption;
 import org.apache.olingo.server.api.uri.queryoption.SkipOption;
 import org.apache.olingo.server.api.uri.queryoption.SkipTokenOption;
@@ -102,10 +95,6 @@ import org.wso2.carbon.dataservices.common.DBConstants;
 import org.wso2.carbon.dataservices.core.DataServiceFault;
 import org.wso2.carbon.dataservices.core.engine.DataEntry;
 import org.wso2.carbon.dataservices.core.odata.DataColumn.ODataDataType;
-//import org.wso2.carbon.dataservices.core.odata.expression.CassandraFilterExpressionVisitor;
-//import org.wso2.carbon.dataservices.core.odata.expression.ExpressionVisitorImpl;
-//import org.wso2.carbon.dataservices.core.odata.expression.operand.TypedOperand;
-//import org.wso2.carbon.dataservices.core.odata.expression.operand.VisitorOperand;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -119,14 +108,10 @@ import java.text.ParseException;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
-//import java.util.Collections;
 import java.util.HashMap;
-//import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.TimeZone;
 import java.util.UUID;
 
 /**
@@ -237,74 +222,13 @@ public class ODataAdapter implements ServiceHandler {
 					}
                 }
             }
-            /*
-            ExpandOption expandOption = uriInfo.getExpandOption();
-            if (expandOption != null) {
-                // retrieve the EdmNavigationProperty from the expand expression.
-                EdmNavigationProperty edmNavigationProperty = null;
-                List<ExpandItem> expandItems = expandOption.getExpandItems();
-                for (ExpandItem expandItem : expandItems) {
-                    if (expandItem.isStar()) {
-                        List<EdmNavigationPropertyBinding> bindings = edmEntitySet.getNavigationPropertyBindings();
-                        // check if navigation bindings exist.
-                        if (!bindings.isEmpty()) {
-                            EdmNavigationPropertyBinding binding = bindings.get(0);
-                            EdmElement property = edmEntitySet.getEntityType().getProperty(binding.getPath());
-                            if (property instanceof EdmNavigationProperty) {
-                                edmNavigationProperty = (EdmNavigationProperty) property;
-                            }
-                        }
-                    } else {
-                        UriResource uriResource = expandItem.getResourcePath().getUriResourceParts().get(0);
-                        if (uriResource instanceof UriResourceNavigation) {
-                            edmNavigationProperty = ((UriResourceNavigation) uriResource).getProperty();
-                        }
-                    }
-                    // handle $expand.
-                    if (edmNavigationProperty != null) {
-                        String navPropName = edmNavigationProperty.getName();
-                        List<Entity> entityList;
-                        if (entitySet != null) {
-                            entityList = entitySet.getEntities();
-                        } else {
-                            entityList = Collections.singletonList(entity);
-                        }
-                        for (Entity entityObject : entityList) {
-                            Link link = new Link();
-                            link.setTitle(navPropName);
-                            link.setType(Constants.ENTITY_NAVIGATION_LINK_TYPE);
-                            link.setRel(Constants.NS_ASSOCIATION_LINK_REL + navPropName);
-                            if (edmNavigationProperty.isCollection()) {
-                                EntityCollection expandEntityCollection = getNavigableEntitySet(this.serviceMetadata,
-                                                                                                entityObject,
-                                                                                                edmNavigationProperty,
-                                                                                                baseURL);
-                                link.setInlineEntitySet(expandEntityCollection);
-                                if (expandEntityCollection != null) {
-                                    link.setHref(expandEntityCollection.getId().toASCIIString());
-                                }
-                            } else {
-                                Entity expandEntity = getNavigableEntity(serviceMetadata, entityObject,
-                                                                         edmNavigationProperty, baseURL);
-                                link.setInlineEntity(expandEntity);
-                                if (expandEntity != null) {
-                                    link.setHref(expandEntity.getId().toASCIIString());
-                                }
-                            }
-                            // set the link containing the expanded data to the current entity.
-                            entityObject.getNavigationLinks().add(link);
-                        }
-                    }
-                }
-            }
-            */
             if (!request.getNavigations().isEmpty() && entity != null) {
                 for (UriResourceNavigation nav : request.getNavigations()) {
                     if (nav.isCollection()) {
-                        entitySet = getNavigableEntitySet(this.serviceMetadata, entity, nav.getProperty(), baseURL);
+                        entitySet = getNavigableEntitySet(this.serviceMetadata, entity, nav, baseURL);
                     } else {
                         parentEntity = entity;
-                        entity = getNavigableEntity(serviceMetadata, parentEntity, nav.getProperty(), baseURL);
+                        entity = getNavigableEntity(serviceMetadata, parentEntity, nav, baseURL);
                     }
                     entityType = nav.getProperty().getType();
                 }
@@ -315,70 +239,45 @@ public class ODataAdapter implements ServiceHandler {
             details.entityType = entityType;
             // According to the odatav4 spec we have to perform these queries according to the following order
             
-            //EdmEntitySet edmEntitySet = getEdmEntitySet(uriInfo);
-            //FilterOption filterOption = uriInfo.getFilterOption();
+            edmEntitySet = getEdmEntitySet(uriInfo);
+            FilterOption filterOption = uriInfo.getFilterOption();
             CountOption countOption = uriInfo.getCountOption();
             OrderByOption orderByOption = uriInfo.getOrderByOption();
             SkipOption skipOption = uriInfo.getSkipOption();
             TopOption topOption = uriInfo.getTopOption();
             SkipTokenOption skipTokenOption = uriInfo.getSkipTokenOption();
-            // non vogliamo filter implementato in memoria, ma al momento conservare questo pezzo commentato
             /*if (filterOption != null) {
-                //QueryHandler.applyFilterSystemQuery(filterOption, details.entitySet, edmEntitySet);
-                try { 
-                	EntityCollection ec = details.entitySet;
-                    final Iterator<Entity> iter = ec.getEntities().iterator();
-                    Entity ent;
-                    while (iter.hasNext()) {
-                    	ent = iter.next();
-                        final VisitorOperand operand =
-                                filterOption.getExpression().accept(new CassandraFilterExpressionVisitor(ent, edmEntitySet));
-                        final TypedOperand typedOperand = operand.asTypedOperand();
-                        if (typedOperand.is(ODataConstants.primitiveBoolean)) {
-                            if (Boolean.FALSE.equals(typedOperand.getTypedValue(Boolean.class))) {
-                                iter.remove();
-                                System.out.println("Removed.");
-                            }
-                        } else {
-                            throw new ODataApplicationException(
-                                    "Invalid filter expression. Filter expressions must return a value of " +
-                                    "type Edm.Boolean", HttpStatusCode.BAD_REQUEST.getStatusCode(), Locale.ROOT);
-                        }
-                    }
-
-                } catch (ExpressionVisitException e) {
-                    throw new ODataApplicationException("Exception in filter evaluation",
-                                                        HttpStatusCode.INTERNAL_SERVER_ERROR.getStatusCode(), Locale.ROOT);
-                }
-            }*/
+            	QueryHandler.applyFilterSystemQuery(filterOption, details.entitySet, edmEntitySet);
+        	}*/
             if (countOption != null) {
-            	// can't we just extract the number of rows with details.entitySet.getEntities().size()?
             	int countRecords = getCountCollection(uriInfo,edmEntitySet.getName());
                 //QueryHandler.applyCountSystemQueryOption(countOption, details.entitySet);
                 QueryHandler.applyCountOption(countOption, entitySet, countRecords);
                 
-                // this is only needed for Cassandra, how to make it execute only for Cassandra?
-                if (details.entitySet != null && details.entitySet.getEntities() != null) {
-                	// should be moved up
-                	int entity_count = details.entitySet.getEntities().size(); // gets the number of rows
-                	details.entitySet.setCount(new Integer(entity_count)); // sets the count it just obtained
+                if (this.dataHandler instanceof CassandraDataHandler) { // only has to execute for Cassandra, since Cassandra would otherwise have to repeat the query
+                	if (details.entitySet != null && details.entitySet.getEntities() != null) {
+                		int entity_count = details.entitySet.getEntities().size(); // gets the number of rows
+                		details.entitySet.setCount(new Integer(entity_count)); // sets the count it just obtained
+                	}
                 }
             }
             
-            if (orderByOption != null) {
-                QueryHandler.applyOrderByOption(orderByOption, details.entitySet, edmEntitySet);
-            }
-            if (skipOption != null) {
-                QueryHandler.applySkipSystemQueryHandler(skipOption, details.entitySet);
-            }
-            if (topOption != null) {
-                QueryHandler.applyTopSystemQueryOption(topOption, details.entitySet);
-            }
-            if (skipTokenOption != null) {
-                int pageSize = request.getOdata().createPreferences(request.getODataRequest()
-                                                                           .getHeaders(HttpHeader.PREFER))
-                                      .getMaxPageSize();
-                QueryHandler.applyServerSidePaging(skipTokenOption, details.entitySet, edmEntitySet, baseURL, pageSize);
+            if (this.dataHandler instanceof CassandraDataHandler) { // only has to execute for Cassandra, since Cassandra does not natively support skip and orderby, and top has to execute after those two
+            	if (orderByOption != null) {
+            		QueryHandler.applyOrderByOption(orderByOption, details.entitySet, edmEntitySet);
+            	}
+            	if (skipOption != null) {
+            		QueryHandler.applySkipSystemQueryHandler(skipOption, details.entitySet);
+            	}
+            	if (topOption != null) {
+            		QueryHandler.applyTopSystemQueryOption(topOption, details.entitySet);
+            	}
+            	if (skipTokenOption != null) {
+            		int pageSize = request.getOdata().createPreferences(request.getODataRequest()
+            																	.getHeaders(HttpHeader.PREFER))
+            																	.getMaxPageSize();
+            		QueryHandler.applyServerSidePaging(skipTokenOption, details.entitySet, edmEntitySet, baseURL, pageSize);
+            	}
             }
             
             return details;
@@ -528,8 +427,11 @@ public class ODataAdapter implements ServiceHandler {
         String baseURL = request.getODataRequest().getRawBaseUri();
         try {
             Entity created = createEntityInTable(edmEntitySet.getEntityType(), entity);
-            entity.setId(new URI(EntityResponse.buildLocation(baseURL, created, edmEntitySet.getName(),
+            // As of 2018/07/24, the EntityResponse.buildLocation method included by the pom is bugged, see ODataUtils.buildLocation for more information
+            entity.setId(new URI(ODataUtils.buildLocation(baseURL, created, edmEntitySet.getName(),
                                                               edmEntitySet.getEntityType())));
+            //entity.setId(new URI(EntityResponse.buildLocation(baseURL, created, edmEntitySet.getName(),
+                    //edmEntitySet.getEntityType())));
             response.writeCreatedEntity(edmEntitySet, created);
         } catch (ODataServiceFault | SerializerException | URISyntaxException | EdmPrimitiveTypeException e) {
             response.writeNotModified();
@@ -1159,27 +1061,6 @@ public class ODataAdapter implements ServiceHandler {
         log.error(error, oDataServerError.getException());
         errorResponse.writeError(oDataServerError);
     }
-    
-    protected static <T> Calendar createDateTime(final T value, final boolean isLocal) throws EdmPrimitiveTypeException {
-        Calendar dateTimeValue;
-        if (value instanceof Date) {
-          dateTimeValue = Calendar.getInstance(isLocal ? TimeZone.getDefault() : TimeZone.getTimeZone("GMT"));
-          dateTimeValue.setTime((Date) value);
-        } else if (value instanceof Calendar) {
-          dateTimeValue = (Calendar) ((Calendar) value).clone();
-        } else if (value instanceof Long) {
-          dateTimeValue = Calendar.getInstance(isLocal ? TimeZone.getDefault() : TimeZone.getTimeZone("GMT"));
-          dateTimeValue.setTimeInMillis((Long) value);
-        } else {
-          throw new EdmPrimitiveTypeException("The value type " + value.getClass() + " is not supported.");
-        }
-        return dateTimeValue;
-    }
-    
-    protected static void appendTwoDigits(final StringBuilder result, final int number) {
-        result.append((char) ('0' + number / 10));
-        result.append((char) ('0' + number % 10));
-    }
 
     /**
      * Returns entity collection from the data entry list to use in olingo.  .
@@ -1206,51 +1087,12 @@ public class ODataAdapter implements ServiceHandler {
                 EdmEntityType entityType = this.serviceMetadata.getEdm()
                                                                .getEntityType(new FullQualifiedName(this.namespace,
                                                                                                     tableName));
-                for (String key : entityType.getKeyPredicateNames()) {
-                	EdmProperty edmp = (EdmProperty) entityType.getProperty(key);
-                	String pt = entity.getProperty(key).getType();
-                	Object pv = entity.getProperty(key).getValue();
-                	if(pt.startsWith("Edm.")) {
-                        pt = pt.substring(4);
-                	}
-                	EdmPrimitiveTypeKind kind = EdmPrimitiveTypeKind.valueOf(pt);
-                	EdmPrimitiveType ept = EdmPrimitiveTypeFactory.getInstance(kind);
-                	System.out.println("EDM type: " + ept.getClass());
-                	System.out.println("Precision: " + edmp.getPrecision() + ", Scale: " + edmp.getScale());
-                	System.out.println("Max length: " + edmp.getMaxLength());
-                	
-                	final Calendar dateTimeValue = createDateTime(pv, false);
-                	StringBuilder result = new StringBuilder();
-                    final int year = dateTimeValue.get(Calendar.YEAR);
-                    appendTwoDigits(result, year / 100);
-                    appendTwoDigits(result, year % 100);
-                    result.append('-');
-                    appendTwoDigits(result, dateTimeValue.get(Calendar.MONTH) + 1); // month is zero-based
-                    result.append('-');
-                    appendTwoDigits(result, dateTimeValue.get(Calendar.DAY_OF_MONTH));
-                    result.append('T');
-                    appendTwoDigits(result, dateTimeValue.get(Calendar.HOUR_OF_DAY));
-                    result.append(':');
-                    appendTwoDigits(result, dateTimeValue.get(Calendar.MINUTE));
-                    result.append(':');
-                    appendTwoDigits(result, dateTimeValue.get(Calendar.SECOND));
-                    
-                    final int fractionalSecs = pv instanceof Timestamp ?
-                            ((Timestamp) pv).getNanos() :
-                    dateTimeValue.get(Calendar.MILLISECOND);
-                            for (int d = 100 * 1; d > 0; d /= 10) {
-                                final byte digit = (byte) (fractionalSecs % (d * 10) / d);
-                                if (digit > 0 || fractionalSecs % d > 0) {
-                                  result.append((char) ('0' + digit));
-                                }
-                        }
-                            System.out.println("Result: " + result);
-                            System.out.println("FRACTIONALSECS: " + fractionalSecs);
-                }
-                String loc = CassandraUtils.buildLocation(baseURL, entity, entityType.getName(), entityType);
-                //String loc = EntityResponse.buildLocation(baseURL, entity, entityType.getName(), entityType);
-                entity.setId(new URI(loc));
-                //entity.setId(new URI(EntityResponse.buildLocation(baseURL, entity, entityType.getName(), entityType)));
+                String location = "";
+                
+                // As of 2018/07/24, the EntityResponse.buildLocation method included by the pom is bugged, see ODataUtils.buildLocation for more information
+                location = ODataUtils.buildLocation(baseURL, entity, entityType.getName(), entityType);
+                //location = EntityResponse.buildLocation(baseURL, entity, entityType.getName(), entityType);
+                entity.setId(new URI(location));
                 entity.setETag(entry.getValue("ETag"));
                 entity.setType(new FullQualifiedName(this.namespace, tableName).getFullQualifiedNameAsString());
                 entitySet.getEntities().add(entity);
@@ -1518,17 +1360,15 @@ public class ODataAdapter implements ServiceHandler {
                 Object match = readPrimitiveValue(property, param.getText());
                 Property entityValue = entity.getProperty(param.getName());
                 if (match != null) {
-                	System.out.println("Match class: " + match.getClass());
-                	System.out.println("Ent class: " + entityValue.asPrimitive().getClass());
-                	Boolean timerr = false;
+                	Boolean timestamp_key_equals = false; // necessary in case the key is a Timestamp
+                	// In case of Timestamp as key, the filter is Timestamp, but the corresponding column read from the database is Calendar, so they have to be converted 
                 	if (match instanceof Timestamp && entityValue.asPrimitive() instanceof Calendar) {
-                		long match_ms = ((Timestamp) match).getTime();
+                		long match_ms = ((Timestamp) match).getTime(); // converts to milliseconds for easier comparisons
                 		long enti_ms = ((Calendar) entityValue.asPrimitive()).getTimeInMillis();
                 		if (match_ms == enti_ms)
-                			timerr = true;
+                			timestamp_key_equals = true;
                 	}
-                	if (timerr || match.equals(entityValue.asPrimitive())) {
-                    //if (match.equals(entityValue.asPrimitive())) {
+                	if (timestamp_key_equals || match.equals(entityValue.asPrimitive())) {
                         list.add(entity);
                     }
                 } else {
@@ -1695,10 +1535,10 @@ public class ODataAdapter implements ServiceHandler {
      * @throws ODataServiceFault
      */
     private EntityCollection getNavigableEntitySet(ServiceMetadata metadata, Entity parentEntity,
-    		EdmNavigationProperty edmNavigationProperty, String url)
+    												UriResourceNavigation navigation, String url)
             throws ODataServiceFault, ODataApplicationException {
         EdmEntityType type = metadata.getEdm().getEntityType(new FullQualifiedName(parentEntity.getType()));
-        String linkName = edmNavigationProperty.getName();
+        String linkName = navigation.getProperty().getName();
         EntityCollection results;
         List<Property> properties = new ArrayList<>();
         Map<String, EdmProperty> propertyMap = new HashMap<>();
@@ -1731,10 +1571,10 @@ public class ODataAdapter implements ServiceHandler {
      * @throws ODataServiceFault
      * @see ODataDataHandler#getNavigationProperties()
      */
-    private Entity getNavigableEntity(ServiceMetadata metadata, Entity parentEntity, EdmNavigationProperty edmNavigationProperty,
+    private Entity getNavigableEntity(ServiceMetadata metadata, Entity parentEntity, UriResourceNavigation navigation,
                                       String baseUrl) throws ODataApplicationException, ODataServiceFault {
         EdmEntityType type = metadata.getEdm().getEntityType(new FullQualifiedName(parentEntity.getType()));
-        String linkName = edmNavigationProperty.getName();
+        String linkName = navigation.getProperty().getName();
         List<Property> properties = new ArrayList<>();
         Map<String, EdmProperty> propertyMap = new HashMap<>();
         for (NavigationKeys keys : this.dataHandler.getNavigationProperties().get(linkName)
@@ -1837,8 +1677,13 @@ public class ODataAdapter implements ServiceHandler {
                     break;
                 case DECIMAL:
                     property.setType(EdmPrimitiveTypeKind.Decimal.getFullQualifiedName());
-                    property.setPrecision(Float.toString(Float.MAX_VALUE).length()); // Cassandra: maximum number of digits a float is capable of having
-                    property.setScale(Float.toString(Float.MAX_VALUE).length()); // Cassandra: make it match maximum number of digits
+                    if (this.dataHandler instanceof CassandraDataHandler) { // for Cassandra, otherwise it will give error if tables contain columns of decimal type
+                    	property.setPrecision(Float.toString(Float.MAX_VALUE).length()); // maximum number of digits a float is capable of having
+                        property.setScale(Float.toString(Float.MAX_VALUE).length()); // make it match maximum number of digits
+                    } else {
+                    	property.setPrecision(column.getPrecision());
+                    	property.setScale(column.getScale());
+                    }
                     property.setNullable(column.isNullable());
                     property.setMaxLength(column.getMaxLength());
                     break;
@@ -1851,7 +1696,7 @@ public class ODataAdapter implements ServiceHandler {
                     break;
                 case TIMEOFDAY:
                 	property.setType(EdmPrimitiveTypeKind.TimeOfDay.getFullQualifiedName());
-                    property.setPrecision(3); // Cassandra: Time is converted to Calendar, which stores date and time down to the milliseconds
+                    property.setPrecision(3); // for Cassandra: Time is converted to Calendar, which stores date and time down to the milliseconds
                     property.setNullable(column.isNullable());
                     property.setMaxLength(column.getMaxLength());
                     break;
@@ -2050,9 +1895,14 @@ public class ODataAdapter implements ServiceHandler {
                 break;
             case TIMEOFDAY:
             	propertyType = EdmPrimitiveTypeKind.TimeOfDay.getFullQualifiedName().getFullQualifiedNameAsString();
-            	// Converts the time to nanoseconds and afterwards to a Calendar type.
-            	// The previous implementation caused an exception for Cassandra.
-                value = paramValue == null ? null : new Time(LocalTime.ofNanoOfDay(Long.parseLong(paramValue)).toString()).getAsCalendar();
+            	if (paramValue == null) {
+            		value = null;
+            	} else if (this.dataHandler instanceof CassandraDataHandler){ // Cassandra returns the time in nanoseconds
+            		// Converts to Time and afterwards to Calendar.
+            		value = new Time(LocalTime.ofNanoOfDay(Long.parseLong(paramValue)).toString()).getAsCalendar();
+            	} else {
+            		value = ConverterUtil.convertToTime(paramValue).getAsCalendar();
+            	}
                 break;
             case INT64:
                 propertyType = EdmPrimitiveTypeKind.Int64.getFullQualifiedName().getFullQualifiedNameAsString();
