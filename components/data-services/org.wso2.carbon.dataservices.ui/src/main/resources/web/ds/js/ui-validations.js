@@ -1341,22 +1341,55 @@ function changeDataSourceType (obj, document) {
 
 
 }
-
+var selectedDS = "";
+var driverClassName = "";
+var urlValue = "";
+var usernameValue = "";
+var passwValue = "";
+var isOData = false;
 function reloadOdataConfig (createOp,driver,url,username,passw) {
-	var selectedType =  document.getElementById('datasourceType')[document.getElementById('datasourceType').selectedIndex].value;
-	var selectedDS = document.getElementById('datasourceId').value;
-	var driverClassName = document.getElementById(driver).value;
-	var urlValue = document.getElementById(url).value;
-	var usernameValue = document.getElementById(username).value;
-	var passwValue = document.getElementById(passw).value;
-	var isOData = document.getElementById("isOData").checked;
+	selectedDS = document.getElementById('datasourceId').value;
+	driverClassName = document.getElementById(driver).value;
+	urlValue = document.getElementById(url).value;
+	usernameValue = document.getElementById(username).value;
+	passwValue = document.getElementById(passw).value;
+	isOData = document.getElementById("isOData").checked;
 	if (isOData){
-		location.href = 'addDataSource.jsp?selectedType=RDBMS&configId='+selectedDS+'&ds=edit&flag=edit_changed'+
-			'&'+driver+'='+driverClassName+'&'+url+'='+urlValue+'&'+username+'='+usernameValue+'&'+passw+'='+passwValue+'&isOData='+isOData;
+		testConnODataCheck(driver,url,username,passw);
 	}
 }
 
-function select_unselect (type) {
+function displayMsgODataCheck(msg) {
+	var successMsg  =  new RegExp("^Database connection is successful with driver class");
+	if (msg.search(successMsg)==-1) //if match failed
+	{
+		CARBON.showErrorDialog(msg);
+	} else {
+		location.href = 'addDataSource.jsp?configId='+selectedDS+'&ds=edit&flag=edit'+
+			'&driverClassName='+driverClassName+'&url='+urlValue+'&username='+usernameValue+'&password='+passwValue+'&isOData='+isOData;
+	}
+}
+
+function testConnODataCheck(driver1,url1,username1,passw1) {
+    var driver = document.getElementById(driver1).value;
+    var jdbcUrl = document.getElementById(url1).value;
+    var userName = document.getElementById(username1).value;
+    var password = document.getElementById(passw1).value;
+
+
+    var useAlias = document.getElementById('useSecretAliasValue').value;
+    if (useAlias == 'true') {
+    	if (document.getElementById('pwdalias') != null) {
+    		var pwdalias = document.getElementById('pwdalias').value;
+    	}
+        var url = 'connection_test_ajaxprocessor.jsp?driver=' + encodeURIComponent(driver) + '&jdbcUrl=' + encodeURIComponent(jdbcUrl) + '&userName=' + encodeURIComponent(userName) + '&password=' + encodeURIComponent(password) + '&passwordAlias=' +pwdalias ;
+    } else {
+    	var url = 'connection_test_ajaxprocessor.jsp?driver=' + encodeURIComponent(driver) + '&jdbcUrl=' + encodeURIComponent(jdbcUrl) + '&userName=' + encodeURIComponent(userName) + '&password=' + encodeURIComponent(password);
+    }
+    jQuery('#connectionTestMsgDiv').load(url, displayMsgODataCheck);
+}
+
+function select_unselect (type,forced) {
 	var all_chkb = document.getElementsByName(type);
 	var nr_checked=0;
 	for(var i=0;i<all_chkb.length;i++) {
@@ -1365,6 +1398,9 @@ function select_unselect (type) {
 		}
 	}
 	var checked = nr_checked == all_chkb.length ? false : true;
+	if(forced){ // force selection of tables and the population of tables list inside columns's block on first time enabling OData (by default select all tbls)
+		checked = true;
+	}
 	for(var i=0;i<all_chkb.length;i++) {
 		all_chkb[i].checked=checked;
 		if(type=="tablesOdata"){ // when selecting massively the tables need also to update the combobox of tables/views inside columns config
@@ -2022,10 +2058,13 @@ function showAdvancedConfigODataTables() {
 	  openTabContent(null, "Tables0");
 	}
 
-function showAdvancedConfigODataTablesColumns(){
+function showAdvancedConfigODataTablesColumns(createView){
 	  var advODataSymbolMax =  document.getElementById('advODataColumnsSymbolMax');
 	  var advancedConfigFields = document.getElementById('advancedConfigODataTablesColumns');
 	  if(advancedConfigFields.style.display == 'none') {
+		  if(createView){
+			  select_unselect("tablesOdata",true); // force selection of tables and the population of tables list inside columns's block on first time enabling OData (by default select all tbls)
+		  }
 		  advODataSymbolMax.setAttribute('style','background-image:url(images/minus.gif);');
 	    advancedConfigFields.style.display = '';
 	  } else {

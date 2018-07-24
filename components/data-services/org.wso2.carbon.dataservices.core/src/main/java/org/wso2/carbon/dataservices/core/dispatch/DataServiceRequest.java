@@ -36,6 +36,7 @@ import org.wso2.carbon.dataservices.core.engine.ParamValue;
 import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilter;
 import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilterInterface;
 import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilterUtils;
+import org.wso2.carbon.identity.authenticator.oauth2.sso.common.Util;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -100,17 +101,21 @@ public abstract class DataServiceRequest {
                 getProperty(HTTP_SERVLET_RESPONSE);
 		String tenantDomain = MultitenantUtils.getTenantDomain(obj);
 		
-        if(!isOdataPublic) {
-        	ServicesSecurityFilterUtils secureUtils = new ServicesSecurityFilterUtils();
-        	ServicesSecurityFilterInterface security = secureUtils.initializeSecurityFilter();
-			boolean isUserAllowed = security.securityFilter(obj,response,tenantDomain);
-        	if(!isUserAllowed) {
-        		throw new DataServiceFault(FaultCodes.UNAUTHORIZED_ERROR,"The data service request named '" + requestName + 
-    					"' need the proper authorization in order to be accessed.");
-        	}
-        	this.disableStreaming = this.dataService.getCallableRequest(
-    				this.requestName).isDisableStreamingEffective();
+		boolean isAuthEnabled = Util.isAuthenticatorEnabled();
+        if(isAuthEnabled) {
+	        if(!isOdataPublic) {
+	        	ServicesSecurityFilterUtils secureUtils = new ServicesSecurityFilterUtils();
+	        	ServicesSecurityFilterInterface security = secureUtils.initializeSecurityFilter();
+				boolean isUserAllowed = security.securityFilter(obj,response,tenantDomain);
+	        	if(!isUserAllowed) {
+	        		throw new DataServiceFault(FaultCodes.UNAUTHORIZED_ERROR,"The data service request named '" + requestName + 
+	    					"' need the proper authorization in order to be accessed.");
+	        	}
+	        }
         }
+        this.disableStreaming = this.dataService.getCallableRequest(
+				this.requestName).isDisableStreamingEffective();
+        
 	}
 	
 	public static DataServiceRequest createDataServiceRequest(

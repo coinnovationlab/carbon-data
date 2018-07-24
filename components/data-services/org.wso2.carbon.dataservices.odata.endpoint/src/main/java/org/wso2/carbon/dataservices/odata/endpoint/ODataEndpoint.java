@@ -26,6 +26,7 @@ import org.wso2.carbon.dataservices.core.odata.ODataServiceRegistry;
 import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilter;
 import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilterInterface;
 import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilterUtils;
+import org.wso2.carbon.identity.authenticator.oauth2.sso.common.Util;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -72,19 +73,28 @@ public class ODataEndpoint {
                 if (log.isDebugEnabled()) {
                     log.debug(serviceRootPath + " Service invoked.");
                 }
-                boolean isPublicOData = handler.isPublicOdata();
-                ServicesSecurityFilterUtils secureUtils = new ServicesSecurityFilterUtils();
-                ServicesSecurityFilterInterface security = secureUtils.initializeSecurityFilter();
-                boolean isUserAllowed = security.securityFilter(request,response,tenantDomain);
-                if(isPublicOData || (!isPublicOData && isUserAllowed)) {
+                boolean isAuthEnabled = Util.isAuthenticatorEnabled();
+                if(!isAuthEnabled) {
                 	handler.process(request, response, serviceRootPath);
-                }else {
-                	if (log.isDebugEnabled()) {
-                        log.debug("ODataService Handler for " + serviceRootPath + " Service is not Public.You are not authorized to access this service.");
+                } else {
+                    boolean isPublicOData = handler.isPublicOdata();
+                    if(isPublicOData) {
+                    	handler.process(request, response, serviceRootPath);
+                    }else{
+                    	ServicesSecurityFilterUtils secureUtils = new ServicesSecurityFilterUtils();
+                        ServicesSecurityFilterInterface security = secureUtils.initializeSecurityFilter();
+                        boolean isUserAllowed = security.securityFilter(request,response,tenantDomain);
+                        if(isUserAllowed) {
+                        	handler.process(request, response, serviceRootPath);
+                        }else {
+                        	if (log.isDebugEnabled()) {
+                                log.debug("ODataService Handler for " + serviceRootPath + " Service is not Public.You are not authorized to access this service.");
+                            }
+                        	response.setStatus(UNAUTHORIZED);
+                        }
                     }
-                	response.setStatus(UNAUTHORIZED);
-                }
-                
+                    
+                }                
             } else {
                 if (log.isDebugEnabled()) {
                     log.debug("Couldn't find the ODataService Handler for " + serviceRootPath + " Service.");

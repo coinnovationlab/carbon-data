@@ -4,11 +4,14 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.core.security.AuthenticatorsConfiguration;
 import org.wso2.carbon.identity.authenticator.oauth2.sso.common.OAUTH2SSOAuthenticatorConstants;
 
 public class ServicesSecurityFilterUtils  {
 	
+	private static final Log log = LogFactory.getLog(ServicesSecurityFilterUtils.class);
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public ServicesSecurityFilterInterface initializeSecurityFilter(){
 		ServicesSecurityFilterInterface secureFilter = null;
@@ -21,16 +24,22 @@ public class ServicesSecurityFilterUtils  {
 			Object newObject = constructor.newInstance();
 			secureFilter = (ServicesSecurityFilterInterface) newObject;
 		} catch (ClassNotFoundException e) {
+			log.info("Error in getting SecurityFilter Class: "+e.getMessage());
 			e.printStackTrace();
 		} catch (NoSuchMethodException | SecurityException e) {
+			log.info("Error in getting SecurityFilter Class: "+e.getMessage());
 			e.printStackTrace();
 		} catch (InstantiationException e) {
+			log.info("Error in getting SecurityFilter Class: "+e.getMessage());
 			e.printStackTrace();
 		} catch (IllegalAccessException e) {
+			log.info("Error in getting SecurityFilter Class: "+e.getMessage());
 			e.printStackTrace();
 		} catch (IllegalArgumentException e) {
+			log.info("Error in getting SecurityFilter Class: "+e.getMessage());
 			e.printStackTrace();
 		} catch (InvocationTargetException e) {
+			log.info("Error in getting SecurityFilter Class: "+e.getMessage());
 			e.printStackTrace();
 		}	
 		return secureFilter;

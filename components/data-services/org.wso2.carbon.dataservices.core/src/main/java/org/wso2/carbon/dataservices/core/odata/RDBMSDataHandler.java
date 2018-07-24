@@ -124,6 +124,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
     public static final String MSSQL_SERVER = "microsoft sql server";
     public static final String MYSQL = "mysql";
     public static final String POSTGRESQL = "postgresql";
+    public static final String H2 = "h2";
 
     private ThreadLocal<Connection> transactionalConnection = new ThreadLocal<Connection>() {
         protected synchronized Connection initialValue() {
@@ -527,6 +528,8 @@ public class RDBMSDataHandler implements ODataDataHandler {
         		query = queryGeneratorMSSql(select, where, row_count, offset, orderBy); 
         		break; 
         	case POSTGRESQL: 
+        		/* fall through */
+        	case H2: 
         		/* fall through */
         	case MYSQL: 
         		query = queryGeneratorSQL(select, where, row_count, offset, orderBy); 

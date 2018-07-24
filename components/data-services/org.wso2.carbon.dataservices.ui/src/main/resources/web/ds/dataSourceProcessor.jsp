@@ -30,6 +30,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.net.URLEncoder" %>
+<%@ page import="org.wso2.carbon.identity.authenticator.oauth2.sso.common.Util" %>
 <jsp:useBean id="dataService" class="org.wso2.carbon.dataservices.ui.beans.Data" scope="session"/>
 <jsp:useBean id="newConfig" class="org.wso2.carbon.dataservices.ui.beans.Config" scope="session"/>
 <jsp:useBean id="backupConfigProps" class="java.util.ArrayList" scope="session"></jsp:useBean>
@@ -74,13 +75,15 @@
         isOData = false;
     }
     Boolean isPublicOData;
-    if (null != request.getParameter("isPublicOData")) {
+    System.out.println(request.getParameter("isPublicOData"));
+    if(!Util.isAuthenticatorEnabled()) { //if no authenticator specified then set public services by default
+    	isPublicOData = true;
+    }else if (request.getParameter("isPublicOData") != null) {
     	isPublicOData = true;
     } else {
     	isPublicOData = false;
     }
-    String creator = "not_important_at_the_moment";//request.getParameter("Creator");
-    System.out.println(" ispublic Creator: "+isPublicOData+" "+creator);
+    String creator = "not_relevant_at_the_moment";//request.getParameter("Creator");
     String driverClass = request.getParameter(DBConstants.RDBMS.DRIVER_CLASSNAME);
     String jdbcUrl = request.getParameter(DBConstants.RDBMS.URL);
     String dsUserName = request.getParameter(DBConstants.RDBMS.USERNAME);

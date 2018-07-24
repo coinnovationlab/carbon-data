@@ -49,6 +49,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="org.wso2.carbon.dataservices.ui.stub.admin.core.xsd.GeneratedListTables" %>
+<%@ page import="org.wso2.carbon.identity.authenticator.oauth2.sso.common.Util" %>
 
 
 <fmt:bundle basename="org.wso2.carbon.dataservices.ui.i18n.Resources">
@@ -199,7 +200,7 @@ private boolean isFieldMandatory(String propertName) {
 }
 
 Boolean isOData = false;
-boolean isPublic = false;
+boolean isPublic = true;
 String user_logged_in = "";
 
 private Config addNotAvailableFunctions(Config config,String selectedType, HttpServletRequest request) {
@@ -799,7 +800,7 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
                     newConfig.addProperty(DBConstants.RDBMS.PASSWORD, "");
 					newConfig.addProperty(DBConstants.RDBMS.DATASOURCE_CLASSNAME, "");
 					newConfig.setExposeAsOData(false);
-					newConfig.setPublicOData(false);
+					newConfig.setPublicOData(true);
                         ArrayList<Property> property = new ArrayList<Property>();
                         //property.add(new Property("URL", ""));
                         //property.add(new Property("User", ""));
@@ -2587,15 +2588,17 @@ if (propertyIterator != null) {
         <input type="text" name="ODataMaxLimit" id="ODataMaxLimit" value="<%=maxLimit %>" >
     </td>
 </tr>
-<tr>
-	<td class="leftCol-small" style="white-space: nowrap;">
-        <fmt:message key="odata.config.is.public"/>
-    </td>
-    <td>
-        <input type="checkbox" id="isPublicOData" name="isPublicOData" onclick="setPublicOData('')" <%=(isPublic==true ? "checked" : "") %>/>
-    </td>
-</tr>
-<% } %>
+	<% if(Util.isAuthenticatorEnabled()) { %>
+	<tr>
+		<td class="leftCol-small" style="white-space: nowrap;">
+	        <fmt:message key="odata.config.is.public"/>
+	    </td>
+	    <td>
+	        <input type="checkbox" id="isPublicOData" name="isPublicOData"  <%=(isPublic==true ? "checked" : "") %>/>
+	    </td>
+	</tr>
+	<% }
+} %>
 <%if ("GDATA_SPREADSHEET".equals(dataSourceType)) {%>
     <tr id="tr:gspread_redirect_uris" style='display:<%=((!(visibility == null || visibility.equals("public")))?"":"none")%>'>
         <td style="width:150px"><fmt:message key="gspread_redirect_uris"/><span
@@ -2630,7 +2633,6 @@ if (propertyIterator != null) {
            		if(schemaList==null) schemaSupport = false; //schemaList = new String[1];
            		tableList2 = client.generateTableList(driverClass, jdbcUrl, userName, pswd, passwordAlias1,schemaList,"TABLE" );
            		viewsList2 = client.generateTableList(driverClass, jdbcUrl, userName, pswd, passwordAlias1,schemaList,"VIEW" );
-           		System.out.println(schemaList);
            		if(!schemaSupport){ 
            			schemaList = new String[1];
   					schemaList[0] = DBConstants.NO_SCHEMA; // support dbs that don't use schema
@@ -2658,7 +2660,7 @@ if (propertyIterator != null) {
 		    </tr>
 		    <tr>
 		    	<td colspan="2">
-		    		<input class="button" type="button" value="<fmt:message key="odata.select.all"/>" onclick="select_unselect('tablesOdata');return false;"/>
+		    		<input class="button" type="button" value="<fmt:message key="odata.select.all"/>" onclick="select_unselect('tablesOdata',false);return false;"/>
                 </td>
 		    </tr>
 	    </table>
@@ -2697,24 +2699,24 @@ if (propertyIterator != null) {
 			  <p><table>
 	    		<% for(int i=0;i<tableList.size();i=i+5){%>
 		    	<tr>
-	    			<td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+"_"+schemaList[j] %>" value="<%=tableList.get(i)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(tableList.get(i))  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'opttables')"/></td>
+	    			<td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+"_"+schemaList[j] %>" value="<%=tableList.get(i)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(tableList.get(i)) || dynamicTableList.size()==0  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'opttables')"/></td>
 	    			<td><label for="tablesOdata<%=i+"_"+schemaList[j] %>" ><%=tableList.get(i) %></label></td>
 	    			<td></td><td></td>
                     <% if (i+1<tableList.size() ) { %>
-                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+1 +"_"+schemaList[j]%>" value="<%=tableList.get(i+1)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(tableList.get(i+1))  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'opttables')"/></td>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+1 +"_"+schemaList[j]%>" value="<%=tableList.get(i+1)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(tableList.get(i+1)) || dynamicTableList.size()==0  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'opttables')"/></td>
 	    			<td><label for="tablesOdata<%=i+1 +"_"+schemaList[j]%>"><%=tableList.get(i+1) %></label></td>
 	    			<td></td><td></td>
                     <%} if (i+2<tableList.size() ) {%>
-                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+2 +"_"+schemaList[j]%>" value="<%=tableList.get(i+2)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(tableList.get(i+2))  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'opttables')"/></td>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+2 +"_"+schemaList[j]%>" value="<%=tableList.get(i+2)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(tableList.get(i+2)) || dynamicTableList.size()==0  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'opttables')"/></td>
 	    			<td><label for="tablesOdata<%=i+2+"_"+schemaList[j]%>"><%=tableList.get(i+2) %></label></td>
 	    			<td></td><td></td>
 	    			<% }%>
 	    			<% if (i+3<tableList.size() ) { %>
-                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+3 +"_"+schemaList[j]%>" value="<%=tableList.get(i+3)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(tableList.get(i+3))  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'opttables')"/></td>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+3 +"_"+schemaList[j]%>" value="<%=tableList.get(i+3)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(tableList.get(i+3)) || dynamicTableList.size()==0 ? "checked='checked'" : ""  %> onchange="addTableToList(this,'opttables')"/></td>
 	    			<td><label for="tablesOdata<%=i+3 +"_"+schemaList[j]%>"><%=tableList.get(i+3) %></label></td>
 	    			<td></td><td></td>
                     <%} if (i+4<tableList.size() ) {%>
-                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+4 +"_"+schemaList[j]%>" value="<%=tableList.get(i+4)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(tableList.get(i+4))  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'opttables')"/></td>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+4 +"_"+schemaList[j]%>" value="<%=tableList.get(i+4)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(tableList.get(i+4)) || dynamicTableList.size()==0 ? "checked='checked'" : ""  %> onchange="addTableToList(this,'opttables')"/></td>
 	    			<td><label for="tablesOdata<%=i+4 +"_"+schemaList[j]%>"><%=tableList.get(i+4) %></label></td>
 	    			<td></td><td></td>
 	    			<% }%>
@@ -2722,6 +2724,11 @@ if (propertyIterator != null) {
 		    	<% }
 		    	%>
 	    	</table>
+	    	<% if(tableList.size() == 0){%>
+	    			<fmt:message key="odata.empty.tables"/>
+    		<%
+	    		}
+	    	%>
 	    	</p>
 			</div>
 			
@@ -2731,20 +2738,20 @@ if (propertyIterator != null) {
 			  <table>
 	    		<% for(int i=0;i<viewsList.size();i=i+5){%>
 		    	<tr>
-	    			<td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i %>" value="<%=viewsList.get(i)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i))  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'optviews')"/></td>
+	    			<td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i %>" value="<%=viewsList.get(i)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i)) || dynamicTableList.size()==0  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'optviews')"/></td>
 	    			<td><label for="tablesOdata<%=i %>" ><%=viewsList.get(i) %></label></td>
 	    			<td></td><td></td>
                     <% if (i+1<viewsList.size() ) { %>
-                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+1 %>" value="<%=viewsList.get(i+1)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i+1))  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'optviews')"/></td>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+1 %>" value="<%=viewsList.get(i+1)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i+1)) || dynamicTableList.size()==0 ? "checked='checked'" : ""  %> onchange="addTableToList(this,'optviews')"/></td>
 	    			<td><label for="tablesOdata<%=i+1 %>"><%=viewsList.get(i+1) %></label></td>
 	    			<td></td><td></td>
                     <%} if (i+2<viewsList.size() ) {%>
-                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+2 %>" value="<%=viewsList.get(i+2)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i+2))  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'optviews')"/></td>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+2 %>" value="<%=viewsList.get(i+2)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i+2)) || dynamicTableList.size()==0 ? "checked='checked'" : ""  %> onchange="addTableToList(this,'optviews')"/></td>
 	    			<td><label for="tablesOdata<%=i+2 %>"><%=viewsList.get(i+2) %></label></td>
 	    			<td></td><td></td>
 	    			<% }%>
 	    			<% if (i+3<viewsList.size() ) { %>
-                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+3 %>" value="<%=viewsList.get(i+3)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i+3))  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'optviews')"/></td>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+3 %>" value="<%=viewsList.get(i+3)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i+3)) || dynamicTableList.size()==0 ? "checked='checked'" : ""  %> onchange="addTableToList(this,'optviews')"/></td>
 	    			<td><label for="tablesOdata<%=i+3 %>"><%=viewsList.get(i+3) %></label></td>
 	    			<td></td><td></td>
                     <%} if (i+4<viewsList.size() ) {%>
@@ -2756,6 +2763,11 @@ if (propertyIterator != null) {
 		    	<% }
 		    	%>
 	    	</table>
+	    	<% if(viewsList.size() == 0){%>
+	    			<fmt:message key="odata.empty.views"/>
+    		<%
+	    		}
+	    	%>
 	    	</p> 
 			</div>
 	    </div>
@@ -2765,7 +2777,7 @@ if (propertyIterator != null) {
     </tr>
     <tr>
         <td colspan="2" class="middle-header">
-        <a onclick="showAdvancedConfigODataTablesColumns()" class="icon-link" style="background-image:url(images/plus.gif);"
+        <a onclick="showAdvancedConfigODataTablesColumns(<%= createView%>)" class="icon-link" style="background-image:url(images/plus.gif);"
                      id="advODataColumnsSymbolMax"></a>
             <fmt:message key="odata.configuration.activate.table.columns"/></td>
     </tr>
@@ -2816,7 +2828,7 @@ if (propertyIterator != null) {
                </td>
 		    </tr>
 			    <td colspan="2">
-			    	<input class="button" type="button" value="<fmt:message key="odata.select.all.columns"/>" onclick="select_unselect('columnsList');return false;"/>
+			    	<input class="button" type="button" value="<fmt:message key="odata.select.all.columns"/>" onclick="select_unselect('columnsList',false);return false;"/>
 			    </td>
 		    </tr>
 	    </table>
@@ -3141,10 +3153,10 @@ if (propertyIterator != null) {
 			        			document.getElementById("typesList_" + name).value = type;
 			        	}
 	        		}else{
-	        			select_unselect("columnsList") ; //by default all columns selected if there is an empty config(only selected table without columns)
+	        			select_unselect("columnsList",false) ; //by default all columns selected if there is an empty config(only selected table without columns)
 	        		}
 	        	}else{
-        			select_unselect("columnsList") ; //by default all columns selected if there is no previous config
+        			select_unselect("columnsList",false) ; //by default all columns selected if there is no previous config
         		}
 	        }
 	        

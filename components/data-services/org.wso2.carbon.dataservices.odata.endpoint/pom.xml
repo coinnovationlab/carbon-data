@@ -17,7 +17,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <parent>
-        <groupId>org.wso2.carbon.data</groupId>
+        <groupId>co.innovation.lab.wso2.dss</groupId>
         <artifactId>data-services</artifactId>
         <version>4.4.0</version>
 	    <relativePath>../pom.xml</relativePath>
@@ -41,8 +41,13 @@
             <artifactId>org.wso2.carbon.core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wso2.carbon.data</groupId>
+            <groupId>co.innovation.lab.wso2.dss</groupId>
             <artifactId>org.wso2.carbon.dataservices.core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>co.innovation.lab</groupId>
+            <artifactId>org.wso2.carbon.identity.authenticator.oauth2.sso</artifactId>
+            <version>1.0.0</version>
         </dependency>
     </dependencies>
 
@@ -66,7 +71,8 @@
                             org.wso2.carbon.dataservices.core.security.filter.*;version="${project.version}",
                             javax.servlet.http;version="${javax.servlet.imp.pkg.version}",
                             org.apache.commons.logging;version="${carbon.commons.logging.imp.pkg.version}",
-                            org.wso2.carbon.core.multitenancy.utils;version="${carbon.kernel.imp.pkg.version}"
+                            org.wso2.carbon.core.multitenancy.utils;version="${carbon.kernel.imp.pkg.version}",
+                            org.wso2.carbon.identity.authenticator.oauth2.sso.*;version="1.0.0"
                         </Import-Package>
                     </instructions>
                 </configuration>
