@@ -21,11 +21,11 @@ public class CassandraUtils {
 	private static final String PREFIX_BINARY = "binary'"; // this prefix is used by OData to signal binary data; it's the OData equivalent of Cassandra's blob type
 	
 	/**
-     * Converts OData notation of certain types to a notation compatible with Cassandra's CQL
-     *
-     * @param obj	The notation (most commonly a String) to convert
-     * @return		An object (most commonly a String) representing a notation fit for Cassandra
-     */
+	* Converts OData notation of certain types to a notation compatible with Cassandra's CQL
+	*
+	* @param obj	The notation (most commonly a String) to convert
+	* @return		An object (most commonly a String) representing a notation fit for Cassandra
+	*/
 	public static Object oDataConversionForDBQuery(Object obj) {
 		Object res = obj;
 		
@@ -45,12 +45,12 @@ public class CassandraUtils {
 	}
 	
 	/**
-     * Cassandra is case sensitive, yet it converts column names to lower case unless they're within double quotes.
-     * This method ensures that the string is within double quotes, so that its case will be preserved.
-     *
-     * @param	s	The case-sensitive string
-     * @return		The string within double quotes, if they weren't present already
-     */
+	* Cassandra is case sensitive, yet it converts column names to lower case unless they're within double quotes.
+	* This method ensures that the string is within double quotes, so that its case will be preserved.
+	*
+	* @param	s	The case-sensitive string
+	* @return		The string within double quotes, if they weren't present already
+	*/
 	public static String preserveCase(String s) {
 		if (!s.startsWith("\"")) // checks if double quotes are already present
 			s = "\"" + s + "\""; // adds double quotes

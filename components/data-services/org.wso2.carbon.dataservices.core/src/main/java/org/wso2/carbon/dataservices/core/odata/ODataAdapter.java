@@ -215,11 +215,11 @@ public class ODataAdapter implements ServiceHandler {
                     }
                 } else {
                     try {
-						entitySet = getEntityCollection(edmEntitySet.getName(), baseURL, uriInfo);
-					} catch (ExpressionVisitException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+                        entitySet = getEntityCollection(edmEntitySet.getName(), baseURL, uriInfo);
+                    } catch (ExpressionVisitException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
                 }
             }
             if (!request.getNavigations().isEmpty() && entity != null) {
@@ -247,37 +247,36 @@ public class ODataAdapter implements ServiceHandler {
             TopOption topOption = uriInfo.getTopOption();
             SkipTokenOption skipTokenOption = uriInfo.getSkipTokenOption();
             /*if (filterOption != null) {
-            	QueryHandler.applyFilterSystemQuery(filterOption, details.entitySet, edmEntitySet);
-        	}*/
+                QueryHandler.applyFilterSystemQuery(filterOption, details.entitySet, edmEntitySet);
+            }*/
             if (countOption != null) {
-            	int countRecords = getCountCollection(uriInfo,edmEntitySet.getName());
+                int countRecords = getCountCollection(uriInfo,edmEntitySet.getName());
                 //QueryHandler.applyCountSystemQueryOption(countOption, details.entitySet);
                 QueryHandler.applyCountOption(countOption, entitySet, countRecords);
                 
                 if (this.dataHandler instanceof CassandraDataHandler) { // only has to execute for Cassandra, since Cassandra would otherwise have to repeat the query
-                	if (details.entitySet != null && details.entitySet.getEntities() != null) {
-                		int entity_count = details.entitySet.getEntities().size(); // gets the number of rows
-                		details.entitySet.setCount(new Integer(entity_count)); // sets the count it just obtained
-                	}
+                    if (details.entitySet != null && details.entitySet.getEntities() != null) {
+                        int entity_count = details.entitySet.getEntities().size(); // gets the number of rows
+                        details.entitySet.setCount(new Integer(entity_count)); // sets the count it just obtained
+                    }
                 }
             }
             
             if (this.dataHandler instanceof CassandraDataHandler) { // only has to execute for Cassandra, since Cassandra does not natively support skip and orderby, and top has to execute after those two
-            	if (orderByOption != null) {
-            		QueryHandler.applyOrderByOption(orderByOption, details.entitySet, edmEntitySet);
-            	}
-            	if (skipOption != null) {
-            		QueryHandler.applySkipSystemQueryHandler(skipOption, details.entitySet);
-            	}
-            	if (topOption != null) {
-            		QueryHandler.applyTopSystemQueryOption(topOption, details.entitySet);
-            	}
-            	if (skipTokenOption != null) {
-            		int pageSize = request.getOdata().createPreferences(request.getODataRequest()
-            																	.getHeaders(HttpHeader.PREFER))
-            																	.getMaxPageSize();
-            		QueryHandler.applyServerSidePaging(skipTokenOption, details.entitySet, edmEntitySet, baseURL, pageSize);
-            	}
+                if (orderByOption != null) {
+                    QueryHandler.applyOrderByOption(orderByOption, details.entitySet, edmEntitySet);
+                }
+                if (skipOption != null) {
+                    QueryHandler.applySkipSystemQueryHandler(skipOption, details.entitySet);
+                }
+                if (topOption != null) {
+                    QueryHandler.applyTopSystemQueryOption(topOption, details.entitySet);
+                }
+                if (skipTokenOption != null) {
+                    int pageSize = request.getOdata().createPreferences(request.getODataRequest()
+                        .getHeaders(HttpHeader.PREFER)).getMaxPageSize();
+                    QueryHandler.applyServerSidePaging(skipTokenOption, details.entitySet, edmEntitySet, baseURL, pageSize);
+                }
             }
             
             return details;
@@ -1678,11 +1677,11 @@ public class ODataAdapter implements ServiceHandler {
                 case DECIMAL:
                     property.setType(EdmPrimitiveTypeKind.Decimal.getFullQualifiedName());
                     if (this.dataHandler instanceof CassandraDataHandler) { // for Cassandra, otherwise it will give error if tables contain columns of decimal type
-                    	property.setPrecision(Float.toString(Float.MAX_VALUE).length()); // maximum number of digits a float is capable of having
+                        property.setPrecision(Float.toString(Float.MAX_VALUE).length()); // maximum number of digits a float is capable of having
                         property.setScale(Float.toString(Float.MAX_VALUE).length()); // make it match maximum number of digits
                     } else {
-                    	property.setPrecision(column.getPrecision());
-                    	property.setScale(column.getScale());
+                        property.setPrecision(column.getPrecision());
+                        property.setScale(column.getScale());
                     }
                     property.setNullable(column.isNullable());
                     property.setMaxLength(column.getMaxLength());
@@ -1695,7 +1694,7 @@ public class ODataAdapter implements ServiceHandler {
                     property.setScale(column.getScale());
                     break;
                 case TIMEOFDAY:
-                	property.setType(EdmPrimitiveTypeKind.TimeOfDay.getFullQualifiedName());
+                    property.setType(EdmPrimitiveTypeKind.TimeOfDay.getFullQualifiedName());
                     property.setPrecision(3); // for Cassandra: Time is converted to Calendar, which stores date and time down to the milliseconds
                     property.setNullable(column.isNullable());
                     property.setMaxLength(column.getMaxLength());
@@ -1706,7 +1705,7 @@ public class ODataAdapter implements ServiceHandler {
                     property.setMaxLength(column.getMaxLength());
                     break;
                 case DATE_TIMEOFFSET:
-                	property.setType(EdmPrimitiveTypeKind.DateTimeOffset.getFullQualifiedName());
+                    property.setType(EdmPrimitiveTypeKind.DateTimeOffset.getFullQualifiedName());
                     property.setNullable(column.isNullable());
                     property.setMaxLength(column.getMaxLength());
                     // Setting as 9 to support nano second representations from certain databases.
@@ -1894,15 +1893,15 @@ public class ODataAdapter implements ServiceHandler {
                 value = paramValue == null ? null : ConverterUtil.convertToFloat(paramValue);
                 break;
             case TIMEOFDAY:
-            	propertyType = EdmPrimitiveTypeKind.TimeOfDay.getFullQualifiedName().getFullQualifiedNameAsString();
-            	if (paramValue == null) {
-            		value = null;
-            	} else if (this.dataHandler instanceof CassandraDataHandler){ // Cassandra returns the time in nanoseconds
-            		// Converts to Time and afterwards to Calendar.
-            		value = new Time(LocalTime.ofNanoOfDay(Long.parseLong(paramValue)).toString()).getAsCalendar();
-            	} else {
-            		value = ConverterUtil.convertToTime(paramValue).getAsCalendar();
-            	}
+                propertyType = EdmPrimitiveTypeKind.TimeOfDay.getFullQualifiedName().getFullQualifiedNameAsString();
+                if (paramValue == null) {
+                    value = null;
+                } else if (this.dataHandler instanceof CassandraDataHandler){ // Cassandra returns the time in nanoseconds
+                    // Converts to Time and afterwards to Calendar.
+                    value = new Time(LocalTime.ofNanoOfDay(Long.parseLong(paramValue)).toString()).getAsCalendar();
+                } else {
+                    value = ConverterUtil.convertToTime(paramValue).getAsCalendar();
+                }
                 break;
             case INT64:
                 propertyType = EdmPrimitiveTypeKind.Int64.getFullQualifiedName().getFullQualifiedNameAsString();
