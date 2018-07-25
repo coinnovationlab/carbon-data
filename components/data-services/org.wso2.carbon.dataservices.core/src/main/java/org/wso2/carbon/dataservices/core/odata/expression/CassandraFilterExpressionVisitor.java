@@ -51,7 +51,7 @@ public class CassandraFilterExpressionVisitor extends FilterExpressionVisitor {
 		switch(methodCall) {
 			// List of methods natively supported by Cassandra
 			case NOW:
-				return "dateof(now())";
+				return "toTimestamp(now())";
 			default:
 				throw new ODataApplicationException("The following method is currently not supported for Cassandra: " + methodCall.name(),
 						HttpStatusCode.BAD_REQUEST.getStatusCode(), Locale.ENGLISH);
