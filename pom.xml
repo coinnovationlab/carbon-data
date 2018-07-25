@@ -7,10 +7,10 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.wso2.carbon.data</groupId>
+    <groupId>co.innovation.lab.wso2.dss</groupId>
     <artifactId>carbon-data</artifactId>
     <packaging>pom</packaging>
-    <version>4.4.0</version>
+    <version>4.4.0-SNAPSHOT</version>
     <name>WSO2 Carbon - Data repo Aggregator Pom</name>
     <url>http://wso2.org</url>
 
@@ -408,7 +408,7 @@
             <!--</dependency>-->
 
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.odata</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
@@ -540,85 +540,85 @@
                 <!--<version>${previous.version}</version>-->
             <!--</dependency>-->
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.core</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.odata</artifactId>
                 <version>${dataservices.version}</version>
                 <type>war</type>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.odata.endpoint</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.common</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dbconsole.ui</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.sql.driver</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.ui</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.task</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.task.ui</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.task.stub</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.stub</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.fileupload.stub</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
             <!--<dependency>-->
-            <!--<groupId>org.wso2.carbon.data</groupId>-->
+            <!--<groupId>co.innovation.lab.wso2.dss</groupId>-->
             <!--<artifactId>org.wso2.carbon.ndataservices.core</artifactId>-->
             <!--<version>${dataservices.version}</version>-->
             <!--</dependency>-->
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.server.feature</artifactId>
                 <version>${dataservices.version}</version>
                 <type>zip</type>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.ui.feature</artifactId>
                 <version>${dataservices.version}</version>
                 <type>zip</type>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.task.server.feature</artifactId>
                 <version>${dataservices.version}</version>
                 <type>zip</type>
@@ -639,7 +639,7 @@
                 <version>${commons.lang3.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.task.ui.feature</artifactId>
                 <version>${dataservices.version}</version>
                 <type>zip</type>
@@ -782,13 +782,13 @@
                 <version>${xerces.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.datasource.reader.hadoop</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
             <!-- END Hadoop datasource reader dependencies -->
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.datasource.reader.cassandra</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
@@ -870,7 +870,7 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.google.tokengen</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
@@ -1143,11 +1143,11 @@
             </modules>
         </profile>
     </profiles>
-
+	
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
-        <dataservices.version>4.4.0</dataservices.version>
+        <identity.auth.oauth2.version>1.0.0-SNAPSHOT</identity.auth.oauth2.version>
+        <dataservices.version>4.4.0-SNAPSHOT</dataservices.version>
         <dataservices.imp.pkg.version>[4.3.0,5.0.0)</dataservices.imp.pkg.version>
         <dataservices.package.export.version>4.3.1</dataservices.package.export.version>
 

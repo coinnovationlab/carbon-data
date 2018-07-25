@@ -18,9 +18,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <parent>
-        <groupId>org.wso2.carbon.data</groupId>
+        <groupId>co.innovation.lab.wso2.dss</groupId>
         <artifactId>data-services-hosting-feature</artifactId>
-        <version>4.4.0</version>
+        <version>4.4.0-SNAPSHOT</version>
 	    <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -34,15 +34,15 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.wso2.carbon.data</groupId>
+            <groupId>co.innovation.lab.wso2.dss</groupId>
             <artifactId>org.wso2.carbon.dataservices.core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wso2.carbon.data</groupId>
+            <groupId>co.innovation.lab.wso2.dss</groupId>
             <artifactId>org.wso2.carbon.dataservices.common</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wso2.carbon.data</groupId>
+            <groupId>co.innovation.lab.wso2.dss</groupId>
             <artifactId>org.wso2.carbon.dataservices.sql.driver</artifactId>
         </dependency>
         <dependency>
@@ -203,12 +203,12 @@
             <artifactId>google-http-client</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wso2.carbon.data</groupId>
+            <groupId>co.innovation.lab.wso2.dss</groupId>
             <artifactId>org.wso2.carbon.dataservices.odata</artifactId>
             <type>war</type>
         </dependency>
         <dependency>
-            <groupId>org.wso2.carbon.data</groupId>
+            <groupId>co.innovation.lab.wso2.dss</groupId>
             <artifactId>org.wso2.carbon.dataservices.odata.endpoint</artifactId>
         </dependency>
     </dependencies>
@@ -233,7 +233,7 @@
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
-                                    <groupId>org.wso2.carbon.data</groupId>
+                                    <groupId>co.innovation.lab.wso2.dss</groupId>
                                     <artifactId>org.wso2.carbon.dataservices.odata</artifactId>
                                     <type>war</type>
                                     <overWrite>true</overWrite>
@@ -304,10 +304,10 @@
                                 </properties>
                             </adviceFile>
                             <bundles>
-                                <bundleDef>org.wso2.carbon.data:org.wso2.carbon.dataservices.core</bundleDef>
-                                <bundleDef>org.wso2.carbon.data:org.wso2.carbon.dataservices.common</bundleDef>
-                                <bundleDef>org.wso2.carbon.data:org.wso2.carbon.dataservices.sql.driver</bundleDef>
-                                <bundleDef>org.wso2.carbon.data:org.wso2.carbon.dataservices.odata.endpoint</bundleDef>
+                                <bundleDef>co.innovation.lab.wso2.dss:org.wso2.carbon.dataservices.core</bundleDef>
+                                <bundleDef>co.innovation.lab.wso2.dss:org.wso2.carbon.dataservices.common</bundleDef>
+                                <bundleDef>co.innovation.lab.wso2.dss:org.wso2.carbon.dataservices.sql.driver</bundleDef>
+                                <bundleDef>co.innovation.lab.wso2.dss:org.wso2.carbon.dataservices.odata.endpoint</bundleDef>
                                 <bundleDef>com.google.gdata.wso2:gdata-core</bundleDef>
                                 <bundleDef>com.google.gdata.wso2:gdata-spreadsheet</bundleDef>
                                 <bundleDef>com.google.guava:guava</bundleDef>
