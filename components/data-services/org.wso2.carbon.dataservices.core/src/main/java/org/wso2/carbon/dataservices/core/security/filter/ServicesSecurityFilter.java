@@ -273,18 +273,15 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
     private static boolean elaborateRolesList(List<Map<String,Object>> rolesListResp, String serviceTenant) {
     	boolean containsProperRole = false;
     	String definedContext = ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.ROLE_CONTEXT);
-    	String definedPrefix = ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.ROLE_PREFIX);
-    	int lngth = definedPrefix.length();
     	Map<String,Object> record;
-    	String context,role,no_prefix;
+    	String context,role,space;
     	log.info("elaborating roles: "+rolesListResp.toString());
     	if(rolesListResp != null) {
 	    	for(int i = 0;i<rolesListResp.size();i++) {
 	    		record = rolesListResp.get(i);
 	    		context = (String) record.get("context");
 	    		role = (String) record.get("role");
-	    		no_prefix = role.substring(lngth);
-	    		if(role.startsWith(definedPrefix) && context.equals(definedContext) && no_prefix.equals(serviceTenant)) {
+	    		if(context!= null && role!= null && context.equals(definedContext) && role.equals(serviceTenant)) {
 	    			containsProperRole = true;
 	    			break;
 	    		}
