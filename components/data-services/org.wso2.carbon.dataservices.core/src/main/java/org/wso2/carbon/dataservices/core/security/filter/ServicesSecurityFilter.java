@@ -41,8 +41,8 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 	private static String SECURITY_FILTER_TOKEN_ID = "securityFilterTokenId";
 	private static String SECURITY_FILTER_TOKEN_EXPIRE = "securityFilterTokenExpire";
 	private static String SECURITY_FILTER_TOKEN_GENERATION_TIME = "securityFilterTokenGenerationTime";
-	private static final int MAX_EXPIRE = Integer.parseInt(ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.MAX_EXPIRE_SEC_TOKEN));
-	/**
+	private static int MAX_EXPIRE = Integer.parseInt(ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.MAX_EXPIRE_SEC_TOKEN_VALUE));
+		/**
      * 
      * Retrieve the apikey parameter 
      * @param request
@@ -365,7 +365,15 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 	    	if(expIn > 0) {
 	    		hasExp = seconds > expIn;
 	    	}else {
-	    		hasExp = seconds > MAX_EXPIRE;
+	    		try {
+		    		String customMaxExp = ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.MAX_EXPIRE_SEC_TOKEN);
+		    		if(customMaxExp != null && !customMaxExp.isEmpty()) {
+		    			MAX_EXPIRE = Integer.parseInt(ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.MAX_EXPIRE_SEC_TOKEN));
+		    		}
+		    		hasExp = seconds > MAX_EXPIRE;
+	    		}catch(NumberFormatException nfe) {
+	    			log.error("Max Expire Client Token default value empty or not a number: " + " : "+nfe.getMessage());
+	    		}
 	    	}
 	    	log.info("diff in seconds: "+seconds+" "+hasExp);
 	    	log.info("now time format: "+dtf.format(now)); 
