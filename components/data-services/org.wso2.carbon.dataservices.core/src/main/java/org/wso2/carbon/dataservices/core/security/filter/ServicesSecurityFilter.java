@@ -213,7 +213,9 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 			UserRealm realm = AnonymousSessionUtil.getRealmByTenantDomain(registryService,realmService, tenantDomain);
 			if(realm != null) {
 				UserStoreManager userstore = realm.getUserStoreManager();
-				if (userstore.isExistingUser(username)) {
+				if( !tenantDomain.equals("carbon.super") && username.equals("admin")) {
+					exists = false;
+				}else if (userstore.isExistingUser(username)) {
 					exists = true;
 				}
 			}
