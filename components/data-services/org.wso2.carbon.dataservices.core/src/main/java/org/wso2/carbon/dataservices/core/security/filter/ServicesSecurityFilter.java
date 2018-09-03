@@ -41,8 +41,7 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 	private static String SECURITY_FILTER_TOKEN_ID = "securityFilterTokenId";
 	private static String SECURITY_FILTER_TOKEN_EXPIRE = "securityFilterTokenExpire";
 	private static String SECURITY_FILTER_TOKEN_GENERATION_TIME = "securityFilterTokenGenerationTime";
-	private static int MAX_EXPIRE = Integer.parseInt(ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.MAX_EXPIRE_SEC_TOKEN_VALUE));
-		/**
+	private static int MAX_EXPIRE = Integer.parseInt(OAUTH2SSOAuthenticatorConstants.MAX_EXPIRE_SEC_TOKEN_VALUE);		/**
      * 
      * Retrieve the apikey parameter 
      * @param request
@@ -127,7 +126,7 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 				int length = usernameArray.length;
 				String user = (length == 3 ? usernameArray[0]+"@"+usernameArray[1] : usernameArray[0]);
 				String userDomain = usernameArray[length-1];
-				log.info("(apikey)user trying to request data: "+user+" context: "+userDomain);
+				log.info("(apikey)user trying to request data: "+user+" context: "+userDomain+" odataTenant: "+oDataTenant);
 				
 				boolean existsInDSS = checkUserExistsInDSS(user, oDataTenant);
 				if(existsInDSS) {
@@ -175,7 +174,7 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 					int length = usernameArray.length;
 					String user = (length == 3 ? usernameArray[0]+"@"+usernameArray[1] : usernameArray[0]);
 					String userDomain = usernameArray[length-1];
-					log.info("(authtoken)user trying to request data: "+user+" context: "+userDomain);
+					log.info("(authtoken)user trying to request data: "+user+" context: "+userDomain+" odataTenant: "+oDataTenant);
 					
 					boolean existsInDSS = checkUserExistsInDSS(user, oDataTenant);
 					if(existsInDSS) {
@@ -222,7 +221,7 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 			e.printStackTrace();
 			return exists;
 		}
-        log.info("User "+username+" exists in DSS. Tenant: "+tenantDomain);
+        log.info("User "+username+" exists in DSS? "+exists+" Tenant: "+tenantDomain);
     	return exists;
     }
     
@@ -281,12 +280,15 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 	    		record = rolesListResp.get(i);
 	    		context = (String) record.get("context");
 	    		role = (String) record.get("role");
-	    		if(context!= null && role!= null && context.equals(definedContext) && role.equals(serviceTenant)) {
+	    		space = (String) record.get("space");
+	    		log.info("oDataTenant: "+serviceTenant+" roleName: " +role+" context: " +context+" spaceName: " +space);
+	    		if(context!= null && role!= null && context.equals(definedContext) && space.equals(serviceTenant)) {
 	    			containsProperRole = true;
 	    			break;
 	    		}
 	    	}
 	    }
+    	log.info("containsProperRole? "+containsProperRole);
     	return containsProperRole;
     }
     
