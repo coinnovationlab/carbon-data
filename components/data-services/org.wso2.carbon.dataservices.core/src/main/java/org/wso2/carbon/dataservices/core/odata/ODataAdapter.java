@@ -160,7 +160,7 @@ public class ODataAdapter implements ServiceHandler {
 
     private ThreadLocal<Boolean> batchRequest = new ThreadLocal<Boolean>() {
         protected synchronized Boolean initialValue() {
-            return true;
+            return false;
         }
     };
 
