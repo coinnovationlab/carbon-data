@@ -33,10 +33,10 @@ import org.wso2.carbon.dataservices.core.DataServiceUser;
 import org.wso2.carbon.dataservices.core.engine.CallableRequest;
 import org.wso2.carbon.dataservices.core.engine.DataService;
 import org.wso2.carbon.dataservices.core.engine.ParamValue;
-import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilter;
-import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilterInterface;
-import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilterUtils;
-import org.wso2.carbon.identity.authenticator.oauth2.sso.common.Util;
+//import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilter;
+//import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilterInterface;
+//import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilterUtils;
+//import org.wso2.carbon.identity.authenticator.oauth2.sso.common.Util;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import javax.servlet.http.HttpServletRequest;
