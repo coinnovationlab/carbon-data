@@ -68,7 +68,7 @@ public class ODataUtils {
 	* @return
 	* @throws EdmPrimitiveTypeException
 	*/
-	public static String buildLocation(String baseURL, Entity entity, String entitySetName, EdmEntityType type) 
+	public static String buildLocation(String baseURL, Entity entity, String entitySetName, EdmEntityType type)
 			throws EdmPrimitiveTypeException {
 		StringBuilder location = new StringBuilder();
 		
@@ -77,6 +77,7 @@ public class ODataUtils {
 		int i = 0;
 		boolean usename = type.getKeyPredicateNames().size() > 1;
 		location.append("(");
+		String columnPrefix = entitySetName + ".";
 		for (String key : type.getKeyPredicateNames()) {
 			if (i > 0) {
 				location.append(",");
@@ -85,11 +86,11 @@ public class ODataUtils {
 			if (usename) {
 				location.append(key).append("=");
 			}
-			
+			if (entity.getProperty(key) != null)
+				columnPrefix = "";
 			EdmProperty property = (EdmProperty)type.getProperty(key);
-			String propertyType = entity.getProperty(key).getType();
-			Object propertyValue = entity.getProperty(key).getValue();
-			
+			String propertyType = entity.getProperty(columnPrefix + key).getType();
+			Object propertyValue = entity.getProperty(columnPrefix + key).getValue();
 			if (propertyValue == null) {
 				throw new EdmPrimitiveTypeException("The key value for property "+key+" is invalid; Key value cannot be null");
 			}

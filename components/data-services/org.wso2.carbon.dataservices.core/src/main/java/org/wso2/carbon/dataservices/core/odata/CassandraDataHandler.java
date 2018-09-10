@@ -35,6 +35,7 @@ import org.wso2.carbon.dataservices.core.DBUtils;
 import org.wso2.carbon.dataservices.core.DataServiceFault;
 import org.wso2.carbon.dataservices.core.odata.DataColumn.ODataDataType;
 import org.wso2.carbon.dataservices.core.odata.expression.CassandraFilterExpressionVisitor;
+import org.apache.olingo.commons.api.data.Property;
 import org.apache.olingo.commons.api.http.HttpStatusCode;
 import org.apache.olingo.server.api.ODataApplicationException;
 import org.apache.olingo.server.api.uri.UriInfo;
@@ -127,7 +128,7 @@ public class CassandraDataHandler implements ODataDataHandler {
     }
 
     @Override
-    public List<ODataEntry> readTable(String tableName,UriInfo uriInfo) throws ODataServiceFault, ExpressionVisitException, ODataApplicationException {
+    public List<ODataEntry> readTable(String tableName, UriInfo uriInfo, List<Property> navProperties) throws ODataServiceFault, ExpressionVisitException, ODataApplicationException {
     	Statement statement = new SimpleStatement(generateCassandraQuery(tableName, uriInfo)); // generates the query to apply to the Cassandra database
         
         ResultSet resultSet = this.session.execute(statement);
