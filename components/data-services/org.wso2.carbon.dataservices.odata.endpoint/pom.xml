@@ -19,7 +19,7 @@
     <parent>
         <groupId>co.innovation.lab.wso2.dss</groupId>
         <artifactId>data-services</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>4.4.1</version>
 	    <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -47,7 +47,7 @@
         <dependency>
             <groupId>co.innovation.lab</groupId>
             <artifactId>org.wso2.carbon.identity.authenticator.oauth2.sso</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
     </dependencies>
 
@@ -72,7 +72,7 @@
                             javax.servlet.http;version="${javax.servlet.imp.pkg.version}",
                             org.apache.commons.logging;version="${carbon.commons.logging.imp.pkg.version}",
                             org.wso2.carbon.core.multitenancy.utils;version="${carbon.kernel.imp.pkg.version}",
-                            org.wso2.carbon.identity.authenticator.oauth2.sso.*;version="1.0.0"
+                            org.wso2.carbon.identity.authenticator.oauth2.sso.*;version="${identity.auth.oauth2.version}"
                         </Import-Package>
                     </instructions>
                 </configuration>

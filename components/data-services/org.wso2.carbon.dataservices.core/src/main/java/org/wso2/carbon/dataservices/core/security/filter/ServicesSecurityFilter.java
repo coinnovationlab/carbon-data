@@ -41,8 +41,7 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 	private static String SECURITY_FILTER_TOKEN_ID = "securityFilterTokenId";
 	private static String SECURITY_FILTER_TOKEN_EXPIRE = "securityFilterTokenExpire";
 	private static String SECURITY_FILTER_TOKEN_GENERATION_TIME = "securityFilterTokenGenerationTime";
-	private static final int MAX_EXPIRE = Integer.parseInt(ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.MAX_EXPIRE_SEC_TOKEN));
-	/**
+	private static int MAX_EXPIRE = Integer.parseInt(OAUTH2SSOAuthenticatorConstants.MAX_EXPIRE_SEC_TOKEN_VALUE);		/**
      * 
      * Retrieve the apikey parameter 
      * @param request
@@ -127,7 +126,7 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 				int length = usernameArray.length;
 				String user = (length == 3 ? usernameArray[0]+"@"+usernameArray[1] : usernameArray[0]);
 				String userDomain = usernameArray[length-1];
-				log.info("(apikey)user trying to request data: "+user+" context: "+userDomain);
+				log.info("(apikey)user trying to request data: "+user+" context: "+userDomain+" odataTenant: "+oDataTenant);
 				
 				boolean existsInDSS = checkUserExistsInDSS(user, oDataTenant);
 				if(existsInDSS) {
@@ -175,7 +174,7 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 					int length = usernameArray.length;
 					String user = (length == 3 ? usernameArray[0]+"@"+usernameArray[1] : usernameArray[0]);
 					String userDomain = usernameArray[length-1];
-					log.info("(authtoken)user trying to request data: "+user+" context: "+userDomain);
+					log.info("(authtoken)user trying to request data: "+user+" context: "+userDomain+" odataTenant: "+oDataTenant);
 					
 					boolean existsInDSS = checkUserExistsInDSS(user, oDataTenant);
 					if(existsInDSS) {
@@ -214,7 +213,9 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 			UserRealm realm = AnonymousSessionUtil.getRealmByTenantDomain(registryService,realmService, tenantDomain);
 			if(realm != null) {
 				UserStoreManager userstore = realm.getUserStoreManager();
-				if (userstore.isExistingUser(username)) {
+				if( !tenantDomain.equals("carbon.super") && username.equals("admin")) {
+					exists = false;
+				}else if (userstore.isExistingUser(username)) {
 					exists = true;
 				}
 			}
@@ -222,7 +223,7 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 			e.printStackTrace();
 			return exists;
 		}
-        log.info("User "+username+" exists in DSS. Tenant: "+tenantDomain);
+        log.info("User "+username+" exists in DSS? "+exists+" Tenant: "+tenantDomain);
     	return exists;
     }
     
@@ -273,23 +274,23 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
     private static boolean elaborateRolesList(List<Map<String,Object>> rolesListResp, String serviceTenant) {
     	boolean containsProperRole = false;
     	String definedContext = ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.ROLE_CONTEXT);
-    	String definedPrefix = ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.ROLE_PREFIX);
-    	int lngth = definedPrefix.length();
     	Map<String,Object> record;
-    	String context,role,no_prefix;
+    	String context,role,space;
     	log.info("elaborating roles: "+rolesListResp.toString());
     	if(rolesListResp != null) {
 	    	for(int i = 0;i<rolesListResp.size();i++) {
 	    		record = rolesListResp.get(i);
 	    		context = (String) record.get("context");
 	    		role = (String) record.get("role");
-	    		no_prefix = role.substring(lngth);
-	    		if(role.startsWith(definedPrefix) && context.equals(definedContext) && no_prefix.equals(serviceTenant)) {
+	    		space = (String) record.get("space");
+	    		log.info("oDataTenant: "+serviceTenant+" roleName: " +role+" context: " +context+" spaceName: " +space);
+	    		if(context!= null && role!= null && context.equals(definedContext) && space.equals(serviceTenant)) {
 	    			containsProperRole = true;
 	    			break;
 	    		}
 	    	}
 	    }
+    	log.info("containsProperRole? "+containsProperRole);
     	return containsProperRole;
     }
     
@@ -368,7 +369,15 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 	    	if(expIn > 0) {
 	    		hasExp = seconds > expIn;
 	    	}else {
-	    		hasExp = seconds > MAX_EXPIRE;
+	    		try {
+		    		String customMaxExp = ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.MAX_EXPIRE_SEC_TOKEN);
+		    		if(customMaxExp != null && !customMaxExp.isEmpty()) {
+		    			MAX_EXPIRE = Integer.parseInt(ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.MAX_EXPIRE_SEC_TOKEN));
+		    		}
+		    		hasExp = seconds > MAX_EXPIRE;
+	    		}catch(NumberFormatException nfe) {
+	    			log.error("Max Expire Client Token default value empty or not a number: " + " : "+nfe.getMessage());
+	    		}
 	    	}
 	    	log.info("diff in seconds: "+seconds+" "+hasExp);
 	    	log.info("now time format: "+dtf.format(now)); 
