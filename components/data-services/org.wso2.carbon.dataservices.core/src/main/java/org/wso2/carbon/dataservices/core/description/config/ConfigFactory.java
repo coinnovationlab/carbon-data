@@ -83,7 +83,7 @@ public class ConfigFactory {
 		} else if (DataSourceTypes.CUSTOM_QUERY.equals(configType)) {
 			return getCustomQueryConfig(dataService, configId, properties, odataEnable);
 		} else if (DataSourceTypes.CASSANDRA.equals(configType)) {
-			return getCassandraConfig(dataService, configId, properties, odataEnable);
+			return getCassandraConfig(dataService, configId, properties, odataEnable, isPublicOData, creator);
 		}
 		
 		return null;
@@ -132,8 +132,8 @@ public class ConfigFactory {
 	}
 
 	private static CassandraConfig getCassandraConfig(DataService dataService, String configId,
-	                                                  Map<String, String> properties, boolean odataEnable) throws DataServiceFault {
-		CassandraConfig config = new CassandraConfig(dataService, configId, properties, odataEnable);
+	                                                  Map<String, String> properties, boolean odataEnable, boolean isPublicOData, String creator) throws DataServiceFault {
+		CassandraConfig config = new CassandraConfig(dataService, configId, properties, odataEnable, isPublicOData, creator);
 		return config;
 	}
 

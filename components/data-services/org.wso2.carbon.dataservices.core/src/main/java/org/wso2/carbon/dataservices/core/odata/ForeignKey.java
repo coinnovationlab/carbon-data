@@ -40,7 +40,7 @@ public class ForeignKey {
 	}
 	
 	public String getFullName() {
-		return getDatabase() + "." + getTable() + "." + getName();
+		return table + "." + name;
 	}
 	
 	public String getForeignDatabase() {
@@ -56,7 +56,7 @@ public class ForeignKey {
 	}
 	
 	public String getFullForeignName() {
-		return getForeignDatabase() + "." + getForeignTable() + "." + getForeignName();
+		return foreignTable + "." + foreignName;
 	}
 	
 	@Override
@@ -64,10 +64,10 @@ public class ForeignKey {
 		String str = "";
 		switch(type) {
 			case IMPORTED:
-				str += getType() + ": " + getFullName() + " -> " + getFullForeignName();
+				str += type + ": " + getFullName() + " -> " + getFullForeignName();
 				break;
 			case EXPORTED:
-				str += getType() + ": " + getFullForeignName() + " -> " + getFullName();
+				str += type + ": " + getFullForeignName() + " -> " + getFullName();
 				break;
 			default:
 		}

@@ -460,19 +460,23 @@ public class ODataAdapter implements ServiceHandler {
      * @throws  ODataServiceFault   Error occurred while parsing the value of the entity obtained through the JOIN
      */
     private Entity createExpandEntity(Entity joinEntity, String foreignTable, String baseURL) throws ODataServiceFault {
-        Entity expandEntity = new Entity();
+        Entity expandEntity = null;
         for (DataColumn column : this.dataHandler.getTableMetadata().get(foreignTable).values()) { // columns of the foreign table
             Property expandProperty = null;
             try {
                 Object value = joinEntity.getProperty(foreignTable + "." + column.getColumnName()).getValue();
-                if (value == null) // entity doesn't reference any external entity for this foreign key
-                    return null;
-                expandProperty = createPrimitive(column.getColumnType(), column.getColumnName(), value.toString());
+                if (value != null) {
+                    expandProperty = createPrimitive(column.getColumnType(), column.getColumnName(), value.toString());
+                    if (expandEntity == null)
+                        expandEntity = new Entity();
+                    expandEntity.addProperty(expandProperty); // adds property to the sub-entry
+                }
             } catch (ParseException e) {
                 throw new ODataServiceFault("There was an error while parsing values from " + foreignTable + ": " + e.getMessage());
             }
-            expandEntity.addProperty(expandProperty); // adds property to the sub-entry
         }
+        if (expandEntity == null) // entity doesn't reference any external entity for this foreign key
+            return null;
         
         //Set ETag to the entity
         EdmEntityType expandEntityType = this.serviceMetadata.getEdm()

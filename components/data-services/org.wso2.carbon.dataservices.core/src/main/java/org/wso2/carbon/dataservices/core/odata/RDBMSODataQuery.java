@@ -9,6 +9,8 @@ import java.util.List;
  */
 public class RDBMSODataQuery {
 	public static final String MYSQL_MAX_LIMIT = "18446744073709551615"; // Necessary for MySQL, which does not allow OFFSET without LIMIT
+	public static final String H2_MAX_LIMIT = "-1"; // Same reason as above but for H2, which interprets -1 as no limit
+	public static final String WHERESEPARATOR = "'#WhereSubQuerySeparator#'"; // H2 and MSSQL do not support multi-column IN sub-queries, so we have to concatenate the PK columns
 	
 	private String dbType;
 	private List<String> select;
@@ -118,6 +120,8 @@ public class RDBMSODataQuery {
 		String result = "";
 		if (select != null && select.size() > 0) {
 			result += "SELECT ";
+			if (select.contains(WHERESEPARATOR)) // H2 and MSSQL do not support multi-column IN sub-queries, so we have to concatenate the PK columns
+				result += "CONCAT(";
 			Iterator<String> iter = select.iterator();
 			while (iter.hasNext()) {
 				result += iter.next();
@@ -125,6 +129,8 @@ public class RDBMSODataQuery {
 					result += ",";
 			}
 		}
+		if (!result.equals("") && select.contains(WHERESEPARATOR)) // H2 and MSSQL do not support multi-column IN sub-queries, so we have to concatenate the PK columns
+			result += ")";
 		return result;
 	}
 	
@@ -308,8 +314,7 @@ public class RDBMSODataQuery {
 		}
 		
 		if (dbType.equalsIgnoreCase(RDBMSDataHandler.MSSQL_SERVER)) {
-			result = result.trim();
-			if(result.equals("")) {
+			if(result.equals("") && (offset != 0 || limit > 0)) {
 				result = " ORDER BY (SELECT 1) ";
 			}
 		}
@@ -344,24 +349,27 @@ public class RDBMSODataQuery {
 		
 		switch (dbType.toLowerCase()) {
 			case (RDBMSDataHandler.ORACLE_SERVER):
-				if (limit >= 0) {
+				if (limit > 0) {
 					result = " FETCH FIRST " + limit + " ROWS ONLY ";
 					if (offset != 0)
 						result = " FETCH NEXT " + limit + " ROWS ONLY ";
 				}
 				break;
 			case (RDBMSDataHandler.MSSQL_SERVER):
-				result = " FETCH NEXT " + limit + " ROWS ONLY ";
-				if (limit < 0)
-					result = " FETCH NEXT 0 ROWS ONLY ";
+				if (limit > 0)
+					result = " FETCH NEXT " + limit + " ROWS ONLY ";
 				break;
 			case (RDBMSDataHandler.POSTGRESQL): // fall through
 			case (RDBMSDataHandler.MYSQL): // fall through
 			default:
 				if (limit >= 0)
 					result = " LIMIT " + limit;
-				else if (offset != 0)
-					result = " LIMIT " + MYSQL_MAX_LIMIT;
+				else if (offset != 0) {
+					if (dbType.contains(RDBMSDataHandler.MYSQL))
+						result = " LIMIT " + MYSQL_MAX_LIMIT;
+					else if (dbType.contains(RDBMSDataHandler.H2))
+						result = " LIMIT " + H2_MAX_LIMIT;
+				}
 		}
 		return result;
 	}
@@ -395,8 +403,10 @@ public class RDBMSODataQuery {
 		case (RDBMSDataHandler.ORACLE_SERVER):
 			if (offset != 0)
 				result = " OFFSET " + offset + " ROWS";
+			break;
 		case (RDBMSDataHandler.MSSQL_SERVER):
-			result = " OFFSET " + offset + " ROWS";
+			if (offset != 0 || limit > 0 || (orderBy != null && orderBy.size() > 0))
+				result = " OFFSET " + offset + " ROWS";
 			break;
 		case (RDBMSDataHandler.POSTGRESQL): // fall through
 		case (RDBMSDataHandler.MYSQL): // fall through
