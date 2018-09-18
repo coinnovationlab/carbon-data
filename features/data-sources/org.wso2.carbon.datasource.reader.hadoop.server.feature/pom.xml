@@ -3,8 +3,8 @@
 
     <parent>
         <artifactId>data-sources-features</artifactId>
-        <groupId>org.wso2.carbon.data</groupId>
-        <version>4.4.44-SNAPSHOT</version>
+        <groupId>co.innovation.lab.wso2.dss</groupId>
+        <version>4.4.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -18,7 +18,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.wso2.carbon.data</groupId>
+            <groupId>co.innovation.lab.wso2.dss</groupId>
             <artifactId>org.wso2.carbon.datasource.reader.hadoop</artifactId>
         </dependency>
         <dependency>
@@ -70,7 +70,7 @@
                                 </properties>
                             </adviceFile>
                             <bundles>
-                                <bundleDef>org.wso2.carbon.data:org.wso2.carbon.datasource.reader.hadoop</bundleDef>
+                                <bundleDef>co.innovation.lab.wso2.dss:org.wso2.carbon.datasource.reader.hadoop</bundleDef>
                                 <bundleDef>org.wso2.orbit.org.apache.hadoop:hadoop-client</bundleDef>
                                 <bundleDef>org.wso2.orbit.org.apache.hbase:hbase-shaded-client</bundleDef>
                                 <bundleDef>org.wso2.orbit.org.apache.htrace:htrace-core-apache</bundleDef>

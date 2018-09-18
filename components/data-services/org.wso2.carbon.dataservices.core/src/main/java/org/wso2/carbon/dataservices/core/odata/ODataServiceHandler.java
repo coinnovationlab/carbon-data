@@ -55,9 +55,15 @@ public class ODataServiceHandler {
      * Olingo ODataHTTPHandler
      */
     private ODataHttpHandler handler;
+    
+    private boolean isPublicOdata;
+    
+    private String creator;
 
-    public ODataServiceHandler(ODataDataHandler dataHandler, String namespace, String configID)
+    public ODataServiceHandler(ODataDataHandler dataHandler, String namespace, String configID, boolean isPublicOdata, String creator)
             throws ODataServiceFault {
+    	this.isPublicOdata = isPublicOdata;
+    	this.creator = creator;
         ODataAdapter processor = new ODataAdapter(dataHandler, namespace, configID);
         OData odata = OData4Impl.newInstance();
         ServiceMetadata edm = odata.createServiceMetadata(processor.getEdmProvider(), new ArrayList<EdmxReference>());
@@ -80,6 +86,13 @@ public class ODataServiceHandler {
         handler.process(modifyServletPath(req, serviceRootPath), resp);
     }
 
+    public boolean isPublicOdata() {
+    	return isPublicOdata;
+    }
+    
+    public String getCreator() {
+    	return creator;
+    }
     /**
      * This method creates a new HTTPServletRequest to modify the ServletPath in the request.
      *

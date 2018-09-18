@@ -17,6 +17,9 @@
 --%>
 <%@page import="org.wso2.carbon.dataservices.common.DBConstants" %>
 <%@ page import="org.wso2.carbon.dataservices.common.conf.DynamicAuthConfiguration" %>
+<%@ page import="org.wso2.carbon.dataservices.common.conf.DynamicODataConfig" %>
+<%@ page import="org.wso2.carbon.dataservices.common.conf.ODataTableSchemaConfig" %>
+<%@ page import="org.wso2.carbon.dataservices.common.conf.ODataColumnsConfig" %>
 <%@ page import="org.wso2.carbon.dataservices.ui.beans.Config" %>
 <%@ page import="org.wso2.carbon.dataservices.ui.beans.Property" %>
 <%@ page import="org.wso2.carbon.dataservices.ui.beans.Query" %>
@@ -24,7 +27,10 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Iterator" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.HashMap" %>
 <%@ page import="java.net.URLEncoder" %>
+<%@ page import="org.wso2.carbon.identity.authenticator.oauth2.sso.common.Util" %>
 <jsp:useBean id="dataService" class="org.wso2.carbon.dataservices.ui.beans.Data" scope="session"/>
 <jsp:useBean id="newConfig" class="org.wso2.carbon.dataservices.ui.beans.Config" scope="session"/>
 <jsp:useBean id="backupConfigProps" class="java.util.ArrayList" scope="session"></jsp:useBean>
@@ -40,6 +46,13 @@
         } else if (value instanceof DynamicAuthConfiguration) {
             List<DynamicAuthConfiguration.Entry> userEntries = ((DynamicAuthConfiguration) value).getEntries();
             if (userEntries != null && userEntries.size() > 0) {
+                config.updateProperty(propertyName, value);
+            } else {
+                config.removeProperty(propertyName);
+            }
+        } else if (value instanceof DynamicODataConfig) {
+            List<ODataTableSchemaConfig> tableEntries = ((DynamicODataConfig) value).getTables();
+            if (tableEntries != null && tableEntries.size() > 0) {
                 config.updateProperty(propertyName, value);
             } else {
                 config.removeProperty(propertyName);
@@ -61,6 +74,16 @@
     } else {
         isOData = false;
     }
+    Boolean isPublicOData;
+    System.out.println(request.getParameter("isPublicOData"));
+    if(!Util.isAuthenticatorEnabled()) { //if no authenticator specified then set public services by default
+    	isPublicOData = true;
+    }else if (request.getParameter("isPublicOData") != null) {
+    	isPublicOData = true;
+    } else {
+    	isPublicOData = false;
+    }
+    String creator = "not_relevant_at_the_moment";//request.getParameter("Creator");
     String driverClass = request.getParameter(DBConstants.RDBMS.DRIVER_CLASSNAME);
     String jdbcUrl = request.getParameter(DBConstants.RDBMS.URL);
     String dsUserName = request.getParameter(DBConstants.RDBMS.USERNAME);
@@ -112,6 +135,7 @@
     String validationQueryTimeout = request.getParameter(DBConstants.RDBMS.VALIDATION_QUERY_TIMEOUT);
     String alternateUserNameAllowed = request.getParameter(DBConstants.RDBMS.ALTERNATE_USERNAME_ALLOWED);
     String dynamicUserAuthClass = request.getParameter(DBConstants.RDBMS.DYNAMIC_USER_AUTH_CLASS);
+    String dynamicODataConfigurations = request.getParameter(DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING);
 
     String excelDatasource = request.getParameter(DBConstants.Excel.DATASOURCE);
     
@@ -267,6 +291,10 @@
                     dataService.removeConfig(dsConfig);
                 }
             } else {
+            	if(DBConstants.getSupportedODataDBTypes().contains(datasourceType)){
+            		dsConfig.setPublicOData(isPublicOData);
+            	}
+                dsConfig.setCreator(creator);
                 if (DBConstants.DataSourceTypes.RDBMS.equals(datasourceType)) {
                     if (isXAType) {
                     	if (useSecretAliasForPassword) {
@@ -427,7 +455,9 @@
                     updateConfiguration(dsConfig, DBConstants.RDBMS.DYNAMIC_USER_AUTH_CLASS, dynamicUserAuthClass);
                     Iterator<Property> iterator = dsConfig.getProperties().iterator();
                     ArrayList<DynamicAuthConfiguration.Entry> dynamicUserList = new ArrayList<DynamicAuthConfiguration.Entry>();
+                    ArrayList<ODataTableSchemaConfig> dynamicTableList = new ArrayList<ODataTableSchemaConfig>();
                     DynamicAuthConfiguration dynamicAuthConfiguration = new DynamicAuthConfiguration();
+                    DynamicODataConfig dynamicODataConfig = new DynamicODataConfig();
                     while (iterator.hasNext()) {
                         Property availableProperty = iterator.next();
                         if (availableProperty.getName().equals(DBConstants.RDBMS.DYNAMIC_USER_AUTH_MAPPING)) {
@@ -443,12 +473,59 @@
                                         dynamicUserEntry.setRequest(carbonUsername);
                                         dynamicUserEntry.setUsername(dbUsername);
                                         dynamicUserEntry.setPassword(dbUserPwd);
-
                                         dynamicUserList.add(dynamicUserEntry);
                                     }
                                 }
                                 dynamicAuthConfiguration.setEntries(dynamicUserList);
-                                break;
+                            }
+                        } else if (availableProperty.getName().equals(DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING)) {
+                           if (availableProperty.getValue() instanceof DynamicODataConfig && null != request.getParameter("isOData")) {
+                        	   if(request.getParameterValues("tablesOdata") != null){
+                        		   Map<String,List<ODataColumnsConfig>> columnsConfig = new HashMap<String,List<ODataColumnsConfig>>();
+                        		   ODataColumnsConfig odataColumns = new ODataColumnsConfig();
+                        		   List<ODataColumnsConfig> cln = new ArrayList<ODataColumnsConfig>();
+                               	   String [] chkbColumnsNames = request.getParameterValues("ODataColumnsConfig");
+                               	   if(chkbColumnsNames != null){
+	                        		   for(String column : chkbColumnsNames){
+	                        			   String [] arrayColTblSchema = column.split("::");
+	                        			   if(arrayColTblSchema.length > 1){
+		                        			   String key = arrayColTblSchema[0];
+		                        			   cln = new ArrayList<ODataColumnsConfig>();
+		                        			   if(arrayColTblSchema[1] != "" && arrayColTblSchema[1] != null){
+			                        			   String [] cols = arrayColTblSchema[1].split(";");
+			                        			   for(int cnt=0;cnt<cols.length;cnt++){
+			                        				   String [] colType= cols[cnt].split(",");
+			                        				   String columnName = colType[0];
+			                        				   String typeName = colType[1];
+			                        				   odataColumns = new ODataColumnsConfig();
+			                            			   odataColumns.setColumnName(columnName);
+			                            			   if(typeName != "" && typeName != null){
+			                            				   odataColumns.setType(typeName);
+			                            			   }
+			                            			   cln.add(odataColumns);
+			                        			   }
+		                        			   }
+		                        			   columnsConfig.put(key,cln);
+		                        		   }
+	                        		   }
+	                        	   }
+	                            	String [] chkbTblNames = request.getParameterValues("tablesOdata");
+	                            	ODataTableSchemaConfig odataTableSchema = new ODataTableSchemaConfig();
+	                                for (String tblnameSchema : chkbTblNames) {
+	                                	String [] arrayTblSch = tblnameSchema.split("::");
+	                                	String tblname = arrayTblSch[0];
+	                                	String schemaname = arrayTblSch[1];
+	                                	odataTableSchema = new ODataTableSchemaConfig();
+	                                	odataTableSchema.setTableName(tblname);
+	                                	odataTableSchema.setSchemaName(schemaname);
+	                                	odataTableSchema.setColumns(columnsConfig.get(schemaname+"."+tblname));
+	                                    dynamicTableList.add(odataTableSchema);
+	                                }
+	                                dynamicODataConfig.setTables(dynamicTableList);
+                        	   }
+                        	   if(request.getParameter("ODataMaxLimit") != null && !request.getParameter("ODataMaxLimit").trim().equals("0") && !request.getParameter("ODataMaxLimit").trim().equals("") ){
+	                            	dynamicODataConfig.setMaxLimit(request.getParameter("ODataMaxLimit"));
+                       	   	   }
                             }
                         }
                     }
@@ -457,6 +534,12 @@
                     } else {
                         dsConfig.removeProperty(DBConstants.RDBMS.DYNAMIC_USER_AUTH_MAPPING);
                     }
+                    if (dynamicTableList.size() > 0) {
+                        updateConfiguration(dsConfig, DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING, dynamicODataConfig);
+                    } else {
+                        dsConfig.removeProperty(DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING);
+                    }
+                    
                 } else if (DBConstants.DataSourceTypes.EXCEL.equals(datasourceType)) {
                 	if (useQueryMode) {
                 		String excelQueryModeUrl = DBConstants.DSSQLDriverPrefixes.EXCEL_PREFIX + ":" +

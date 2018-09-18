@@ -7,10 +7,10 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.wso2.carbon.data</groupId>
+    <groupId>co.innovation.lab.wso2.dss</groupId>
     <artifactId>carbon-data</artifactId>
     <packaging>pom</packaging>
-    <version>4.4.44-SNAPSHOT</version>
+    <version>4.4.1</version>
     <name>WSO2 Carbon - Data repo Aggregator Pom</name>
     <url>http://wso2.org</url>
 
@@ -408,7 +408,7 @@
             <!--</dependency>-->
 
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.odata</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
@@ -540,85 +540,85 @@
                 <!--<version>${previous.version}</version>-->
             <!--</dependency>-->
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.core</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.odata</artifactId>
                 <version>${dataservices.version}</version>
                 <type>war</type>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.odata.endpoint</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.common</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dbconsole.ui</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.sql.driver</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.ui</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.task</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.task.ui</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.task.stub</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.stub</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.fileupload.stub</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
             <!--<dependency>-->
-            <!--<groupId>org.wso2.carbon.data</groupId>-->
+            <!--<groupId>co.innovation.lab.wso2.dss</groupId>-->
             <!--<artifactId>org.wso2.carbon.ndataservices.core</artifactId>-->
             <!--<version>${dataservices.version}</version>-->
             <!--</dependency>-->
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.server.feature</artifactId>
                 <version>${dataservices.version}</version>
                 <type>zip</type>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.ui.feature</artifactId>
                 <version>${dataservices.version}</version>
                 <type>zip</type>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.task.server.feature</artifactId>
                 <version>${dataservices.version}</version>
                 <type>zip</type>
@@ -639,7 +639,7 @@
                 <version>${commons.lang3.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.task.ui.feature</artifactId>
                 <version>${dataservices.version}</version>
                 <type>zip</type>
@@ -787,7 +787,7 @@
                 <version>${xerces.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.datasource.reader.hadoop</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
@@ -798,7 +798,7 @@
             </dependency>
             <!-- END Hadoop datasource reader dependencies -->
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.datasource.reader.cassandra</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
@@ -880,7 +880,7 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.data</groupId>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.google.tokengen</artifactId>
                 <version>${dataservices.version}</version>
             </dependency>
@@ -1117,6 +1117,7 @@
         </pluginRepository>
     </pluginRepositories>
 
+	
     <profiles>
         <profile>
             <id>default</id>
@@ -1153,11 +1154,11 @@
             </modules>
         </profile>
     </profiles>
-
+	
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
-        <dataservices.version>4.4.44-SNAPSHOT</dataservices.version>
+        <identity.auth.oauth2.version>1.0.1</identity.auth.oauth2.version>
+        <dataservices.version>4.4.1</dataservices.version>
         <dataservices.imp.pkg.version>[4.3.0,5.0.0)</dataservices.imp.pkg.version>
         <dataservices.package.export.version>4.3.1</dataservices.package.export.version>
 
@@ -1228,7 +1229,7 @@
         <cassandra-jdbc.orbit.version>1.2.5.wso2v1</cassandra-jdbc.orbit.version>
 
         <mongo-java-driver.orbit.version>3.4.1</mongo-java-driver.orbit.version>
-        <mongo-java-driver.orbit.imp.pkg.version>[3.4.1,4.0.0)</mongo-java-driver.orbit.imp.pkg.version> <!--todo change this to appropriate version range ([2.11.4.wso2v1,2.12.0)) after osgi bundle is corrected - rajith-->
+        <mongo-java-driver.orbit.imp.pkg.version>[3.0.0,4.0.0)</mongo-java-driver.orbit.imp.pkg.version> <!--todo change this to appropriate version range ([2.11.4.wso2v1,2.12.0)) after osgi bundle is corrected - rajith-->
 
         <jongo.orbit.version>1.2.0.wso2v1</jongo.orbit.version>
         <jongo.orbit.imp.pkg.version>[1.2,1.3)</jongo.orbit.imp.pkg.version>
@@ -1240,7 +1241,7 @@
         <slf4j.version>1.7.2</slf4j.version>
         <cassandra-driver-core.orbit.version>3.0.2</cassandra-driver-core.orbit.version>
         <cassandra-driver-core.orbit.imp.pkg.version>[3.0.2,3.1.0)</cassandra-driver-core.orbit.imp.pkg.version>
-        <mongo-java-driver.imp.pkg.version>[3.4.0,)</mongo-java-driver.imp.pkg.version>
+        <mongo-java-driver.imp.pkg.version>[3.0.0,)</mongo-java-driver.imp.pkg.version>
 		<mongo.driver.version>3.4.1</mongo.driver.version>
         <cassandra-driver-core.version>3.0.2</cassandra-driver-core.version>
         <cassandra-driver-core.imp.pkg.version>[3.0.2,3.1.0)</cassandra-driver-core.imp.pkg.version>

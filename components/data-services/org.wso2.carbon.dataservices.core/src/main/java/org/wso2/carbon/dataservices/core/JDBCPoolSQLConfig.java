@@ -48,8 +48,8 @@ public class JDBCPoolSQLConfig extends SQLConfig {
 	private DataSource dataSource;
 
 	public JDBCPoolSQLConfig(DataService dataService, String configId, String type, Map<String, String> properties,
-	                         boolean odataEnable) throws DataServiceFault {
-		super(dataService, configId, type, RDBMSUtils.convertConfigPropsFromV2toV3(properties), odataEnable);
+	                         boolean odataEnable, boolean isPublicOData, String creator) throws DataServiceFault {
+		super(dataService, configId, type, RDBMSUtils.convertConfigPropsFromV2toV3(properties), odataEnable, isPublicOData, creator);
 	}
 	
 	@Override
@@ -139,6 +139,7 @@ public class JDBCPoolSQLConfig extends SQLConfig {
 		props.remove(RDBMS.MAX_WAIT);
 		props.remove(RDBMS.DYNAMIC_USER_AUTH_CLASS);
 		props.remove(RDBMS.DYNAMIC_USER_AUTH_MAPPING);
+                props.remove(RDBMS.DYNAMIC_ODATA_TABLE_MAPPING);
 	}
 	
 	private void handlePostConfigInit(RDBMSConfiguration config) {

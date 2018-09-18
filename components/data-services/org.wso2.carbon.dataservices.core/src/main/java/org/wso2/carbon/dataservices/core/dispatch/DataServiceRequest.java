@@ -25,6 +25,7 @@ import org.apache.axis2.description.AxisOperation;
 import org.apache.axis2.description.AxisService;
 import org.wso2.carbon.dataservices.common.DBConstants;
 import org.wso2.carbon.dataservices.common.DBConstants.BoxcarringOps;
+import org.wso2.carbon.dataservices.common.DBConstants.FaultCodes;
 import org.wso2.carbon.dataservices.core.DBUtils;
 import org.wso2.carbon.dataservices.core.DSSessionManager;
 import org.wso2.carbon.dataservices.core.DataServiceFault;
@@ -32,7 +33,14 @@ import org.wso2.carbon.dataservices.core.DataServiceUser;
 import org.wso2.carbon.dataservices.core.engine.CallableRequest;
 import org.wso2.carbon.dataservices.core.engine.DataService;
 import org.wso2.carbon.dataservices.core.engine.ParamValue;
+import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilter;
+import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilterInterface;
+import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilterUtils;
+import org.wso2.carbon.identity.authenticator.oauth2.sso.common.Util;
+import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.xml.namespace.QName;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,6 +79,10 @@ public abstract class DataServiceRequest {
 	 * Disable streaming flag
 	 */
 	private boolean disableStreaming;
+	protected static MessageContext messageContext;
+	private static final String HTTP_SERVLET_REQUEST = "transport.http.servletRequest";
+	private static final String HTTP_SERVLET_RESPONSE = "transport.http.servletResponse";
+	
 	
 	protected DataServiceRequest(DataService dataService, String requestName) 
 	        throws DataServiceFault {
@@ -81,8 +93,29 @@ public abstract class DataServiceRequest {
 			throw new DataServiceFault("A data service request named '" + requestName + 
 					"' does not exist in data service '" + dataService.getName() + "'");
 		}
-		this.disableStreaming = this.dataService.getCallableRequest(
+		String configId = this.getDataService().getCallableRequest(this.getRequestName()).getCallQuery().getQuery().getConfigId();
+        boolean isOdataPublic = this.getDataService().getConfig(configId).IsOdataPublic();
+        HttpServletRequest obj = (HttpServletRequest) messageContext.
+                getProperty(HTTP_SERVLET_REQUEST);
+        HttpServletResponse response = (HttpServletResponse) messageContext.
+                getProperty(HTTP_SERVLET_RESPONSE);
+		String tenantDomain = MultitenantUtils.getTenantDomain(obj);
+		
+		boolean isAuthEnabled = Util.isAuthenticatorEnabled();
+        if(isAuthEnabled) {
+	        if(!isOdataPublic) {
+	        	ServicesSecurityFilterUtils secureUtils = new ServicesSecurityFilterUtils();
+	        	ServicesSecurityFilterInterface security = secureUtils.initializeSecurityFilter();
+				boolean isUserAllowed = security.securityFilter(obj,response,tenantDomain);
+	        	if(!isUserAllowed) {
+	        		throw new DataServiceFault(FaultCodes.UNAUTHORIZED_ERROR,"The data service request named '" + requestName + 
+	    					"' need the proper authorization in order to be accessed.");
+	        	}
+	        }
+        }
+        this.disableStreaming = this.dataService.getCallableRequest(
 				this.requestName).isDisableStreamingEffective();
+        
 	}
 	
 	public static DataServiceRequest createDataServiceRequest(
@@ -95,6 +128,7 @@ public abstract class DataServiceRequest {
 		if (inputMessage != null && !requestName.equals(inputMessage.getLocalName())) {
 			throw new DataServiceFault("Input Message and " + requestName + " Axis Operation didn't match.");
 		}
+		messageContext = msgContext;
 		/* retrieve the DataService object representing the current data service */
 		DataService dataService = (DataService) axisService.getParameter(
 				DBConstants.DATA_SERVICE_OBJECT).getValue();

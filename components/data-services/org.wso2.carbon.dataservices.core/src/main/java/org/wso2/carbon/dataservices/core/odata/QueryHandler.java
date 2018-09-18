@@ -60,6 +60,18 @@ public class QueryHandler {
     }
 
     /**
+     * This method applies count query option to the given entity collection.
+     *
+     * @param countOption Count option
+     * @param entitySet   Entity collection
+     */
+    public static void applyCountOption(final CountOption countOption, final EntityCollection entitySet, int countRecords) {
+        if (countOption.getValue()) {
+            entitySet.setCount(countRecords);
+        }
+    }
+    
+    /**
      * This method applies filter query option to the given entity collection.
      *
      * @param filterOption Filter option

@@ -19,6 +19,9 @@ import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
 import org.wso2.carbon.dataservices.common.conf.DynamicAuthConfiguration;
+import org.wso2.carbon.dataservices.common.conf.DynamicODataConfig;
+import org.wso2.carbon.dataservices.common.conf.ODataColumnsConfig;
+import org.wso2.carbon.dataservices.common.conf.ODataTableSchemaConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -96,7 +99,7 @@ public class Property extends DataServiceConfigurationElement{
                 OMElement dynamicUserAuthConfigEle = fac.createOMElement("configuration", null);
                 DynamicAuthConfiguration dynamicAuthConfiguration = (DynamicAuthConfiguration) this.getValue();
                 List<DynamicAuthConfiguration.Entry> dynamicUserEntries = dynamicAuthConfiguration.getEntries();
-                if (dynamicUserEntries != null) {
+                if (dynamicUserEntries != null && dynamicUserEntries.size()>0) {
                     for (DynamicAuthConfiguration.Entry userEntry : dynamicUserEntries) {
                         OMElement dynamicUserEntryEle = fac.createOMElement("entry", null);
                         dynamicUserEntryEle.addAttribute("request", userEntry.getRequest(), null);
@@ -113,6 +116,38 @@ public class Property extends DataServiceConfigurationElement{
                         dynamicUserAuthConfigEle.addChild(dynamicUserEntryEle);
                     }
                     propEl.addChild(dynamicUserAuthConfigEle);
+                }
+            }
+            else if (this.getValue() instanceof DynamicODataConfig) {
+                propEl.addAttribute("name", this.getName(), null);
+                DynamicODataConfig dynamicODataConfiguration = (DynamicODataConfig) this.getValue();
+                List<ODataTableSchemaConfig> dynamicTableEntries = dynamicODataConfiguration.getTables();
+                String maxLimit = dynamicODataConfiguration.getMaxLimit();
+                if(maxLimit != null) {
+                	propEl.addAttribute("maxLimit", maxLimit, null);
+                }
+                if (dynamicTableEntries != null) {
+                    for (ODataTableSchemaConfig table : dynamicTableEntries) {
+                        if(table.getTableName() != null && table.getSchemaName() != null) {
+	                    	OMElement dynamicUserEntryEle = fac.createOMElement("tblname", null);
+	                        String tblname = table.getTableName();
+	                        String schemaName = table.getSchemaName();
+	                        dynamicUserEntryEle.addAttribute("schema", schemaName, null);
+	                        dynamicUserEntryEle.addAttribute("name", tblname, null);
+	                        
+	                        if(table.getColumns() != null) {
+	                        	List<ODataColumnsConfig> columns = table.getColumns();
+	                        	for(ODataColumnsConfig column : columns) {
+	                        		OMElement colEle = fac.createOMElement("column", null);
+	                        		colEle.setText(column.getColumnName());
+	                        		if(column.getType() != null)
+	                        			colEle.addAttribute("type", column.getType(), null);
+	                        		dynamicUserEntryEle.addChild(colEle);
+	                        	}
+	                        }
+	                        propEl.addChild(dynamicUserEntryEle);
+                        }
+                    }
                 }
             }
         }

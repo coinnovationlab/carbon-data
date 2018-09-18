@@ -26,6 +26,9 @@
 <%@ page import="org.wso2.carbon.dataservices.common.DBConstants.RDBMS" %>
 <%@ page import="org.wso2.carbon.dataservices.common.RDBMSUtils" %>
 <%@ page import="org.wso2.carbon.dataservices.common.conf.DynamicAuthConfiguration" %>
+<%@ page import="org.wso2.carbon.dataservices.common.conf.DynamicODataConfig" %>
+<%@ page import="org.wso2.carbon.dataservices.common.conf.ODataTableSchemaConfig" %>
+<%@ page import="org.wso2.carbon.dataservices.common.conf.ODataColumnsConfig" %>
 <%@ page import="org.wso2.carbon.dataservices.ui.DataServiceAdminClient" %>
 <%@ page import="org.wso2.carbon.dataservices.ui.beans.Config" %>
 <%@ page import="org.wso2.carbon.dataservices.ui.beans.Property" %>
@@ -34,18 +37,27 @@
 <%@ page import="javax.xml.bind.JAXBContext" %>
 <%@ page import="javax.xml.bind.Marshaller" %>
 <%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Iterator" %>
 <%@ page import="javax.xml.bind.JAXBException" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.regex.Pattern" %>
 <%@ page import="java.util.regex.Matcher" %>
 <%@ page import="org.wso2.carbon.dataservices.sql.driver.parser.Constants" %>
+<%@ page import="org.apache.axis2.AxisFault"%>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.HashMap" %>
+<%@ page import="org.wso2.carbon.dataservices.ui.stub.admin.core.xsd.GeneratedListTables" %>
+<%@ page import="org.wso2.carbon.identity.authenticator.oauth2.sso.common.Util" %>
+
 
 <fmt:bundle basename="org.wso2.carbon.dataservices.ui.i18n.Resources">
 <script type="text/javascript" src="../ajax/js/prototype.js"></script>
 <script type="text/javascript" src="../resources/js/resource_util.js"></script>
 <jsp:include page="../resources/resources-i18n-ajaxprocessor.jsp"/>
 <link rel="stylesheet" type="text/css" href="../resources/css/registry.css"/>
+<link rel="stylesheet" type="text/css" href="css/datasource.css" media="all"/>
 
 <carbon:breadcrumb
         label="Add Datasource"
@@ -61,6 +73,7 @@
 
 var propertyCount_ = 0;
 var staticUserMappingsCount = 0;
+
 function setHiddenInputs() {
     if (document.getElementById("mongoDB_authentication_type").value == 'NONE') {
         document.getElementById("tr:username").style.display = 'none';
@@ -123,8 +136,8 @@ function getUseSecretAliasValueForProperty(chkbox, id) {
 }
 
 </script>
-
 <%!
+
 private boolean isFieldMandatory(String propertName) {
 	if (propertName.equals(DBConstants.RDBMS.DRIVER_CLASSNAME)) {
 		return true;
@@ -187,22 +200,41 @@ private boolean isFieldMandatory(String propertName) {
 }
 
 Boolean isOData = false;
+boolean isPublic = true;
+String user_logged_in = "";
+
 private Config addNotAvailableFunctions(Config config,String selectedType, HttpServletRequest request) {
     String xaVal = request.getParameter ("xaVal");
-	if (DBConstants.DataSourceTypes.RDBMS.equals(selectedType)) {
-		 if (config.getPropertyValue(DBConstants.RDBMS.DRIVER_CLASSNAME) == null) {
-			 config.addProperty(DBConstants.RDBMS.DRIVER_CLASSNAME, "");
+    String driver = request.getParameter (DBConstants.RDBMS.DRIVER_CLASSNAME) ==  null ? "" : request.getParameter (DBConstants.RDBMS.DRIVER_CLASSNAME);
+    String url = request.getParameter (DBConstants.RDBMS.URL) ==  null ? "" : request.getParameter (DBConstants.RDBMS.URL);
+    String username = request.getParameter (DBConstants.RDBMS.USERNAME) ==  null ? "" : request.getParameter (DBConstants.RDBMS.USERNAME);
+    String passw = request.getParameter (DBConstants.RDBMS.PASSWORD) ==  null ? "" : request.getParameter (DBConstants.RDBMS.PASSWORD);
+    if(DBConstants.getSupportedODataDBTypes().contains(selectedType)){
+		if (config.isPublicODataService() == true) {
+			isPublic = true;
+		 } else {
+			isPublic = false;
 		 }
-		 if (config.getPropertyValue(DBConstants.RDBMS.URL) == null) {
-			 config.addProperty(DBConstants.RDBMS.URL, "");
+	}
+    user_logged_in = config.getCreator();
+    if (DBConstants.DataSourceTypes.RDBMS.equals(selectedType)) {
+		 if (config.getPropertyValue(DBConstants.RDBMS.DRIVER_CLASSNAME) == null || request.getParameter (DBConstants.RDBMS.DRIVER_CLASSNAME) != null) {
+			 config.removeProperty(DBConstants.RDBMS.DRIVER_CLASSNAME);
+			 config.addProperty(DBConstants.RDBMS.DRIVER_CLASSNAME, driver);
 		 }
-		 if (config.getPropertyValue(DBConstants.RDBMS.USERNAME) == null) {
-			 config.addProperty(DBConstants.RDBMS.USERNAME, "");
+		 if (config.getPropertyValue(DBConstants.RDBMS.URL) == null || request.getParameter (DBConstants.RDBMS.URL) != null) {
+			 config.removeProperty(DBConstants.RDBMS.URL);
+			 config.addProperty(DBConstants.RDBMS.URL, url);
 		 }
-		 if (config.getPropertyValue(DBConstants.RDBMS.PASSWORD) == null) {
-			 config.addProperty(DBConstants.RDBMS.PASSWORD, "");
+		 if (config.getPropertyValue(DBConstants.RDBMS.USERNAME) == null || request.getParameter (DBConstants.RDBMS.USERNAME) != null) {
+			 config.removeProperty(DBConstants.RDBMS.USERNAME);
+			 config.addProperty(DBConstants.RDBMS.USERNAME, username);
 		 }
-	 	 if (config.isExposeAsODataService() == true) {
+		 if (config.getPropertyValue(DBConstants.RDBMS.PASSWORD) == null || request.getParameter (DBConstants.RDBMS.PASSWORD) != null) {
+			 config.removeProperty(DBConstants.RDBMS.PASSWORD);
+			 config.addProperty(DBConstants.RDBMS.PASSWORD, passw);
+		 }
+	 	 if (config.isExposeAsODataService() == true || (request.getParameter("isOData") != null && request.getParameter("isOData").equals("true") ) ) {
 			 isOData = true;
 		 } else {
 		 	isOData = false;
@@ -322,6 +354,10 @@ private Config addNotAvailableFunctions(Config config,String selectedType, HttpS
         DynamicAuthConfiguration dynamicUserConfig = new DynamicAuthConfiguration();
         if (config.getPropertyValue(DBConstants.RDBMS.DYNAMIC_USER_AUTH_MAPPING) == null) {
             config.addProperty(DBConstants.RDBMS.DYNAMIC_USER_AUTH_MAPPING, dynamicUserConfig);
+        }
+        DynamicODataConfig dynamicODataConfig = new DynamicODataConfig();
+        if (config.getPropertyValue(DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING) == null) {
+            config.addProperty(DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING, dynamicODataConfig);
         }
     } else if (DBConstants.DataSourceTypes.EXCEL.equals(selectedType)) {
     	if (config.getPropertyValue(DBConstants.RDBMS.DRIVER_CLASSNAME) == null) {
@@ -708,6 +744,7 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
 
 
 <%
+
 	//retrieve values from the data service session
 	String protectedTokens = dataService.getProtectedTokens();
 	String passwordProvider = dataService.getPasswordProvider();
@@ -715,6 +752,10 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
     String configId = request.getParameter("configId");
     String selectedType = request.getParameter("selectedType");
     String scraperString = request.getParameter("scraper-config");
+    String driver = request.getParameter("driverClassName");
+    String url = request.getParameter("url");
+    String username = request.getParameter("username");
+    String password = request.getParameter("password");
     boolean isXAAvailable = false;
     String xaVal = request.getParameter ("xaVal");
     String[] carbonDataSourceNames = null;
@@ -728,6 +769,7 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
     String detailedServiceName = request.getParameter("detailedServiceName");
     String dynamicUserAuthClass = request.getParameter("dynamicUserAuthClass");
     dynamicUserAuthClass = (dynamicUserAuthClass == null) ? "" : dynamicUserAuthClass;
+    
     if (configId == null
         || (selectedType != null && newConfig.getDataSourceType() != null) && !newConfig.getDataSourceType().equals(selectedType)) {
         /* if a new datasource or,
@@ -752,12 +794,13 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
             if (selectedType != null && selectedType.trim().length() > 0 && newConfig.getId() == null) {
                 newConfig.setId(configId);
                 if (DBConstants.DataSourceTypes.RDBMS.equals(selectedType)) {
-                    newConfig.addProperty(DBConstants.RDBMS.DRIVER_CLASSNAME, "");
+                    newConfig.addProperty(DBConstants.RDBMS.DRIVER_CLASSNAME, driver);
                     newConfig.addProperty(DBConstants.RDBMS.URL, "");
                     newConfig.addProperty(DBConstants.RDBMS.USERNAME, "");
                     newConfig.addProperty(DBConstants.RDBMS.PASSWORD, "");
 					newConfig.addProperty(DBConstants.RDBMS.DATASOURCE_CLASSNAME, "");
 					newConfig.setExposeAsOData(false);
+					newConfig.setPublicOData(true);
                         ArrayList<Property> property = new ArrayList<Property>();
                         //property.add(new Property("URL", ""));
                         //property.add(new Property("User", ""));
@@ -802,6 +845,8 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
 
                     DynamicAuthConfiguration dynamicUserConfig = new DynamicAuthConfiguration();
                     newConfig.addProperty(DBConstants.RDBMS.DYNAMIC_USER_AUTH_MAPPING, dynamicUserConfig);
+                    DynamicODataConfig dynamicODataConfig = new DynamicODataConfig();
+                    newConfig.addProperty(DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING, dynamicODataConfig);
 
                 } else if (DBConstants.DataSourceTypes.EXCEL.equals(selectedType)) {
                 	newConfig.addProperty(DBConstants.RDBMS.DRIVER_CLASSNAME, "");
@@ -926,7 +971,7 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
                 Config conf = new Config();
                 conf.setId(configId);
                 if (DBConstants.DataSourceTypes.RDBMS.equals(selectedType)) {
-                    conf.addProperty(DBConstants.RDBMS.DRIVER_CLASSNAME, "");
+                    conf.addProperty(DBConstants.RDBMS.DRIVER_CLASSNAME, driver);
                     conf.addProperty(DBConstants.RDBMS.URL, "");
                     conf.addProperty(DBConstants.RDBMS.USERNAME, "");
                     conf.addProperty(DBConstants.RDBMS.PASSWORD, "");
@@ -1156,7 +1201,7 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
                 useSecretAlias = dsConfig.isUseSecretAliasForPassword();
             }
         } else {
-            configId = "";
+        	configId = "";
         }
         /* if the selectType is carbon datasources, populate the names list */
         if ((selectedType != null && selectedType.equals("CARBON_DATASOURCE")) || dataSourceType.equals("CARBON_DATASOURCE")) {
@@ -1639,7 +1684,7 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
 
 
 <%
-    if (propertyIterator != null) {
+    if (propertyIterator != null) { // TODO
         String jdbcUrl = "";
         while (propertyIterator.hasNext()) {
             Property property = (Property) propertyIterator.next();
@@ -1800,6 +1845,8 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
             ||propertyName.equals(DBConstants.RDBMS.ALTERNATE_USERNAME_ALLOWED)
             ||propertyName.equals(DBConstants.RDBMS.DYNAMIC_USER_AUTH_CLASS)
             ||propertyName.equals(DBConstants.RDBMS.DYNAMIC_USER_AUTH_MAPPING)
+            ||propertyName.equals(DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING)
+            ||propertyName.equals(DBConstants.RDBMS.ODATA_MAX_LIMIT)
             ||propertyName.equals(DBConstants.CustomDataSource.DATA_SOURCE_PROPS) 
             ||propertyName.equals(DBConstants.CustomDataSource.DATA_SOURCE_QUERY_CLASS)
             ||propertyName.equals(DBConstants.CustomDataSource.DATA_SOURCE_TABULAR_CLASS)) && 
@@ -2429,6 +2476,8 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
             ||propertyName.equals(DBConstants.RDBMS.ALTERNATE_USERNAME_ALLOWED)
             ||propertyName.equals(DBConstants.RDBMS.DYNAMIC_USER_AUTH_CLASS)
             ||propertyName.equals(DBConstants.RDBMS.DYNAMIC_USER_AUTH_MAPPING)
+            ||propertyName.equals(DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING)
+            ||propertyName.equals(DBConstants.RDBMS.ODATA_MAX_LIMIT)
             ||propertyName.equals(DBConstants.CustomDataSource.DATA_SOURCE_PROPS) 
             ||propertyName.equals(DBConstants.CustomDataSource.DATA_SOURCE_QUERY_CLASS)
             ||propertyName.equals(DBConstants.CustomDataSource.DATA_SOURCE_TABULAR_CLASS)) && !(propertyName.equals(DBConstants.GSpread.DATASOURCE) && useQueryMode)
@@ -2444,16 +2493,112 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
 
     }
     }
+Boolean createView = false;
+if (configId != null && configId.trim().length() > 0) {
+    Config dsConfig = dataService.getConfig(configId);
+    String user_logged_in = "";
+
+    if (dsConfig == null || (dsConfig != null && !flag.equals("edit"))) {
+        dsConfig = newConfig;
+        createView = true;
+        user_logged_in = (String) session.getAttribute("loggedInUser");
+        dsConfig.setOpMode(DBConstants.DBSFields.CREATE_VIEW);
+        dsConfig.setCreator(user_logged_in);
+    }
+    if (dsConfig != null) {
+        dataSourceType = dsConfig.getDataSourceType();
+        if (dataSourceType == null) {
+            dataSourceType = "";
+        }
+        if (selectedType == null) {
+            selectedType = dsConfig.getDataSourceType();
+        }
+        dsConfig = addNotAvailableFunctions(dsConfig, selectedType, request);
+        ArrayList configProperties = dsConfig.getProperties();
+        propertyIterator = configProperties.iterator();
+
+    }
+}
+DynamicODataConfig dynamicODataConfig;
+List<ODataTableSchemaConfig> dynamicOdataTableList = new ArrayList<ODataTableSchemaConfig>();
+List<String> dynamicTableList = new ArrayList<String>();
+Map<String,List<ODataColumnsConfig>> dynamicColumnsList = new HashMap<String,List<ODataColumnsConfig>>();
+String maxLimit = "100";
+String driverClass = "";
+String jdbcUrl = "";
+String userName = "";
+String pswd = "";
+String passwordAlias1 = "";
+if (propertyIterator != null) {
+    while (propertyIterator.hasNext()) {
+        Property property = (Property) propertyIterator.next();
+        String propertyName = property.getName();
+        Object propertyValue = property.getValue();
+        if(property.getValue() instanceof  String ){
+        	if (propertyName.equals(DBConstants.RDBMS.DRIVER_CLASSNAME)) {
+        		driverClass = (String) propertyValue;
+            } else if (propertyName.equals(DBConstants.RDBMS.URL)) {
+            	jdbcUrl = (String) propertyValue;
+            } else if (propertyName.equals(DBConstants.RDBMS.USERNAME)) {
+            	userName = (String) propertyValue;
+            } else if (propertyName.equals(DBConstants.RDBMS.PASSWORD)) {
+            	pswd = (String) propertyValue;
+            }
+        } else if (property.getValue() instanceof DynamicODataConfig) {
+            if (propertyName.equals(DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING)) {
+            	dynamicODataConfig = (DynamicODataConfig)propertyValue;
+            	dynamicOdataTableList = dynamicODataConfig.getTables();
+                maxLimit = dynamicODataConfig.getMaxLimit();
+                for(int count=0;count<dynamicOdataTableList.size();count++){
+                	dynamicTableList.add(dynamicOdataTableList.get(count).getTableName());
+                	List<ODataColumnsConfig> columnsList = dynamicOdataTableList.get(count).getColumns();
+                	String key = dynamicOdataTableList.get(count).getSchemaName()+"."+dynamicOdataTableList.get(count).getTableName();
+                	dynamicColumnsList.put(key,columnsList);
+                	
+    	            String colConfTmp = "";
+    	            if(columnsList != null){
+	    	            for(int iter=0;iter<columnsList.size();iter++){
+	    	            	colConfTmp += (iter != 0 ? ";" : "");
+	    	            	colConfTmp += columnsList.get(iter).getColumnName()+","+ columnsList.get(iter).getType();
+	    	            }
+    	            }
+    	            %>
+    	            <input type="hidden" name="ODataColumnsConfig" id="ColConfig_<%=key %>" value="<%=key+"::"+colConfTmp%>" />
+    	            <%
+                }
+            }
+        }
+    }
+}
 %>
-<% if("RDBMS".equals(dataSourceType) || "Cassandra".equals(dataSourceType) || "CARBON_DATASOURCE".equals(dataSourceType)) { %>
-<tr>
-    <td class="leftCol-small" style="white-space: nowrap;">
+<input type="hidden" name="Creator" value="<%=user_logged_in%>" />
+
+<% if(DBConstants.getSupportedODataDBTypes().contains(dataSourceType) || "CARBON_DATASOURCE".equals(dataSourceType)) { %>
+<tr>""    <td class="leftCol-small" style="white-space: nowrap;">
         Enable OData</td>
     <td>
-        <input type="checkbox" name="isOData" id="isOData" value="isOData" <%=(isOData==true ? "checked" : "") %>>
+        <input type="checkbox" name="isOData" id="isOData" value="isOData" <%=(isOData==true ? "checked" : "") %> onclick="reloadOdataConfig(<%=createView%>,'<%=DBConstants.RDBMS.DRIVER_CLASSNAME%>','<%=DBConstants.RDBMS.URL%>','<%=DBConstants.RDBMS.USERNAME%>','<%=DBConstants.RDBMS.PASSWORD%>');">
     </td>
 </tr>
-<% } %>
+<tr>
+	<td class="leftCol-small" style="white-space: nowrap;">
+        <fmt:message key="odata.config.max.records"/>
+    </td>
+    <td>
+        <input type="text" name="ODataMaxLimit" id="ODataMaxLimit" value="<%=maxLimit %>" >
+    </td>
+</tr>
+	<% if(Util.isAuthenticatorEnabled()) { %>
+	<tr>
+		<td class="leftCol-small" style="white-space: nowrap;">
+	        <fmt:message key="odata.config.is.public"/>
+	    </td>
+	    <td>
+	        <input type="checkbox" id="isPublicOData" name="isPublicOData"  <%=(isPublic==true ? "checked" : "") %>/>
+	    </td>
+	</tr>
+	<% }
+} %>
 <%if ("GDATA_SPREADSHEET".equals(dataSourceType)) {%>
     <tr id="tr:gspread_redirect_uris" style='display:<%=((!(visibility == null || visibility.equals("public")))?"":"none")%>'>
         <td style="width:150px"><fmt:message key="gspread_redirect_uris"/><span
@@ -2467,6 +2612,232 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
     </tr>
 <%} %>
 </table>
+
+<% if( DBConstants.getSupportedODataDBTypes().contains(dataSourceType) ) { %>
+<table id="advancedTable" class="styledLeft noBorders" cellspacing="0" width="100%">
+    <%
+           boolean schemaSupport = true;
+           if (propertyIterator != null) {
+               String backendServerURL = CarbonUIUtil
+           			.getServerURL(config.getServletContext(), session);
+           	ConfigurationContext configContext = (ConfigurationContext) config.getServletContext()
+           			.getAttribute(CarbonConstants.CONFIGURATION_CONTEXT);
+           	String cookie = (String) session.getAttribute(ServerConstants.ADMIN_SERVICE_COOKIE);
+           	DataServiceAdminClient client = new DataServiceAdminClient(cookie, backendServerURL,
+           			configContext);
+           	GeneratedListTables [] tableList2 = {};
+           	GeneratedListTables [] viewsList2 = {};
+           	String [] schemaList = {};
+           	if( driverClass != "" && jdbcUrl != "" && userName != "" ){
+           		schemaList = client.getdbSchemaListUsingParams(driverClass, jdbcUrl, userName, pswd, passwordAlias1);
+           		if(schemaList==null) schemaSupport = false; //schemaList = new String[1];
+           		tableList2 = client.generateTableList(driverClass, jdbcUrl, userName, pswd, passwordAlias1,schemaList,"TABLE" );
+           		viewsList2 = client.generateTableList(driverClass, jdbcUrl, userName, pswd, passwordAlias1,schemaList,"VIEW" );
+           		if(!schemaSupport){ 
+           			schemaList = new String[1];
+  					schemaList[0] = DBConstants.NO_SCHEMA; // support dbs that don't use schema
+     			} 
+           	}
+	    	
+	    	%>
+	<tr>
+        <td colspan="2" class="middle-header">
+        <a onclick="showAdvancedConfigODataTables()" class="icon-link" style="background-image:url(images/plus.gif);"
+                     id="advODataSymbolMax"></a>
+            <fmt:message key="odata.configuration.activate.table"/></td>
+    </tr>
+    <tr id="advancedConfigODataTables" style="display:none">
+	    <td>
+	    <table>
+		    <tr>
+               <td><fmt:message key="odata.choose.schema"/>:</td>
+               <td><select id="schema_list" name="schema_list" onchange="reloadOdataObjects()">
+                           <% for(int i=0;i<schemaList.length;i++){%>
+                           		<option value="<%=schemaList[i] %>"><%=schemaList[i] %></option>
+                           <%} %>
+                    </select>
+               </td>
+		    </tr>
+		    <tr>
+		    	<td colspan="2">
+		    		<input class="button" type="button" value="<fmt:message key="odata.select.all"/>" onclick="select_unselect('tablesOdata',false);return false;"/>
+                </td>
+		    </tr>
+	    </table>
+	    <% 
+	    Map<String,List<String>> tableListAll = new HashMap<String,List<String>>();
+	    Map<String,List<String>> viewsListAll = new HashMap<String,List<String>>();
+	    for(int j=0;j<schemaList.length;j++){
+	    	String [] tableArray = {};
+	    	String [] viewsArray = {};
+	    	for(int k=0;k<tableList2.length;k++){
+	    		GeneratedListTables currSchemaTables = tableList2[k];
+	    		GeneratedListTables currSchemaViews = viewsList2[k];    		
+	    		if(currSchemaTables.getSchemaName().equals(schemaList[j]) || currSchemaTables.getSchemaName().equals(DBConstants.NO_SCHEMA)){
+	    			if(currSchemaTables.getTables() != null){
+	    				tableArray = (String [])currSchemaTables.getTables();
+	    			}
+	    			if(currSchemaViews.getTables() != null){
+	    				viewsArray = (String [])currSchemaViews.getTables();
+	    			}
+	    			break;
+	    		}
+	    	}
+	    	List<String> tableList = new ArrayList<String>(Arrays.asList(tableArray ));
+	    	List<String> viewsList = new ArrayList<String>(Arrays.asList(viewsArray ));
+	    	tableListAll.put(schemaList[j],tableList);
+	    	viewsListAll.put(schemaList[j],viewsList);
+	    	%>
+	    <div id="<%= schemaList[j] %>" style="display:<%= ((j==0) ? "inline" : "none")%>">
+	    <div class="tab">
+			  <span class="tablinks" id="Tables<%= j %>Header" onclick="openTabContent(event, 'Tables<%= j %>')">Tables</span>
+			  <span class="tablinks" id="Views<%= j %>Header" onclick="openTabContent(event, 'Views<%= j %>')">Views</span>
+			</div>
+			
+			<div id="Tables<%= j %>" class="tabcontent">
+			  <h3>List of Tables</h3>
+			  <p><table>
+	    		<% for(int i=0;i<tableList.size();i=i+5){%>
+		    	<tr>
+	    			<td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+"_"+schemaList[j] %>" value="<%=tableList.get(i)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(tableList.get(i)) || dynamicTableList.size()==0  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'opttables')"/></td>
+	    			<td><label for="tablesOdata<%=i+"_"+schemaList[j] %>" ><%=tableList.get(i) %></label></td>
+	    			<td></td><td></td>
+                    <% if (i+1<tableList.size() ) { %>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+1 +"_"+schemaList[j]%>" value="<%=tableList.get(i+1)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(tableList.get(i+1)) || dynamicTableList.size()==0  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'opttables')"/></td>
+	    			<td><label for="tablesOdata<%=i+1 +"_"+schemaList[j]%>"><%=tableList.get(i+1) %></label></td>
+	    			<td></td><td></td>
+                    <%} if (i+2<tableList.size() ) {%>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+2 +"_"+schemaList[j]%>" value="<%=tableList.get(i+2)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(tableList.get(i+2)) || dynamicTableList.size()==0  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'opttables')"/></td>
+	    			<td><label for="tablesOdata<%=i+2+"_"+schemaList[j]%>"><%=tableList.get(i+2) %></label></td>
+	    			<td></td><td></td>
+	    			<% }%>
+	    			<% if (i+3<tableList.size() ) { %>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+3 +"_"+schemaList[j]%>" value="<%=tableList.get(i+3)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(tableList.get(i+3)) || dynamicTableList.size()==0 ? "checked='checked'" : ""  %> onchange="addTableToList(this,'opttables')"/></td>
+	    			<td><label for="tablesOdata<%=i+3 +"_"+schemaList[j]%>"><%=tableList.get(i+3) %></label></td>
+	    			<td></td><td></td>
+                    <%} if (i+4<tableList.size() ) {%>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+4 +"_"+schemaList[j]%>" value="<%=tableList.get(i+4)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(tableList.get(i+4)) || dynamicTableList.size()==0 ? "checked='checked'" : ""  %> onchange="addTableToList(this,'opttables')"/></td>
+	    			<td><label for="tablesOdata<%=i+4 +"_"+schemaList[j]%>"><%=tableList.get(i+4) %></label></td>
+	    			<td></td><td></td>
+	    			<% }%>
+		    	</tr>
+		    	<% }
+		    	%>
+	    	</table>
+	    	<% if(tableList.size() == 0){%>
+	    			<fmt:message key="odata.empty.tables"/>
+    		<%
+	    		}
+	    	%>
+	    	</p>
+			</div>
+			
+			<div id="Views<%= j %>" class="tabcontent">
+			  <h3>List of Views</h3>
+			  <p>
+			  <table>
+	    		<% for(int i=0;i<viewsList.size();i=i+5){%>
+		    	<tr>
+	    			<td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i %>" value="<%=viewsList.get(i)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i)) || dynamicTableList.size()==0  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'optviews')"/></td>
+	    			<td><label for="tablesOdata<%=i %>" ><%=viewsList.get(i) %></label></td>
+	    			<td></td><td></td>
+                    <% if (i+1<viewsList.size() ) { %>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+1 %>" value="<%=viewsList.get(i+1)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i+1)) || dynamicTableList.size()==0 ? "checked='checked'" : ""  %> onchange="addTableToList(this,'optviews')"/></td>
+	    			<td><label for="tablesOdata<%=i+1 %>"><%=viewsList.get(i+1) %></label></td>
+	    			<td></td><td></td>
+                    <%} if (i+2<viewsList.size() ) {%>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+2 %>" value="<%=viewsList.get(i+2)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i+2)) || dynamicTableList.size()==0 ? "checked='checked'" : ""  %> onchange="addTableToList(this,'optviews')"/></td>
+	    			<td><label for="tablesOdata<%=i+2 %>"><%=viewsList.get(i+2) %></label></td>
+	    			<td></td><td></td>
+	    			<% }%>
+	    			<% if (i+3<viewsList.size() ) { %>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+3 %>" value="<%=viewsList.get(i+3)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i+3)) || dynamicTableList.size()==0 ? "checked='checked'" : ""  %> onchange="addTableToList(this,'optviews')"/></td>
+	    			<td><label for="tablesOdata<%=i+3 %>"><%=viewsList.get(i+3) %></label></td>
+	    			<td></td><td></td>
+                    <%} if (i+4<viewsList.size() ) {%>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+4 %>" value="<%=viewsList.get(i+4)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i+4))  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'optviews')"/></td>
+	    			<td><label for="tablesOdata<%=i+4 %>"><%=viewsList.get(i+4) %></label></td>
+	    			<td></td><td></td>
+	    			<% }%>
+		    	</tr>
+		    	<% }
+		    	%>
+	    	</table>
+	    	<% if(viewsList.size() == 0){%>
+	    			<fmt:message key="odata.empty.views"/>
+    		<%
+	    		}
+	    	%>
+	    	</p> 
+			</div>
+	    </div>
+	    <%} %>
+	    	
+	    </td>
+    </tr>
+    <tr>
+        <td colspan="2" class="middle-header">
+        <a onclick="showAdvancedConfigODataTablesColumns(<%= createView%>)" class="icon-link" style="background-image:url(images/plus.gif);"
+                     id="advODataColumnsSymbolMax"></a>
+            <fmt:message key="odata.configuration.activate.table.columns"/></td>
+    </tr>
+    <tr id="advancedConfigODataTablesColumns" style="display:none">
+	    <td>
+	    <table>
+		    <tr>
+		       <td><fmt:message key="odata.choose.table"/>:</td>
+               <td><select id="tables_list" name="tables_list" onchange="reloadOdataColumns(this[this.selectedIndex].value)" >
+                           <option value=""><fmt:message key="odata.table.none"/></option>
+                           <optgroup label="Tables" id="opttables">
+                           <% for(String schema : tableListAll.keySet() ){
+                        	   List<String> tbls = tableListAll.get(schema);
+                        	   String prefix = schema+".";
+                        	   if (!schemaSupport) prefix = "";
+	                           for(int i=0;i<tbls.size();i++){%>
+		                           <script type="text/javascript">
+				    		    		var selectedTable = <%=dynamicTableList.contains(tbls.get(i))%>;
+				    		    		if(selectedTable){
+				    		    			var option   = document.createElement("option");
+				    		    			option.text  = "<%=prefix + tbls.get(i)%>";
+				    		    			option.value = "<%=schema+"." + tbls.get(i)%>";
+				    		    			document.getElementById("opttables").append(option);
+			    		    		}
+			    		    	</script>
+		    		    	<%}
+		    		    	}%>
+		    		    	</optgroup>
+		    		    	<optgroup label="Views" id="optviews">
+		    		    	<% for(String schema : viewsListAll.keySet() ){
+	                        	   List<String> views = viewsListAll.get(schema);
+	                        	   String prefix = schema+".";
+	                        	   if (!schemaSupport) prefix = "";
+	                        	   for(int i=0;i<views.size();i++){%>
+		                           <script type="text/javascript">
+				    		    		var selectedTable = <%=dynamicTableList.contains(views.get(i))%>;
+				    		    		if(selectedTable){
+				    		    			var option   = document.createElement("option");
+				    		    			option.text  = "<%=prefix + views.get(i)%>";
+				    		    			option.value = "<%=schema+"." + views.get(i)%>";
+				    		    			document.getElementById("optviews").append(option);
+				    		    		}
+				    		    	</script>
+		    		    	<%}
+		    		    	}%>
+		    		    	</optgroup>
+                    </select>
+               </td>
+		    </tr>
+			    <td colspan="2">
+			    	<input class="button" type="button" value="<fmt:message key="odata.select.all.columns"/>" onclick="select_unselect('columnsList',false);return false;"/>
+			    </td>
+		    </tr>
+	    </table>
+	    <div id="columns_content"  class='tab'></div>
+	    </td>
+    </tr>
+    <%  }%>
+</table>
+<% } %>
 
 <% if (DBConstants.DataSourceTypes.RDBMS.equals(selectedType)) { %>
 <table id="advancedTable" class="styledLeft noBorders" cellspacing="0" width="100%">
@@ -2746,6 +3117,76 @@ private String getRefreshToken(String gSpreadJDBCUrl) {
         <input class="button" type="button" value="<fmt:message key="datasource.test.connection"/>"
                onclick="testConnection();return false;"/>
         <script type="text/javascript">
+	        function reloadOdataObjects(){
+	        	var obj=document.getElementById('schema_list');
+	        	var schemaSelected = obj[obj.selectedIndex].value;
+	            for(var i = 0;i<obj.options.length;i++){
+	            	document.getElementById(obj.item(i).value).style.display="none";
+	            }
+	            document.getElementById(schemaSelected).style.display="inline";
+	            openTabContent(event, 'Tables'+obj.selectedIndex);
+	            return false;
+	        }
+        
+	        function displayMsgTables(msg) {
+	        	var objTable=document.getElementById('tables_list');
+	        	var tableSelectedAll = objTable[objTable.selectedIndex].value.split(".");
+	        	var tableSelected = tableSelectedAll[1];
+	        	var schemaSelected = tableSelectedAll[0];
+	        	       	
+	        	var key = objTable[objTable.selectedIndex].value;
+	        	var objColConf = document.getElementById("ColConfig_"+key);
+	        	if(objColConf !== undefined && objColConf != null){
+	        		var valTemp = objColConf.value.split("::");
+	        		if(valTemp.length >1 && valTemp[1] != ""){
+	        			var selectedCols = valTemp[1].split(";");
+		        		var name,type,colTemp;
+		        		
+		        		for(var i=0 ; i<selectedCols.length; i++){
+		        			colTemp = selectedCols[i].split(",");
+		        			name = colTemp[0];
+		        			type = colTemp[1];
+		        			if(document.getElementById("columnsList_" + name) != null && document.getElementById("columnsList_" + name) != undefined){
+		        				document.getElementById("columnsList_" + name).checked =true;
+		        			}
+			        		if(type != "" && type != null && type != undefined && document.getElementById("typesList_" + name) != null && document.getElementById("typesList_" + name) != undefined)
+			        			document.getElementById("typesList_" + name).value = type;
+			        	}
+	        		}else{
+	        			select_unselect("columnsList",false) ; //by default all columns selected if there is an empty config(only selected table without columns)
+	        		}
+	        	}else{
+        			select_unselect("columnsList",false) ; //by default all columns selected if there is no previous config
+        		}
+	        }
+	        
+	        function reloadOdataColumns(key) {
+	        	//var objTable=document.getElementById('tables_list');
+	        	var tableSelectedAll = key.split(".");// objTable[objTable.selectedIndex].value.split(".");
+	        	var tableSelected = tableSelectedAll[1];
+	        	var schemaSelected = tableSelectedAll[0];
+	        	document.getElementById("tables_list").value = key;
+	        	
+	            var driverClassName = document.getElementById('<%=RDBMS.DRIVER_CLASSNAME%>').value;
+	        	var urlValue = document.getElementById('<%=RDBMS.URL%>').value;
+	        	var usernameValue = document.getElementById('<%=RDBMS.USERNAME%>').value;
+	        	var passwValue = document.getElementById('<%=RDBMS.PASSWORD%>').value;
+	            var useAlias = document.getElementById('useSecretAliasValue').value;
+	            var dataToBeSent = {};
+	            var pwdalias="";
+	            if (useAlias == 'true') {
+	            	if (document.getElementById('pwdalias') != null) {
+	            		pwdalias = document.getElementById('pwdalias').value;
+	            	}
+	                var url = 'getColumnsList_ajaxprocessor.jsp?tablename='+tableSelected+'&driver=' + encodeURIComponent(driverClassName) + '&jdbcUrl=' + encodeURIComponent(urlValue) + '&userName=' + encodeURIComponent(usernameValue) + '&password=' + encodeURIComponent(passwValue) + '&passwordAlias=' +pwdalias + '&schema=' +schemaSelected ;
+	            } else {
+	            	var url = 'getColumnsList_ajaxprocessor.jsp?tablename='+tableSelected+'&driver=' + encodeURIComponent(driverClassName) + '&jdbcUrl=' + encodeURIComponent(urlValue) + '&userName=' + encodeURIComponent(usernameValue) + '&password=' + encodeURIComponent(passwValue) + '&schema=' +schemaSelected ;
+	            }
+	            
+	            jQuery('#columns_content').load(url, dataToBeSent, displayMsgTables);
+	            return false;
+	        }
+
             function displayMsg(msg) {
             	var successMsg  =  new RegExp("^Database connection is successful with driver class");
             	if (msg.search(successMsg)==-1) //if match failed

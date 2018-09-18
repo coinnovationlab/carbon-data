@@ -1,20 +1,4 @@
-<!--
-  ~ Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
-  ~
-  ~ Licensed under the Apache License, Version 2.0 (the "License");
-  ~ you may not use this file except in compliance with the License.
-  ~ You may obtain a copy of the License at
-  ~
-  ~ http://www.apache.org/licenses/LICENSE-2.0
-  ~
-  ~ Unless required by applicable law or agreed to in writing, software
-  ~ distributed under the License is distributed on an "AS IS" BASIS,
-  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  ~ See the License for the specific language governing permissions and
-  ~ limitations under the License.
-  -->
-
-<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:ns1="http://org.apache.axis2/xsd" xmlns:ns="http://admin.core.dataservices.carbon.wso2.org" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:ax290="http://script.core.dataservices.carbon.wso2.org/xsd" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" targetNamespace="http://admin.core.dataservices.carbon.wso2.org">
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:ns="http://admin.core.dataservices.carbon.wso2.org" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:ax290="http://script.core.dataservices.carbon.wso2.org/xsd" xmlns:ns1="http://org.apache.axis2/xsd" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" targetNamespace="http://admin.core.dataservices.carbon.wso2.org">
     <wsdl:documentation>DataServiceAdmin</wsdl:documentation>
     <wsdl:types>
         <xs:schema xmlns:ax291="http://script.core.dataservices.carbon.wso2.org/xsd" attributeFormDefault="qualified" elementFormDefault="qualified" targetNamespace="http://admin.core.dataservices.carbon.wso2.org">
@@ -46,24 +30,6 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
-            <xs:element name="testGSpreadConnection">
-                <xs:complexType>
-                    <xs:sequence>
-                        <xs:element minOccurs="0" name="clientId" nillable="true" type="xs:string"/>
-                        <xs:element minOccurs="0" name="clientSecret" nillable="true" type="xs:string"/>
-                        <xs:element minOccurs="0" name="refreshToken" nillable="true" type="xs:string"/>
-                        <xs:element minOccurs="0" name="visibility" nillable="true" type="xs:string"/>
-                        <xs:element minOccurs="0" name="documentURL" nillable="true" type="xs:string"/>
-                    </xs:sequence>
-                </xs:complexType>
-            </xs:element>
-            <xs:element name="testGSpreadConnectionResponse">
-                <xs:complexType>
-                    <xs:sequence>
-                        <xs:element minOccurs="0" name="return" nillable="true" type="xs:string"/>
-                    </xs:sequence>
-                </xs:complexType>
-            </xs:element>
             <xs:element name="DataServiceAdminException">
                 <xs:complexType>
                     <xs:sequence>
@@ -76,37 +42,43 @@
                     <xs:element minOccurs="0" name="Message" nillable="true" type="xs:string"/>
                 </xs:sequence>
             </xs:complexType>
-            <xs:element name="getDSService">
+            <xs:element name="generateTableList">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element minOccurs="0" name="dataSourceId" nillable="true" type="xs:string"/>
-                        <xs:element minOccurs="0" name="dbName" nillable="true" type="xs:string"/>
+                        <xs:element minOccurs="0" name="driverClass" nillable="true" type="xs:string"/>
+                        <xs:element minOccurs="0" name="jdbcURL" nillable="true" type="xs:string"/>
+                        <xs:element minOccurs="0" name="username" nillable="true" type="xs:string"/>
+                        <xs:element minOccurs="0" name="password" nillable="true" type="xs:string"/>
+                        <xs:element minOccurs="0" name="passwordAlias" nillable="true" type="xs:string"/>
                         <xs:element maxOccurs="unbounded" minOccurs="0" name="schemas" nillable="true" type="xs:string"/>
-                        <xs:element maxOccurs="unbounded" minOccurs="0" name="tableNames" nillable="true" type="xs:string"/>
-                        <xs:element minOccurs="0" name="singleService" type="xs:boolean"/>
-                        <xs:element minOccurs="0" name="serviceName" nillable="true" type="xs:string"/>
-                        <xs:element minOccurs="0" name="serviceNamespace" nillable="true" type="xs:string"/>
+                        <xs:element minOccurs="0" name="type" nillable="true" type="xs:string"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
-            <xs:element name="getDSServiceResponse">
+            <xs:element name="generateTableListResponse">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element minOccurs="0" name="return" nillable="true" type="xs:string"/>
+                        <xs:element maxOccurs="unbounded" minOccurs="0" name="return" nillable="true" type="ax290:GeneratedListTables"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
-            <xs:element name="validateJSONMapping">
+            <xs:element name="generateTableColumnsList">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element minOccurs="0" name="jsonMapping" nillable="true" type="xs:string"/>
+                        <xs:element minOccurs="0" name="driverClass" nillable="true" type="xs:string"/>
+                        <xs:element minOccurs="0" name="jdbcURL" nillable="true" type="xs:string"/>
+                        <xs:element minOccurs="0" name="username" nillable="true" type="xs:string"/>
+                        <xs:element minOccurs="0" name="password" nillable="true" type="xs:string"/>
+                        <xs:element minOccurs="0" name="passwordAlias" nillable="true" type="xs:string"/>
+                        <xs:element minOccurs="0" name="schema" nillable="true" type="xs:string"/>
+                        <xs:element minOccurs="0" name="tablename" nillable="true" type="xs:string"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
-            <xs:element name="validateJSONMappingResponse">
+            <xs:element name="generateTableColumnsListResponse">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element minOccurs="0" name="return" nillable="true" type="xs:string"/>
+                        <xs:element maxOccurs="unbounded" minOccurs="0" name="return" nillable="true" type="ax290:ColumnsList"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
@@ -118,6 +90,24 @@
                 </xs:complexType>
             </xs:element>
             <xs:element name="getDataServiceContentAsStringResponse">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element minOccurs="0" name="return" nillable="true" type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="testGSpreadConnection">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element minOccurs="0" name="clientId" nillable="true" type="xs:string"/>
+                        <xs:element minOccurs="0" name="clientSecret" nillable="true" type="xs:string"/>
+                        <xs:element minOccurs="0" name="refreshToken" nillable="true" type="xs:string"/>
+                        <xs:element minOccurs="0" name="visibility" nillable="true" type="xs:string"/>
+                        <xs:element minOccurs="0" name="documentURL" nillable="true" type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="testGSpreadConnectionResponse">
                 <xs:complexType>
                     <xs:sequence>
                         <xs:element minOccurs="0" name="return" nillable="true" type="xs:string"/>
@@ -220,6 +210,24 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="getdbSchemaListUsingParams">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element minOccurs="0" name="driverClass" nillable="true" type="xs:string"/>
+                        <xs:element minOccurs="0" name="jdbcURL" nillable="true" type="xs:string"/>
+                        <xs:element minOccurs="0" name="username" nillable="true" type="xs:string"/>
+                        <xs:element minOccurs="0" name="password" nillable="true" type="xs:string"/>
+                        <xs:element minOccurs="0" name="passwordAlias" nillable="true" type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="getdbSchemaListUsingParamsResponse">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element maxOccurs="unbounded" minOccurs="0" name="return" nillable="true" type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
             <xs:element name="getPaginatedSchemaInfo">
                 <xs:complexType>
                     <xs:sequence>
@@ -287,6 +295,40 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="getDSService">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element minOccurs="0" name="dataSourceId" nillable="true" type="xs:string"/>
+                        <xs:element minOccurs="0" name="dbName" nillable="true" type="xs:string"/>
+                        <xs:element maxOccurs="unbounded" minOccurs="0" name="schemas" nillable="true" type="xs:string"/>
+                        <xs:element maxOccurs="unbounded" minOccurs="0" name="tableNames" nillable="true" type="xs:string"/>
+                        <xs:element minOccurs="0" name="singleService" type="xs:boolean"/>
+                        <xs:element minOccurs="0" name="serviceName" nillable="true" type="xs:string"/>
+                        <xs:element minOccurs="0" name="serviceNamespace" nillable="true" type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="getDSServiceResponse">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element minOccurs="0" name="return" nillable="true" type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="validateJSONMapping">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element minOccurs="0" name="jsonMapping" nillable="true" type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="validateJSONMappingResponse">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element minOccurs="0" name="return" nillable="true" type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
             <xs:element name="getAllRoles">
                 <xs:complexType>
                     <xs:sequence>
@@ -315,6 +357,19 @@
             </xs:element>
         </xs:schema>
         <xs:schema attributeFormDefault="qualified" elementFormDefault="qualified" targetNamespace="http://script.core.dataservices.carbon.wso2.org/xsd">
+            <xs:complexType name="GeneratedListTables">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="schemaName" nillable="true" type="xs:string"/>
+                    <xs:element maxOccurs="unbounded" minOccurs="0" name="tables" nillable="true" type="xs:string"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType name="ColumnsList">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="name" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="size" type="xs:int"/>
+                    <xs:element minOccurs="0" name="type" nillable="true" type="xs:string"/>
+                </xs:sequence>
+            </xs:complexType>
             <xs:complexType name="PaginatedTableInfo">
                 <xs:sequence>
                     <xs:element minOccurs="0" name="numberOfPages" type="xs:int"/>
@@ -323,59 +378,11 @@
             </xs:complexType>
         </xs:schema>
     </wsdl:types>
-    <wsdl:message name="isDSNameAvailableRequest">
-        <wsdl:part name="parameters" element="ns:isDSNameAvailable"/>
-    </wsdl:message>
-    <wsdl:message name="isDSNameAvailableResponse">
-        <wsdl:part name="parameters" element="ns:isDSNameAvailableResponse"/>
-    </wsdl:message>
-    <wsdl:message name="getdbSchemaListRequest">
-        <wsdl:part name="parameters" element="ns:getdbSchemaList"/>
-    </wsdl:message>
-    <wsdl:message name="getdbSchemaListResponse">
-        <wsdl:part name="parameters" element="ns:getdbSchemaListResponse"/>
-    </wsdl:message>
-    <wsdl:message name="DataServiceAdminException">
-        <wsdl:part name="parameters" element="ns:DataServiceAdminException"/>
-    </wsdl:message>
-    <wsdl:message name="getAvailableDSRequest">
-        <wsdl:part name="parameters" element="ns:getAvailableDS"/>
-    </wsdl:message>
-    <wsdl:message name="getAvailableDSResponse">
-        <wsdl:part name="parameters" element="ns:getAvailableDSResponse"/>
-    </wsdl:message>
-    <wsdl:message name="getCarbonDataSourceTypeRequest">
-        <wsdl:part name="parameters" element="ns:getCarbonDataSourceType"/>
-    </wsdl:message>
-    <wsdl:message name="getCarbonDataSourceTypeResponse">
-        <wsdl:part name="parameters" element="ns:getCarbonDataSourceTypeResponse"/>
-    </wsdl:message>
-    <wsdl:message name="getOutputColumnNamesRequest">
-        <wsdl:part name="parameters" element="ns:getOutputColumnNames"/>
-    </wsdl:message>
-    <wsdl:message name="getOutputColumnNamesResponse">
-        <wsdl:part name="parameters" element="ns:getOutputColumnNamesResponse"/>
-    </wsdl:message>
-    <wsdl:message name="getTableListRequest">
-        <wsdl:part name="parameters" element="ns:getTableList"/>
-    </wsdl:message>
-    <wsdl:message name="getTableListResponse">
-        <wsdl:part name="parameters" element="ns:getTableListResponse"/>
-    </wsdl:message>
-    <wsdl:message name="saveDataServiceRequest">
-        <wsdl:part name="parameters" element="ns:saveDataService"/>
-    </wsdl:message>
     <wsdl:message name="testGSpreadConnectionRequest">
         <wsdl:part name="parameters" element="ns:testGSpreadConnection"/>
     </wsdl:message>
     <wsdl:message name="testGSpreadConnectionResponse">
         <wsdl:part name="parameters" element="ns:testGSpreadConnectionResponse"/>
-    </wsdl:message>
-    <wsdl:message name="getDSServiceRequest">
-        <wsdl:part name="parameters" element="ns:getDSService"/>
-    </wsdl:message>
-    <wsdl:message name="getDSServiceResponse">
-        <wsdl:part name="parameters" element="ns:getDSServiceResponse"/>
     </wsdl:message>
     <wsdl:message name="getAllRolesRequest">
         <wsdl:part name="parameters" element="ns:getAllRoles"/>
@@ -383,23 +390,11 @@
     <wsdl:message name="getAllRolesResponse">
         <wsdl:part name="parameters" element="ns:getAllRolesResponse"/>
     </wsdl:message>
-    <wsdl:message name="validateJSONMappingRequest">
-        <wsdl:part name="parameters" element="ns:validateJSONMapping"/>
+    <wsdl:message name="getAvailableDSRequest">
+        <wsdl:part name="parameters" element="ns:getAvailableDS"/>
     </wsdl:message>
-    <wsdl:message name="validateJSONMappingResponse">
-        <wsdl:part name="parameters" element="ns:validateJSONMappingResponse"/>
-    </wsdl:message>
-    <wsdl:message name="getPaginatedTableInfoRequest">
-        <wsdl:part name="parameters" element="ns:getPaginatedTableInfo"/>
-    </wsdl:message>
-    <wsdl:message name="getPaginatedTableInfoResponse">
-        <wsdl:part name="parameters" element="ns:getPaginatedTableInfoResponse"/>
-    </wsdl:message>
-    <wsdl:message name="getInputMappingNamesRequest">
-        <wsdl:part name="parameters" element="ns:getInputMappingNames"/>
-    </wsdl:message>
-    <wsdl:message name="getInputMappingNamesResponse">
-        <wsdl:part name="parameters" element="ns:getInputMappingNamesResponse"/>
+    <wsdl:message name="getAvailableDSResponse">
+        <wsdl:part name="parameters" element="ns:getAvailableDSResponse"/>
     </wsdl:message>
     <wsdl:message name="getDataServiceContentAsStringRequest">
         <wsdl:part name="parameters" element="ns:getDataServiceContentAsString"/>
@@ -407,17 +402,65 @@
     <wsdl:message name="getDataServiceContentAsStringResponse">
         <wsdl:part name="parameters" element="ns:getDataServiceContentAsStringResponse"/>
     </wsdl:message>
+    <wsdl:message name="isDSNameAvailableRequest">
+        <wsdl:part name="parameters" element="ns:isDSNameAvailable"/>
+    </wsdl:message>
+    <wsdl:message name="isDSNameAvailableResponse">
+        <wsdl:part name="parameters" element="ns:isDSNameAvailableResponse"/>
+    </wsdl:message>
+    <wsdl:message name="generateTableListRequest">
+        <wsdl:part name="parameters" element="ns:generateTableList"/>
+    </wsdl:message>
+    <wsdl:message name="generateTableListResponse">
+        <wsdl:part name="parameters" element="ns:generateTableListResponse"/>
+    </wsdl:message>
+    <wsdl:message name="DataServiceAdminException">
+        <wsdl:part name="parameters" element="ns:DataServiceAdminException"/>
+    </wsdl:message>
+    <wsdl:message name="getdbSchemaListUsingParamsRequest">
+        <wsdl:part name="parameters" element="ns:getdbSchemaListUsingParams"/>
+    </wsdl:message>
+    <wsdl:message name="getdbSchemaListUsingParamsResponse">
+        <wsdl:part name="parameters" element="ns:getdbSchemaListUsingParamsResponse"/>
+    </wsdl:message>
+    <wsdl:message name="getOutputColumnNamesRequest">
+        <wsdl:part name="parameters" element="ns:getOutputColumnNames"/>
+    </wsdl:message>
+    <wsdl:message name="getOutputColumnNamesResponse">
+        <wsdl:part name="parameters" element="ns:getOutputColumnNamesResponse"/>
+    </wsdl:message>
     <wsdl:message name="testJDBCConnectionRequest">
         <wsdl:part name="parameters" element="ns:testJDBCConnection"/>
     </wsdl:message>
     <wsdl:message name="testJDBCConnectionResponse">
         <wsdl:part name="parameters" element="ns:testJDBCConnectionResponse"/>
     </wsdl:message>
-    <wsdl:message name="getCarbonDataSourceNamesForTypesRequest">
-        <wsdl:part name="parameters" element="ns:getCarbonDataSourceNamesForTypes"/>
+    <wsdl:message name="getDSServiceListRequest">
+        <wsdl:part name="parameters" element="ns:getDSServiceList"/>
     </wsdl:message>
-    <wsdl:message name="getCarbonDataSourceNamesForTypesResponse">
-        <wsdl:part name="parameters" element="ns:getCarbonDataSourceNamesForTypesResponse"/>
+    <wsdl:message name="getDSServiceListResponse">
+        <wsdl:part name="parameters" element="ns:getDSServiceListResponse"/>
+    </wsdl:message>
+    <wsdl:message name="getTableListRequest">
+        <wsdl:part name="parameters" element="ns:getTableList"/>
+    </wsdl:message>
+    <wsdl:message name="getTableListResponse">
+        <wsdl:part name="parameters" element="ns:getTableListResponse"/>
+    </wsdl:message>
+    <wsdl:message name="generateTableColumnsListRequest">
+        <wsdl:part name="parameters" element="ns:generateTableColumnsList"/>
+    </wsdl:message>
+    <wsdl:message name="generateTableColumnsListResponse">
+        <wsdl:part name="parameters" element="ns:generateTableColumnsListResponse"/>
+    </wsdl:message>
+    <wsdl:message name="getDSServiceRequest">
+        <wsdl:part name="parameters" element="ns:getDSService"/>
+    </wsdl:message>
+    <wsdl:message name="getDSServiceResponse">
+        <wsdl:part name="parameters" element="ns:getDSServiceResponse"/>
+    </wsdl:message>
+    <wsdl:message name="saveDataServiceRequest">
+        <wsdl:part name="parameters" element="ns:saveDataService"/>
     </wsdl:message>
     <wsdl:message name="getCarbonDataSourceNamesRequest">
         <wsdl:part name="parameters" element="ns:getCarbonDataSourceNames"/>
@@ -425,11 +468,41 @@
     <wsdl:message name="getCarbonDataSourceNamesResponse">
         <wsdl:part name="parameters" element="ns:getCarbonDataSourceNamesResponse"/>
     </wsdl:message>
-    <wsdl:message name="getDSServiceListRequest">
-        <wsdl:part name="parameters" element="ns:getDSServiceList"/>
+    <wsdl:message name="getCarbonDataSourceNamesForTypesRequest">
+        <wsdl:part name="parameters" element="ns:getCarbonDataSourceNamesForTypes"/>
     </wsdl:message>
-    <wsdl:message name="getDSServiceListResponse">
-        <wsdl:part name="parameters" element="ns:getDSServiceListResponse"/>
+    <wsdl:message name="getCarbonDataSourceNamesForTypesResponse">
+        <wsdl:part name="parameters" element="ns:getCarbonDataSourceNamesForTypesResponse"/>
+    </wsdl:message>
+    <wsdl:message name="getPaginatedTableInfoRequest">
+        <wsdl:part name="parameters" element="ns:getPaginatedTableInfo"/>
+    </wsdl:message>
+    <wsdl:message name="getPaginatedTableInfoResponse">
+        <wsdl:part name="parameters" element="ns:getPaginatedTableInfoResponse"/>
+    </wsdl:message>
+    <wsdl:message name="getdbSchemaListRequest">
+        <wsdl:part name="parameters" element="ns:getdbSchemaList"/>
+    </wsdl:message>
+    <wsdl:message name="getdbSchemaListResponse">
+        <wsdl:part name="parameters" element="ns:getdbSchemaListResponse"/>
+    </wsdl:message>
+    <wsdl:message name="getInputMappingNamesRequest">
+        <wsdl:part name="parameters" element="ns:getInputMappingNames"/>
+    </wsdl:message>
+    <wsdl:message name="getInputMappingNamesResponse">
+        <wsdl:part name="parameters" element="ns:getInputMappingNamesResponse"/>
+    </wsdl:message>
+    <wsdl:message name="validateJSONMappingRequest">
+        <wsdl:part name="parameters" element="ns:validateJSONMapping"/>
+    </wsdl:message>
+    <wsdl:message name="validateJSONMappingResponse">
+        <wsdl:part name="parameters" element="ns:validateJSONMappingResponse"/>
+    </wsdl:message>
+    <wsdl:message name="getCarbonDataSourceTypeRequest">
+        <wsdl:part name="parameters" element="ns:getCarbonDataSourceType"/>
+    </wsdl:message>
+    <wsdl:message name="getCarbonDataSourceTypeResponse">
+        <wsdl:part name="parameters" element="ns:getCarbonDataSourceTypeResponse"/>
     </wsdl:message>
     <wsdl:message name="getPaginatedSchemaInfoRequest">
         <wsdl:part name="parameters" element="ns:getPaginatedSchemaInfo"/>
@@ -438,82 +511,97 @@
         <wsdl:part name="parameters" element="ns:getPaginatedSchemaInfoResponse"/>
     </wsdl:message>
     <wsdl:portType name="DataServiceAdminPortType">
-        <wsdl:operation name="isDSNameAvailable">
-            <wsdl:input message="ns:isDSNameAvailableRequest" wsaw:Action="urn:isDSNameAvailable"/>
-            <wsdl:output message="ns:isDSNameAvailableResponse" wsaw:Action="urn:isDSNameAvailableResponse"/>
+        <wsdl:operation name="testGSpreadConnection">
+            <wsdl:input message="ns:testGSpreadConnectionRequest" wsaw:Action="urn:testGSpreadConnection"/>
+            <wsdl:output message="ns:testGSpreadConnectionResponse" wsaw:Action="urn:testGSpreadConnectionResponse"/>
         </wsdl:operation>
-        <wsdl:operation name="getdbSchemaList">
-            <wsdl:input message="ns:getdbSchemaListRequest" wsaw:Action="urn:getdbSchemaList"/>
-            <wsdl:output message="ns:getdbSchemaListResponse" wsaw:Action="urn:getdbSchemaListResponse"/>
-            <wsdl:fault message="ns:DataServiceAdminException" name="DataServiceAdminException" wsaw:Action="urn:getdbSchemaListDataServiceAdminException"/>
+        <wsdl:operation name="getAllRoles">
+            <wsdl:input message="ns:getAllRolesRequest" wsaw:Action="urn:getAllRoles"/>
+            <wsdl:output message="ns:getAllRolesResponse" wsaw:Action="urn:getAllRolesResponse"/>
         </wsdl:operation>
         <wsdl:operation name="getAvailableDS">
             <wsdl:input message="ns:getAvailableDSRequest" wsaw:Action="urn:getAvailableDS"/>
             <wsdl:output message="ns:getAvailableDSResponse" wsaw:Action="urn:getAvailableDSResponse"/>
         </wsdl:operation>
-        <wsdl:operation name="getCarbonDataSourceType">
-            <wsdl:input message="ns:getCarbonDataSourceTypeRequest" wsaw:Action="urn:getCarbonDataSourceType"/>
-            <wsdl:output message="ns:getCarbonDataSourceTypeResponse" wsaw:Action="urn:getCarbonDataSourceTypeResponse"/>
+        <wsdl:operation name="getDataServiceContentAsString">
+            <wsdl:input message="ns:getDataServiceContentAsStringRequest" wsaw:Action="urn:getDataServiceContentAsString"/>
+            <wsdl:output message="ns:getDataServiceContentAsStringResponse" wsaw:Action="urn:getDataServiceContentAsStringResponse"/>
+        </wsdl:operation>
+        <wsdl:operation name="isDSNameAvailable">
+            <wsdl:input message="ns:isDSNameAvailableRequest" wsaw:Action="urn:isDSNameAvailable"/>
+            <wsdl:output message="ns:isDSNameAvailableResponse" wsaw:Action="urn:isDSNameAvailableResponse"/>
+        </wsdl:operation>
+        <wsdl:operation name="generateTableList">
+            <wsdl:input message="ns:generateTableListRequest" wsaw:Action="urn:generateTableList"/>
+            <wsdl:output message="ns:generateTableListResponse" wsaw:Action="urn:generateTableListResponse"/>
+            <wsdl:fault message="ns:DataServiceAdminException" name="DataServiceAdminException" wsaw:Action="urn:generateTableListDataServiceAdminException"/>
+        </wsdl:operation>
+        <wsdl:operation name="getdbSchemaListUsingParams">
+            <wsdl:input message="ns:getdbSchemaListUsingParamsRequest" wsaw:Action="urn:getdbSchemaListUsingParams"/>
+            <wsdl:output message="ns:getdbSchemaListUsingParamsResponse" wsaw:Action="urn:getdbSchemaListUsingParamsResponse"/>
+            <wsdl:fault message="ns:DataServiceAdminException" name="DataServiceAdminException" wsaw:Action="urn:getdbSchemaListUsingParamsDataServiceAdminException"/>
         </wsdl:operation>
         <wsdl:operation name="getOutputColumnNames">
             <wsdl:input message="ns:getOutputColumnNamesRequest" wsaw:Action="urn:getOutputColumnNames"/>
             <wsdl:output message="ns:getOutputColumnNamesResponse" wsaw:Action="urn:getOutputColumnNamesResponse"/>
             <wsdl:fault message="ns:DataServiceAdminException" name="DataServiceAdminException" wsaw:Action="urn:getOutputColumnNamesDataServiceAdminException"/>
         </wsdl:operation>
+        <wsdl:operation name="testJDBCConnection">
+            <wsdl:input message="ns:testJDBCConnectionRequest" wsaw:Action="urn:testJDBCConnection"/>
+            <wsdl:output message="ns:testJDBCConnectionResponse" wsaw:Action="urn:testJDBCConnectionResponse"/>
+        </wsdl:operation>
+        <wsdl:operation name="getDSServiceList">
+            <wsdl:input message="ns:getDSServiceListRequest" wsaw:Action="urn:getDSServiceList"/>
+            <wsdl:output message="ns:getDSServiceListResponse" wsaw:Action="urn:getDSServiceListResponse"/>
+            <wsdl:fault message="ns:DataServiceAdminException" name="DataServiceAdminException" wsaw:Action="urn:getDSServiceListDataServiceAdminException"/>
+        </wsdl:operation>
         <wsdl:operation name="getTableList">
             <wsdl:input message="ns:getTableListRequest" wsaw:Action="urn:getTableList"/>
             <wsdl:output message="ns:getTableListResponse" wsaw:Action="urn:getTableListResponse"/>
         </wsdl:operation>
-        <wsdl:operation name="saveDataService">
-            <wsdl:input message="ns:saveDataServiceRequest" wsaw:Action="urn:saveDataService"/>
-        </wsdl:operation>
-        <wsdl:operation name="testGSpreadConnection">
-            <wsdl:input message="ns:testGSpreadConnectionRequest" wsaw:Action="urn:testGSpreadConnection"/>
-            <wsdl:output message="ns:testGSpreadConnectionResponse" wsaw:Action="urn:testGSpreadConnectionResponse"/>
+        <wsdl:operation name="generateTableColumnsList">
+            <wsdl:input message="ns:generateTableColumnsListRequest" wsaw:Action="urn:generateTableColumnsList"/>
+            <wsdl:output message="ns:generateTableColumnsListResponse" wsaw:Action="urn:generateTableColumnsListResponse"/>
+            <wsdl:fault message="ns:DataServiceAdminException" name="DataServiceAdminException" wsaw:Action="urn:generateTableColumnsListDataServiceAdminException"/>
         </wsdl:operation>
         <wsdl:operation name="getDSService">
             <wsdl:input message="ns:getDSServiceRequest" wsaw:Action="urn:getDSService"/>
             <wsdl:output message="ns:getDSServiceResponse" wsaw:Action="urn:getDSServiceResponse"/>
             <wsdl:fault message="ns:DataServiceAdminException" name="DataServiceAdminException" wsaw:Action="urn:getDSServiceDataServiceAdminException"/>
         </wsdl:operation>
-        <wsdl:operation name="getAllRoles">
-            <wsdl:input message="ns:getAllRolesRequest" wsaw:Action="urn:getAllRoles"/>
-            <wsdl:output message="ns:getAllRolesResponse" wsaw:Action="urn:getAllRolesResponse"/>
+        <wsdl:operation name="saveDataService">
+            <wsdl:input message="ns:saveDataServiceRequest" wsaw:Action="urn:saveDataService"/>
         </wsdl:operation>
-        <wsdl:operation name="validateJSONMapping">
-            <wsdl:input message="ns:validateJSONMappingRequest" wsaw:Action="urn:validateJSONMapping"/>
-            <wsdl:output message="ns:validateJSONMappingResponse" wsaw:Action="urn:validateJSONMappingResponse"/>
+        <wsdl:operation name="getCarbonDataSourceNames">
+            <wsdl:input message="ns:getCarbonDataSourceNamesRequest" wsaw:Action="urn:getCarbonDataSourceNames"/>
+            <wsdl:output message="ns:getCarbonDataSourceNamesResponse" wsaw:Action="urn:getCarbonDataSourceNamesResponse"/>
+        </wsdl:operation>
+        <wsdl:operation name="getCarbonDataSourceNamesForTypes">
+            <wsdl:input message="ns:getCarbonDataSourceNamesForTypesRequest" wsaw:Action="urn:getCarbonDataSourceNamesForTypes"/>
+            <wsdl:output message="ns:getCarbonDataSourceNamesForTypesResponse" wsaw:Action="urn:getCarbonDataSourceNamesForTypesResponse"/>
         </wsdl:operation>
         <wsdl:operation name="getPaginatedTableInfo">
             <wsdl:input message="ns:getPaginatedTableInfoRequest" wsaw:Action="urn:getPaginatedTableInfo"/>
             <wsdl:output message="ns:getPaginatedTableInfoResponse" wsaw:Action="urn:getPaginatedTableInfoResponse"/>
             <wsdl:fault message="ns:DataServiceAdminException" name="DataServiceAdminException" wsaw:Action="urn:getPaginatedTableInfoDataServiceAdminException"/>
         </wsdl:operation>
+        <wsdl:operation name="getdbSchemaList">
+            <wsdl:input message="ns:getdbSchemaListRequest" wsaw:Action="urn:getdbSchemaList"/>
+            <wsdl:output message="ns:getdbSchemaListResponse" wsaw:Action="urn:getdbSchemaListResponse"/>
+            <wsdl:fault message="ns:DataServiceAdminException" name="DataServiceAdminException" wsaw:Action="urn:getdbSchemaListDataServiceAdminException"/>
+        </wsdl:operation>
         <wsdl:operation name="getInputMappingNames">
             <wsdl:input message="ns:getInputMappingNamesRequest" wsaw:Action="urn:getInputMappingNames"/>
             <wsdl:output message="ns:getInputMappingNamesResponse" wsaw:Action="urn:getInputMappingNamesResponse"/>
             <wsdl:fault message="ns:DataServiceAdminException" name="DataServiceAdminException" wsaw:Action="urn:getInputMappingNamesDataServiceAdminException"/>
         </wsdl:operation>
-        <wsdl:operation name="getDataServiceContentAsString">
-            <wsdl:input message="ns:getDataServiceContentAsStringRequest" wsaw:Action="urn:getDataServiceContentAsString"/>
-            <wsdl:output message="ns:getDataServiceContentAsStringResponse" wsaw:Action="urn:getDataServiceContentAsStringResponse"/>
+        <wsdl:operation name="validateJSONMapping">
+            <wsdl:input message="ns:validateJSONMappingRequest" wsaw:Action="urn:validateJSONMapping"/>
+            <wsdl:output message="ns:validateJSONMappingResponse" wsaw:Action="urn:validateJSONMappingResponse"/>
         </wsdl:operation>
-        <wsdl:operation name="testJDBCConnection">
-            <wsdl:input message="ns:testJDBCConnectionRequest" wsaw:Action="urn:testJDBCConnection"/>
-            <wsdl:output message="ns:testJDBCConnectionResponse" wsaw:Action="urn:testJDBCConnectionResponse"/>
-        </wsdl:operation>
-        <wsdl:operation name="getCarbonDataSourceNamesForTypes">
-            <wsdl:input message="ns:getCarbonDataSourceNamesForTypesRequest" wsaw:Action="urn:getCarbonDataSourceNamesForTypes"/>
-            <wsdl:output message="ns:getCarbonDataSourceNamesForTypesResponse" wsaw:Action="urn:getCarbonDataSourceNamesForTypesResponse"/>
-        </wsdl:operation>
-        <wsdl:operation name="getCarbonDataSourceNames">
-            <wsdl:input message="ns:getCarbonDataSourceNamesRequest" wsaw:Action="urn:getCarbonDataSourceNames"/>
-            <wsdl:output message="ns:getCarbonDataSourceNamesResponse" wsaw:Action="urn:getCarbonDataSourceNamesResponse"/>
-        </wsdl:operation>
-        <wsdl:operation name="getDSServiceList">
-            <wsdl:input message="ns:getDSServiceListRequest" wsaw:Action="urn:getDSServiceList"/>
-            <wsdl:output message="ns:getDSServiceListResponse" wsaw:Action="urn:getDSServiceListResponse"/>
-            <wsdl:fault message="ns:DataServiceAdminException" name="DataServiceAdminException" wsaw:Action="urn:getDSServiceListDataServiceAdminException"/>
+        <wsdl:operation name="getCarbonDataSourceType">
+            <wsdl:input message="ns:getCarbonDataSourceTypeRequest" wsaw:Action="urn:getCarbonDataSourceType"/>
+            <wsdl:output message="ns:getCarbonDataSourceTypeResponse" wsaw:Action="urn:getCarbonDataSourceTypeResponse"/>
         </wsdl:operation>
         <wsdl:operation name="getPaginatedSchemaInfo">
             <wsdl:input message="ns:getPaginatedSchemaInfoRequest" wsaw:Action="urn:getPaginatedSchemaInfo"/>
@@ -523,6 +611,42 @@
     </wsdl:portType>
     <wsdl:binding name="DataServiceAdminSoap11Binding" type="ns:DataServiceAdminPortType">
         <soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document"/>
+        <wsdl:operation name="getAvailableDS">
+            <soap:operation soapAction="urn:getAvailableDS" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getAllRoles">
+            <soap:operation soapAction="urn:getAllRoles" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="testGSpreadConnection">
+            <soap:operation soapAction="urn:testGSpreadConnection" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getDataServiceContentAsString">
+            <soap:operation soapAction="urn:getDataServiceContentAsString" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
         <wsdl:operation name="isDSNameAvailable">
             <soap:operation soapAction="urn:isDSNameAvailable" style="document"/>
             <wsdl:input>
@@ -532,8 +656,8 @@
                 <soap:body use="literal"/>
             </wsdl:output>
         </wsdl:operation>
-        <wsdl:operation name="getdbSchemaList">
-            <soap:operation soapAction="urn:getdbSchemaList" style="document"/>
+        <wsdl:operation name="generateTableList">
+            <soap:operation soapAction="urn:generateTableList" style="document"/>
             <wsdl:input>
                 <soap:body use="literal"/>
             </wsdl:input>
@@ -544,26 +668,41 @@
                 <soap:fault use="literal" name="DataServiceAdminException"/>
             </wsdl:fault>
         </wsdl:operation>
-        <wsdl:operation name="getAvailableDS">
-            <soap:operation soapAction="urn:getAvailableDS" style="document"/>
+        <wsdl:operation name="getdbSchemaListUsingParams">
+            <soap:operation soapAction="urn:getdbSchemaListUsingParams" style="document"/>
             <wsdl:input>
                 <soap:body use="literal"/>
             </wsdl:input>
             <wsdl:output>
                 <soap:body use="literal"/>
             </wsdl:output>
-        </wsdl:operation>
-        <wsdl:operation name="getCarbonDataSourceType">
-            <soap:operation soapAction="urn:getCarbonDataSourceType" style="document"/>
-            <wsdl:input>
-                <soap:body use="literal"/>
-            </wsdl:input>
-            <wsdl:output>
-                <soap:body use="literal"/>
-            </wsdl:output>
+            <wsdl:fault name="DataServiceAdminException">
+                <soap:fault use="literal" name="DataServiceAdminException"/>
+            </wsdl:fault>
         </wsdl:operation>
         <wsdl:operation name="getOutputColumnNames">
             <soap:operation soapAction="urn:getOutputColumnNames" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+            <wsdl:fault name="DataServiceAdminException">
+                <soap:fault use="literal" name="DataServiceAdminException"/>
+            </wsdl:fault>
+        </wsdl:operation>
+        <wsdl:operation name="testJDBCConnection">
+            <soap:operation soapAction="urn:testJDBCConnection" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getDSServiceList">
+            <soap:operation soapAction="urn:getDSServiceList" style="document"/>
             <wsdl:input>
                 <soap:body use="literal"/>
             </wsdl:input>
@@ -583,20 +722,17 @@
                 <soap:body use="literal"/>
             </wsdl:output>
         </wsdl:operation>
-        <wsdl:operation name="saveDataService">
-            <soap:operation soapAction="urn:saveDataService" style="document"/>
-            <wsdl:input>
-                <soap:body use="literal"/>
-            </wsdl:input>
-        </wsdl:operation>
-        <wsdl:operation name="testGSpreadConnection">
-            <soap:operation soapAction="urn:testGSpreadConnection" style="document"/>
+        <wsdl:operation name="generateTableColumnsList">
+            <soap:operation soapAction="urn:generateTableColumnsList" style="document"/>
             <wsdl:input>
                 <soap:body use="literal"/>
             </wsdl:input>
             <wsdl:output>
                 <soap:body use="literal"/>
             </wsdl:output>
+            <wsdl:fault name="DataServiceAdminException">
+                <soap:fault use="literal" name="DataServiceAdminException"/>
+            </wsdl:fault>
         </wsdl:operation>
         <wsdl:operation name="getDSService">
             <soap:operation soapAction="urn:getDSService" style="document"/>
@@ -610,8 +746,14 @@
                 <soap:fault use="literal" name="DataServiceAdminException"/>
             </wsdl:fault>
         </wsdl:operation>
-        <wsdl:operation name="getAllRoles">
-            <soap:operation soapAction="urn:getAllRoles" style="document"/>
+        <wsdl:operation name="saveDataService">
+            <soap:operation soapAction="urn:saveDataService" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+        </wsdl:operation>
+        <wsdl:operation name="getCarbonDataSourceNames">
+            <soap:operation soapAction="urn:getCarbonDataSourceNames" style="document"/>
             <wsdl:input>
                 <soap:body use="literal"/>
             </wsdl:input>
@@ -619,8 +761,8 @@
                 <soap:body use="literal"/>
             </wsdl:output>
         </wsdl:operation>
-        <wsdl:operation name="validateJSONMapping">
-            <soap:operation soapAction="urn:validateJSONMapping" style="document"/>
+        <wsdl:operation name="getCarbonDataSourceNamesForTypes">
+            <soap:operation soapAction="urn:getCarbonDataSourceNamesForTypes" style="document"/>
             <wsdl:input>
                 <soap:body use="literal"/>
             </wsdl:input>
@@ -630,6 +772,18 @@
         </wsdl:operation>
         <wsdl:operation name="getPaginatedTableInfo">
             <soap:operation soapAction="urn:getPaginatedTableInfo" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+            <wsdl:fault name="DataServiceAdminException">
+                <soap:fault use="literal" name="DataServiceAdminException"/>
+            </wsdl:fault>
+        </wsdl:operation>
+        <wsdl:operation name="getdbSchemaList">
+            <soap:operation soapAction="urn:getdbSchemaList" style="document"/>
             <wsdl:input>
                 <soap:body use="literal"/>
             </wsdl:input>
@@ -652,8 +806,8 @@
                 <soap:fault use="literal" name="DataServiceAdminException"/>
             </wsdl:fault>
         </wsdl:operation>
-        <wsdl:operation name="testJDBCConnection">
-            <soap:operation soapAction="urn:testJDBCConnection" style="document"/>
+        <wsdl:operation name="validateJSONMapping">
+            <soap:operation soapAction="urn:validateJSONMapping" style="document"/>
             <wsdl:input>
                 <soap:body use="literal"/>
             </wsdl:input>
@@ -661,44 +815,14 @@
                 <soap:body use="literal"/>
             </wsdl:output>
         </wsdl:operation>
-        <wsdl:operation name="getDataServiceContentAsString">
-            <soap:operation soapAction="urn:getDataServiceContentAsString" style="document"/>
+        <wsdl:operation name="getCarbonDataSourceType">
+            <soap:operation soapAction="urn:getCarbonDataSourceType" style="document"/>
             <wsdl:input>
                 <soap:body use="literal"/>
             </wsdl:input>
             <wsdl:output>
                 <soap:body use="literal"/>
             </wsdl:output>
-        </wsdl:operation>
-        <wsdl:operation name="getCarbonDataSourceNamesForTypes">
-            <soap:operation soapAction="urn:getCarbonDataSourceNamesForTypes" style="document"/>
-            <wsdl:input>
-                <soap:body use="literal"/>
-            </wsdl:input>
-            <wsdl:output>
-                <soap:body use="literal"/>
-            </wsdl:output>
-        </wsdl:operation>
-        <wsdl:operation name="getCarbonDataSourceNames">
-            <soap:operation soapAction="urn:getCarbonDataSourceNames" style="document"/>
-            <wsdl:input>
-                <soap:body use="literal"/>
-            </wsdl:input>
-            <wsdl:output>
-                <soap:body use="literal"/>
-            </wsdl:output>
-        </wsdl:operation>
-        <wsdl:operation name="getDSServiceList">
-            <soap:operation soapAction="urn:getDSServiceList" style="document"/>
-            <wsdl:input>
-                <soap:body use="literal"/>
-            </wsdl:input>
-            <wsdl:output>
-                <soap:body use="literal"/>
-            </wsdl:output>
-            <wsdl:fault name="DataServiceAdminException">
-                <soap:fault use="literal" name="DataServiceAdminException"/>
-            </wsdl:fault>
         </wsdl:operation>
         <wsdl:operation name="getPaginatedSchemaInfo">
             <soap:operation soapAction="urn:getPaginatedSchemaInfo" style="document"/>
@@ -715,6 +839,42 @@
     </wsdl:binding>
     <wsdl:binding name="DataServiceAdminSoap12Binding" type="ns:DataServiceAdminPortType">
         <soap12:binding transport="http://schemas.xmlsoap.org/soap/http" style="document"/>
+        <wsdl:operation name="getAvailableDS">
+            <soap12:operation soapAction="urn:getAvailableDS" style="document"/>
+            <wsdl:input>
+                <soap12:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap12:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getAllRoles">
+            <soap12:operation soapAction="urn:getAllRoles" style="document"/>
+            <wsdl:input>
+                <soap12:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap12:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="testGSpreadConnection">
+            <soap12:operation soapAction="urn:testGSpreadConnection" style="document"/>
+            <wsdl:input>
+                <soap12:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap12:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getDataServiceContentAsString">
+            <soap12:operation soapAction="urn:getDataServiceContentAsString" style="document"/>
+            <wsdl:input>
+                <soap12:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap12:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
         <wsdl:operation name="isDSNameAvailable">
             <soap12:operation soapAction="urn:isDSNameAvailable" style="document"/>
             <wsdl:input>
@@ -724,8 +884,8 @@
                 <soap12:body use="literal"/>
             </wsdl:output>
         </wsdl:operation>
-        <wsdl:operation name="getdbSchemaList">
-            <soap12:operation soapAction="urn:getdbSchemaList" style="document"/>
+        <wsdl:operation name="generateTableList">
+            <soap12:operation soapAction="urn:generateTableList" style="document"/>
             <wsdl:input>
                 <soap12:body use="literal"/>
             </wsdl:input>
@@ -736,26 +896,41 @@
                 <soap12:fault use="literal" name="DataServiceAdminException"/>
             </wsdl:fault>
         </wsdl:operation>
-        <wsdl:operation name="getAvailableDS">
-            <soap12:operation soapAction="urn:getAvailableDS" style="document"/>
+        <wsdl:operation name="getdbSchemaListUsingParams">
+            <soap12:operation soapAction="urn:getdbSchemaListUsingParams" style="document"/>
             <wsdl:input>
                 <soap12:body use="literal"/>
             </wsdl:input>
             <wsdl:output>
                 <soap12:body use="literal"/>
             </wsdl:output>
-        </wsdl:operation>
-        <wsdl:operation name="getCarbonDataSourceType">
-            <soap12:operation soapAction="urn:getCarbonDataSourceType" style="document"/>
-            <wsdl:input>
-                <soap12:body use="literal"/>
-            </wsdl:input>
-            <wsdl:output>
-                <soap12:body use="literal"/>
-            </wsdl:output>
+            <wsdl:fault name="DataServiceAdminException">
+                <soap12:fault use="literal" name="DataServiceAdminException"/>
+            </wsdl:fault>
         </wsdl:operation>
         <wsdl:operation name="getOutputColumnNames">
             <soap12:operation soapAction="urn:getOutputColumnNames" style="document"/>
+            <wsdl:input>
+                <soap12:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap12:body use="literal"/>
+            </wsdl:output>
+            <wsdl:fault name="DataServiceAdminException">
+                <soap12:fault use="literal" name="DataServiceAdminException"/>
+            </wsdl:fault>
+        </wsdl:operation>
+        <wsdl:operation name="testJDBCConnection">
+            <soap12:operation soapAction="urn:testJDBCConnection" style="document"/>
+            <wsdl:input>
+                <soap12:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap12:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getDSServiceList">
+            <soap12:operation soapAction="urn:getDSServiceList" style="document"/>
             <wsdl:input>
                 <soap12:body use="literal"/>
             </wsdl:input>
@@ -775,20 +950,17 @@
                 <soap12:body use="literal"/>
             </wsdl:output>
         </wsdl:operation>
-        <wsdl:operation name="saveDataService">
-            <soap12:operation soapAction="urn:saveDataService" style="document"/>
-            <wsdl:input>
-                <soap12:body use="literal"/>
-            </wsdl:input>
-        </wsdl:operation>
-        <wsdl:operation name="testGSpreadConnection">
-            <soap12:operation soapAction="urn:testGSpreadConnection" style="document"/>
+        <wsdl:operation name="generateTableColumnsList">
+            <soap12:operation soapAction="urn:generateTableColumnsList" style="document"/>
             <wsdl:input>
                 <soap12:body use="literal"/>
             </wsdl:input>
             <wsdl:output>
                 <soap12:body use="literal"/>
             </wsdl:output>
+            <wsdl:fault name="DataServiceAdminException">
+                <soap12:fault use="literal" name="DataServiceAdminException"/>
+            </wsdl:fault>
         </wsdl:operation>
         <wsdl:operation name="getDSService">
             <soap12:operation soapAction="urn:getDSService" style="document"/>
@@ -802,8 +974,14 @@
                 <soap12:fault use="literal" name="DataServiceAdminException"/>
             </wsdl:fault>
         </wsdl:operation>
-        <wsdl:operation name="getAllRoles">
-            <soap12:operation soapAction="urn:getAllRoles" style="document"/>
+        <wsdl:operation name="saveDataService">
+            <soap12:operation soapAction="urn:saveDataService" style="document"/>
+            <wsdl:input>
+                <soap12:body use="literal"/>
+            </wsdl:input>
+        </wsdl:operation>
+        <wsdl:operation name="getCarbonDataSourceNames">
+            <soap12:operation soapAction="urn:getCarbonDataSourceNames" style="document"/>
             <wsdl:input>
                 <soap12:body use="literal"/>
             </wsdl:input>
@@ -811,8 +989,8 @@
                 <soap12:body use="literal"/>
             </wsdl:output>
         </wsdl:operation>
-        <wsdl:operation name="validateJSONMapping">
-            <soap12:operation soapAction="urn:validateJSONMapping" style="document"/>
+        <wsdl:operation name="getCarbonDataSourceNamesForTypes">
+            <soap12:operation soapAction="urn:getCarbonDataSourceNamesForTypes" style="document"/>
             <wsdl:input>
                 <soap12:body use="literal"/>
             </wsdl:input>
@@ -822,6 +1000,18 @@
         </wsdl:operation>
         <wsdl:operation name="getPaginatedTableInfo">
             <soap12:operation soapAction="urn:getPaginatedTableInfo" style="document"/>
+            <wsdl:input>
+                <soap12:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap12:body use="literal"/>
+            </wsdl:output>
+            <wsdl:fault name="DataServiceAdminException">
+                <soap12:fault use="literal" name="DataServiceAdminException"/>
+            </wsdl:fault>
+        </wsdl:operation>
+        <wsdl:operation name="getdbSchemaList">
+            <soap12:operation soapAction="urn:getdbSchemaList" style="document"/>
             <wsdl:input>
                 <soap12:body use="literal"/>
             </wsdl:input>
@@ -844,8 +1034,8 @@
                 <soap12:fault use="literal" name="DataServiceAdminException"/>
             </wsdl:fault>
         </wsdl:operation>
-        <wsdl:operation name="testJDBCConnection">
-            <soap12:operation soapAction="urn:testJDBCConnection" style="document"/>
+        <wsdl:operation name="validateJSONMapping">
+            <soap12:operation soapAction="urn:validateJSONMapping" style="document"/>
             <wsdl:input>
                 <soap12:body use="literal"/>
             </wsdl:input>
@@ -853,44 +1043,14 @@
                 <soap12:body use="literal"/>
             </wsdl:output>
         </wsdl:operation>
-        <wsdl:operation name="getDataServiceContentAsString">
-            <soap12:operation soapAction="urn:getDataServiceContentAsString" style="document"/>
+        <wsdl:operation name="getCarbonDataSourceType">
+            <soap12:operation soapAction="urn:getCarbonDataSourceType" style="document"/>
             <wsdl:input>
                 <soap12:body use="literal"/>
             </wsdl:input>
             <wsdl:output>
                 <soap12:body use="literal"/>
             </wsdl:output>
-        </wsdl:operation>
-        <wsdl:operation name="getCarbonDataSourceNamesForTypes">
-            <soap12:operation soapAction="urn:getCarbonDataSourceNamesForTypes" style="document"/>
-            <wsdl:input>
-                <soap12:body use="literal"/>
-            </wsdl:input>
-            <wsdl:output>
-                <soap12:body use="literal"/>
-            </wsdl:output>
-        </wsdl:operation>
-        <wsdl:operation name="getCarbonDataSourceNames">
-            <soap12:operation soapAction="urn:getCarbonDataSourceNames" style="document"/>
-            <wsdl:input>
-                <soap12:body use="literal"/>
-            </wsdl:input>
-            <wsdl:output>
-                <soap12:body use="literal"/>
-            </wsdl:output>
-        </wsdl:operation>
-        <wsdl:operation name="getDSServiceList">
-            <soap12:operation soapAction="urn:getDSServiceList" style="document"/>
-            <wsdl:input>
-                <soap12:body use="literal"/>
-            </wsdl:input>
-            <wsdl:output>
-                <soap12:body use="literal"/>
-            </wsdl:output>
-            <wsdl:fault name="DataServiceAdminException">
-                <soap12:fault use="literal" name="DataServiceAdminException"/>
-            </wsdl:fault>
         </wsdl:operation>
         <wsdl:operation name="getPaginatedSchemaInfo">
             <soap12:operation soapAction="urn:getPaginatedSchemaInfo" style="document"/>
@@ -907,77 +1067,8 @@
     </wsdl:binding>
     <wsdl:binding name="DataServiceAdminHttpBinding" type="ns:DataServiceAdminPortType">
         <http:binding verb="POST"/>
-        <wsdl:operation name="isDSNameAvailable">
-            <http:operation location="isDSNameAvailable"/>
-            <wsdl:input>
-                <mime:content type="text/xml" part="parameters"/>
-            </wsdl:input>
-            <wsdl:output>
-                <mime:content type="text/xml" part="parameters"/>
-            </wsdl:output>
-        </wsdl:operation>
-        <wsdl:operation name="getdbSchemaList">
-            <http:operation location="getdbSchemaList"/>
-            <wsdl:input>
-                <mime:content type="text/xml" part="parameters"/>
-            </wsdl:input>
-            <wsdl:output>
-                <mime:content type="text/xml" part="parameters"/>
-            </wsdl:output>
-        </wsdl:operation>
         <wsdl:operation name="getAvailableDS">
             <http:operation location="getAvailableDS"/>
-            <wsdl:input>
-                <mime:content type="text/xml" part="parameters"/>
-            </wsdl:input>
-            <wsdl:output>
-                <mime:content type="text/xml" part="parameters"/>
-            </wsdl:output>
-        </wsdl:operation>
-        <wsdl:operation name="getCarbonDataSourceType">
-            <http:operation location="getCarbonDataSourceType"/>
-            <wsdl:input>
-                <mime:content type="text/xml" part="parameters"/>
-            </wsdl:input>
-            <wsdl:output>
-                <mime:content type="text/xml" part="parameters"/>
-            </wsdl:output>
-        </wsdl:operation>
-        <wsdl:operation name="getOutputColumnNames">
-            <http:operation location="getOutputColumnNames"/>
-            <wsdl:input>
-                <mime:content type="text/xml" part="parameters"/>
-            </wsdl:input>
-            <wsdl:output>
-                <mime:content type="text/xml" part="parameters"/>
-            </wsdl:output>
-        </wsdl:operation>
-        <wsdl:operation name="getTableList">
-            <http:operation location="getTableList"/>
-            <wsdl:input>
-                <mime:content type="text/xml" part="parameters"/>
-            </wsdl:input>
-            <wsdl:output>
-                <mime:content type="text/xml" part="parameters"/>
-            </wsdl:output>
-        </wsdl:operation>
-        <wsdl:operation name="saveDataService">
-            <http:operation location="saveDataService"/>
-            <wsdl:input>
-                <mime:content type="text/xml" part="parameters"/>
-            </wsdl:input>
-        </wsdl:operation>
-        <wsdl:operation name="testGSpreadConnection">
-            <http:operation location="testGSpreadConnection"/>
-            <wsdl:input>
-                <mime:content type="text/xml" part="parameters"/>
-            </wsdl:input>
-            <wsdl:output>
-                <mime:content type="text/xml" part="parameters"/>
-            </wsdl:output>
-        </wsdl:operation>
-        <wsdl:operation name="getDSService">
-            <http:operation location="getDSService"/>
             <wsdl:input>
                 <mime:content type="text/xml" part="parameters"/>
             </wsdl:input>
@@ -994,35 +1085,8 @@
                 <mime:content type="text/xml" part="parameters"/>
             </wsdl:output>
         </wsdl:operation>
-        <wsdl:operation name="validateJSONMapping">
-            <http:operation location="validateJSONMapping"/>
-            <wsdl:input>
-                <mime:content type="text/xml" part="parameters"/>
-            </wsdl:input>
-            <wsdl:output>
-                <mime:content type="text/xml" part="parameters"/>
-            </wsdl:output>
-        </wsdl:operation>
-        <wsdl:operation name="getPaginatedTableInfo">
-            <http:operation location="getPaginatedTableInfo"/>
-            <wsdl:input>
-                <mime:content type="text/xml" part="parameters"/>
-            </wsdl:input>
-            <wsdl:output>
-                <mime:content type="text/xml" part="parameters"/>
-            </wsdl:output>
-        </wsdl:operation>
-        <wsdl:operation name="getInputMappingNames">
-            <http:operation location="getInputMappingNames"/>
-            <wsdl:input>
-                <mime:content type="text/xml" part="parameters"/>
-            </wsdl:input>
-            <wsdl:output>
-                <mime:content type="text/xml" part="parameters"/>
-            </wsdl:output>
-        </wsdl:operation>
-        <wsdl:operation name="testJDBCConnection">
-            <http:operation location="testJDBCConnection"/>
+        <wsdl:operation name="testGSpreadConnection">
+            <http:operation location="testGSpreadConnection"/>
             <wsdl:input>
                 <mime:content type="text/xml" part="parameters"/>
             </wsdl:input>
@@ -1039,14 +1103,92 @@
                 <mime:content type="text/xml" part="parameters"/>
             </wsdl:output>
         </wsdl:operation>
-        <wsdl:operation name="getCarbonDataSourceNamesForTypes">
-            <http:operation location="getCarbonDataSourceNamesForTypes"/>
+        <wsdl:operation name="isDSNameAvailable">
+            <http:operation location="isDSNameAvailable"/>
             <wsdl:input>
                 <mime:content type="text/xml" part="parameters"/>
             </wsdl:input>
             <wsdl:output>
                 <mime:content type="text/xml" part="parameters"/>
             </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="generateTableList">
+            <http:operation location="generateTableList"/>
+            <wsdl:input>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:input>
+            <wsdl:output>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getdbSchemaListUsingParams">
+            <http:operation location="getdbSchemaListUsingParams"/>
+            <wsdl:input>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:input>
+            <wsdl:output>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getOutputColumnNames">
+            <http:operation location="getOutputColumnNames"/>
+            <wsdl:input>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:input>
+            <wsdl:output>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="testJDBCConnection">
+            <http:operation location="testJDBCConnection"/>
+            <wsdl:input>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:input>
+            <wsdl:output>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getDSServiceList">
+            <http:operation location="getDSServiceList"/>
+            <wsdl:input>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:input>
+            <wsdl:output>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getTableList">
+            <http:operation location="getTableList"/>
+            <wsdl:input>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:input>
+            <wsdl:output>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="generateTableColumnsList">
+            <http:operation location="generateTableColumnsList"/>
+            <wsdl:input>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:input>
+            <wsdl:output>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getDSService">
+            <http:operation location="getDSService"/>
+            <wsdl:input>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:input>
+            <wsdl:output>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="saveDataService">
+            <http:operation location="saveDataService"/>
+            <wsdl:input>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:input>
         </wsdl:operation>
         <wsdl:operation name="getCarbonDataSourceNames">
             <http:operation location="getCarbonDataSourceNames"/>
@@ -1057,8 +1199,53 @@
                 <mime:content type="text/xml" part="parameters"/>
             </wsdl:output>
         </wsdl:operation>
-        <wsdl:operation name="getDSServiceList">
-            <http:operation location="getDSServiceList"/>
+        <wsdl:operation name="getCarbonDataSourceNamesForTypes">
+            <http:operation location="getCarbonDataSourceNamesForTypes"/>
+            <wsdl:input>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:input>
+            <wsdl:output>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getPaginatedTableInfo">
+            <http:operation location="getPaginatedTableInfo"/>
+            <wsdl:input>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:input>
+            <wsdl:output>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getdbSchemaList">
+            <http:operation location="getdbSchemaList"/>
+            <wsdl:input>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:input>
+            <wsdl:output>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getInputMappingNames">
+            <http:operation location="getInputMappingNames"/>
+            <wsdl:input>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:input>
+            <wsdl:output>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="validateJSONMapping">
+            <http:operation location="validateJSONMapping"/>
+            <wsdl:input>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:input>
+            <wsdl:output>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getCarbonDataSourceType">
+            <http:operation location="getCarbonDataSourceType"/>
             <wsdl:input>
                 <mime:content type="text/xml" part="parameters"/>
             </wsdl:input>
@@ -1078,22 +1265,13 @@
     </wsdl:binding>
     <wsdl:service name="DataServiceAdmin">
         <wsdl:port name="DataServiceAdminHttpsSoap11Endpoint" binding="ns:DataServiceAdminSoap11Binding">
-            <soap:address location="https://localhost:9443/services/DataServiceAdmin.DataServiceAdminHttpsSoap11Endpoint/"/>
-        </wsdl:port>
-        <wsdl:port name="DataServiceAdminHttpSoap11Endpoint" binding="ns:DataServiceAdminSoap11Binding">
-            <soap:address location="http://localhost:9763/services/DataServiceAdmin.DataServiceAdminHttpSoap11Endpoint/"/>
+            <soap:address location="https://172.17.0.1:9443/services/DataServiceAdmin.DataServiceAdminHttpsSoap11Endpoint/"/>
         </wsdl:port>
         <wsdl:port name="DataServiceAdminHttpsSoap12Endpoint" binding="ns:DataServiceAdminSoap12Binding">
-            <soap12:address location="https://localhost:9443/services/DataServiceAdmin.DataServiceAdminHttpsSoap12Endpoint/"/>
-        </wsdl:port>
-        <wsdl:port name="DataServiceAdminHttpSoap12Endpoint" binding="ns:DataServiceAdminSoap12Binding">
-            <soap12:address location="http://localhost:9763/services/DataServiceAdmin.DataServiceAdminHttpSoap12Endpoint/"/>
+            <soap12:address location="https://172.17.0.1:9443/services/DataServiceAdmin.DataServiceAdminHttpsSoap12Endpoint/"/>
         </wsdl:port>
         <wsdl:port name="DataServiceAdminHttpsEndpoint" binding="ns:DataServiceAdminHttpBinding">
-            <http:address location="https://localhost:9443/services/DataServiceAdmin.DataServiceAdminHttpsEndpoint/"/>
-        </wsdl:port>
-        <wsdl:port name="DataServiceAdminHttpEndpoint" binding="ns:DataServiceAdminHttpBinding">
-            <http:address location="http://localhost:9763/services/DataServiceAdmin.DataServiceAdminHttpEndpoint/"/>
+            <http:address location="https://172.17.0.1:9443/services/DataServiceAdmin.DataServiceAdminHttpsEndpoint/"/>
         </wsdl:port>
     </wsdl:service>
 </wsdl:definitions>

@@ -18,6 +18,11 @@
 
 package org.wso2.carbon.dataservices.core.odata;
 
+import org.apache.olingo.commons.api.data.Property;
+import org.apache.olingo.server.api.ODataApplicationException;
+import org.apache.olingo.server.api.uri.UriInfo;
+import org.apache.olingo.server.api.uri.queryoption.CountOption;
+import org.apache.olingo.server.api.uri.queryoption.expression.ExpressionVisitException;
 import org.wso2.carbon.dataservices.core.engine.DataEntry;
 
 import java.util.List;
@@ -32,12 +37,14 @@ public interface ODataDataHandler {
      * This method read the table data and return.
      * Return a list of DataEntry object which has been wrapped the entity.
      *
-     * @param tableName Name of the table
+     * @param tableName 		Name of the table
+     * @param uriInfo			May contain OData query options
+     * @param navProperties		Navigation properties, in case of a compound path
      * @return EntityCollection
      * @throws ODataServiceFault
      * @see DataEntry
      */
-    List<ODataEntry> readTable(String tableName) throws ODataServiceFault;
+    List<ODataEntry> readTable(String tableName, UriInfo uriInfo, List<Property> navProperties) throws ODataServiceFault,ExpressionVisitException,ODataApplicationException;
 
     /**
      * This method read the table with Keys and return.
@@ -49,8 +56,9 @@ public interface ODataDataHandler {
      * @throws ODataServiceFault
      * @see DataEntry
      */
-    List<ODataEntry> readTableWithKeys(String tableName, ODataEntry keys) throws ODataServiceFault;
+    List<ODataEntry> readTableWithKeys(String tableName, ODataEntry keys, UriInfo uriInfo) throws ODataServiceFault;
 
+    int countRecords (UriInfo uriInfo, String tableName) throws ODataServiceFault, ExpressionVisitException, ODataApplicationException;
     /**
      * This method inserts entity to table.
      *

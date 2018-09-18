@@ -18,7 +18,9 @@
  */
 package org.wso2.carbon.dataservices.common;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -84,6 +86,7 @@ public final class DBConstants {
     public static final String SQL_DRIVER_CLASS_NAME = "org.wso2.carbon.dataservices.sql.driver.TDriver";
     public static final String SECURITY_MODULE_NAME = "rampart";
     public static final String TENANT_IN_ONLY_MESSAGE = "TENANT_IN_ONLY_MESSAGE";
+    public static final String NO_SCHEMA = "no_schema";
         
     /**
      * Codes to be used as fault codes.
@@ -99,6 +102,7 @@ public final class DBConstants {
         public static String VALIDATION_ERROR = "VALIDATION_ERROR";
         public static String INCOMPATIBLE_PARAMETERS_ERROR = "INCOMPATIBLE_PARAMETERS_ERROR";
         public static String UNKNOWN_ERROR = "UNKNOWN_ERROR";
+        public static String UNAUTHORIZED_ERROR = "The service is not Public.You are not authorized to access this service.";
     }
 
     /**
@@ -127,7 +131,15 @@ public final class DBConstants {
     public enum AutoCommit {
         DEFAULT, AUTO_COMMIT_ON, AUTO_COMMIT_OFF;
     }
-
+    
+    public static List<String> getSupportedODataDBTypes(){
+    	List<String> supportedODataDBTypes = new ArrayList<String>();
+        supportedODataDBTypes.add(DBConstants.DataSourceTypes.RDBMS);
+        supportedODataDBTypes.add(DBConstants.DataSourceTypes.CASSANDRA);
+        supportedODataDBTypes.add(DBConstants.DataSourceTypes.MONGODB);
+    	return supportedODataDBTypes;
+    }
+    
     /**
      * Constants related to data types.
      */
@@ -392,6 +404,8 @@ public final class DBConstants {
         public static final String MAX_ROWS = "maxRows";        
         public static final String DYNAMIC_USER_AUTH_CLASS = "dynamicUserAuthClass";
         public static final String DYNAMIC_USER_AUTH_MAPPING = "dynamicUserAuthMapping";
+        public static final String DYNAMIC_ODATA_TABLE_MAPPING = "dynamicOdataConfig";
+        public static final String ODATA_MAX_LIMIT = "maxLimit";
         public static final String USERNAME_WILDCARD = "*";
         public static final String DSS_TIMERZONE = "dss.timezone";
         public static final String DSS_LEGACY_TIMEZONE_MODE = "dss.legacy.timezone.mode";
@@ -774,6 +788,9 @@ public final class DBConstants {
         public static final String ENABLESEC = "enableSec";
         public static final String CONFIG = "config";
         public static final String ENABLE_ODATA = "enableOData";
+        public static final String ISPUBLIC_ODATA = "isPublic";
+        public static final String CREATOR = "creator";
+        public static final String CREATE_VIEW = "createView";
         public static final String QUERY = "query";
         public static final String OPERATION = "operation";
         public static final String RESOURCE = "resource";

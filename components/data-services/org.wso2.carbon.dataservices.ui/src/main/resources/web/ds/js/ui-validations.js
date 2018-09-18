@@ -1360,6 +1360,100 @@ function changeDataSourceType (obj, document) {
 		location.href = 'addDataSource.jsp?selectedType='+selectedType+'&configId='+selectedDS+'&ds=edit&flag=edit_changed';
 	}
 }
+var selectedDS = "";
+var driverClassName = "";
+var urlValue = "";
+var usernameValue = "";
+var passwValue = "";
+var isOData = false;
+function reloadOdataConfig (createOp,driver,url,username,passw) {
+	selectedDS = document.getElementById('datasourceId').value;
+	driverClassName = document.getElementById(driver).value;
+	urlValue = document.getElementById(url).value;
+	usernameValue = document.getElementById(username).value;
+	passwValue = document.getElementById(passw).value;
+	isOData = document.getElementById("isOData").checked;
+	if (isOData){
+		testConnODataCheck(driver,url,username,passw);
+	}
+}
+
+function displayMsgODataCheck(msg) {
+	var successMsg  =  new RegExp("^Database connection is successful with driver class");
+	if (msg.search(successMsg)==-1) //if match failed
+	{
+		CARBON.showErrorDialog(msg);
+	} else {
+		location.href = 'addDataSource.jsp?configId='+selectedDS+'&ds=edit&flag=edit'+
+			'&driverClassName='+driverClassName+'&url='+urlValue+'&username='+usernameValue+'&password='+passwValue+'&isOData='+isOData;
+	}
+}
+
+function testConnODataCheck(driver1,url1,username1,passw1) {
+    var driver = document.getElementById(driver1).value;
+    var jdbcUrl = document.getElementById(url1).value;
+    var userName = document.getElementById(username1).value;
+    var password = document.getElementById(passw1).value;
+
+
+    var useAlias = document.getElementById('useSecretAliasValue').value;
+    if (useAlias == 'true') {
+    	if (document.getElementById('pwdalias') != null) {
+    		var pwdalias = document.getElementById('pwdalias').value;
+    	}
+        var url = 'connection_test_ajaxprocessor.jsp?driver=' + encodeURIComponent(driver) + '&jdbcUrl=' + encodeURIComponent(jdbcUrl) + '&userName=' + encodeURIComponent(userName) + '&password=' + encodeURIComponent(password) + '&passwordAlias=' +pwdalias ;
+    } else {
+    	var url = 'connection_test_ajaxprocessor.jsp?driver=' + encodeURIComponent(driver) + '&jdbcUrl=' + encodeURIComponent(jdbcUrl) + '&userName=' + encodeURIComponent(userName) + '&password=' + encodeURIComponent(password);
+    }
+    jQuery('#connectionTestMsgDiv').load(url, displayMsgODataCheck);
+}
+
+function select_unselect (type,forced) {
+	var all_chkb = document.getElementsByName(type);
+	var nr_checked=0;
+	for(var i=0;i<all_chkb.length;i++) {
+		if(all_chkb[i].checked){
+			nr_checked++;
+		}
+	}
+	var checked = nr_checked == all_chkb.length ? false : true;
+	if(forced){ // force selection of tables and the population of tables list inside columns's block on first time enabling OData (by default select all tbls)
+		checked = true;
+	}
+	for(var i=0;i<all_chkb.length;i++) {
+		all_chkb[i].checked=checked;
+		if(type=="tablesOdata"){ // when selecting massively the tables need also to update the combobox of tables/views inside columns config
+			// going back- td/tr/tbody/table/div
+			var parentId = all_chkb[i].parentElement.parentElement.parentElement.parentElement.parentElement.id; // the id of the div containing chkb
+			var elType = (parentId.indexOf("Views") !== -1  ? "optviews" : "opttables");
+			addTableToList(all_chkb[i], elType );
+		}
+		else {// columns OData
+			var key = document.getElementById("tables_list")[document.getElementById("tables_list").selectedIndex].value;
+			saveColState(key);
+		}
+	}
+}
+
+function addTableToList(object,type){
+	var selected = object.value.split("::");
+	var tablename= selected[0];
+	var schema = selected[1];
+	var currItem = schema+"."+tablename;
+	if(object.checked){
+		var option   = document.createElement("option");
+		option.text  = currItem;
+		option.value = currItem;
+		document.getElementById(type).appendChild(option);
+		//reloadOdataColumns(currItem); //by default load and set selected all columns of the chosen table
+	}else{
+		jQuery("#tables_list option[value='" + currItem + "']").remove();
+		//remove also the config in hidden input
+        if(document.getElementById("ColConfig_"+currItem) != null && document.getElementById("ColConfig_"+currItem) != undefined){
+        	document.getElementById("ColConfig_"+currItem).value=currItem+"::";
+        }
+	}
+}
 
 function changeXADataSourceEngine (obj, document) {
  	var selectedType =  obj[obj.selectedIndex].value;
@@ -1367,7 +1461,7 @@ function changeXADataSourceEngine (obj, document) {
     var url = selectedType.substring(selectedType.indexOf("#") + 1, selectedType.length);
  	document.getElementById('org.wso2.ws.dataservice.xa_datasource_class').value = driverClass;
     document.getElementById('URL').value = url;
- }
+}
 
 function changeXAType(obj, document) {
 	var selectedDS = document.getElementById('datasourceId').value;
@@ -1968,6 +2062,77 @@ function showAdvancedRDBMSConfigurations() {
       pwdMngrSymbolMax.setAttribute('style','background-image:url(images/plus.gif);');
       advancedConfigFields.style.display = 'none';
   }
+}
+
+function showAdvancedConfigODataTables() {
+	  var advODataSymbolMax =  document.getElementById('advODataSymbolMax');
+	  var advancedConfigFields = document.getElementById('advancedConfigODataTables');
+	  if(advancedConfigFields.style.display == 'none') {
+		  advODataSymbolMax.setAttribute('style','background-image:url(images/minus.gif);');
+	    advancedConfigFields.style.display = '';
+	  } else {
+		  advODataSymbolMax.setAttribute('style','background-image:url(images/plus.gif);');
+	      advancedConfigFields.style.display = 'none';
+	  }
+	  openTabContent(null, "Tables0");
+	}
+
+function showAdvancedConfigODataTablesColumns(createView){
+	  var advODataSymbolMax =  document.getElementById('advODataColumnsSymbolMax');
+	  var advancedConfigFields = document.getElementById('advancedConfigODataTablesColumns');
+	  if(advancedConfigFields.style.display == 'none') {
+		  if(createView){
+			  select_unselect("tablesOdata",true); // force selection of tables and the population of tables list inside columns's block on first time enabling OData (by default select all tbls)
+		  }
+		  advODataSymbolMax.setAttribute('style','background-image:url(images/minus.gif);');
+	    advancedConfigFields.style.display = '';
+	  } else {
+		  advODataSymbolMax.setAttribute('style','background-image:url(images/plus.gif);');
+	      advancedConfigFields.style.display = 'none';
+	  }
+}
+
+function saveColState(key){
+
+	var objs = document.getElementsByName("columnsList");
+	var i,val,valTmp="",type ;
+	for(i=0;i<objs.length;i++){
+		if(objs[i].checked){
+			val = objs[i].value.split("::");// get column name from chkb value
+			type = document.getElementById("typesList_"+val[0]).value;
+			valTmp += (valTmp!=="" ? ";" : "");
+			valTmp += val[0]+","+type;
+		}
+	}
+	if(document.getElementById("ColConfig_"+key) != null && document.getElementById("ColConfig_"+key) !=undefined){
+		document.getElementById("ColConfig_"+key).value=key+"::"+valTmp;
+	}
+	else{
+		var inputElem = document.createElement('input');
+	    inputElem.type = "hidden";
+	    inputElem.name = "ODataColumnsConfig";
+	    inputElem.id = "ColConfig_"+key;
+	    inputElem.value = key+"::"+valTmp;
+	    document.getElementById("advancedConfigODataTablesColumns").appendChild(inputElem);
+	}
+}
+
+function openTabContent(evt, tabName) {
+    var i, tabcontent, tablinks;
+    tabcontent = document.getElementsByClassName("tabcontent");
+    for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+    }
+    tablinks = document.getElementsByClassName("tablinks");
+    for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+    if(document.getElementById(tabName)!==undefined && document.getElementById(tabName) !== null){
+    	document.getElementById(tabName).style.display = "block";
+    }
+    if(document.getElementById(tabName+"Header")!==undefined && document.getElementById(tabName+"Header")!==null){
+    	document.getElementById(tabName+"Header").className += " active";
+    }
 }
 
 function deleteNewPropertyField(i) {

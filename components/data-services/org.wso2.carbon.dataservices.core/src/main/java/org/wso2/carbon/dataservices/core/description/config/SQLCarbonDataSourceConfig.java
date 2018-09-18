@@ -216,7 +216,7 @@ public class SQLCarbonDataSourceConfig extends SQLConfig {
 
 	@Override
 	public ODataDataHandler createODataHandler() throws ODataServiceFault {
-		return new RDBMSDataHandler(getDataSource(), getConfigId());
+		return new RDBMSDataHandler(getDataSource(), getConfigId(), null);
 	}
 }
 

@@ -23,6 +23,9 @@ import org.apache.axiom.om.OMNamespace;
 import org.wso2.carbon.dataservices.common.DBConstants;
 import org.wso2.carbon.dataservices.common.DBConstants.DBSFields;
 import org.wso2.carbon.dataservices.common.conf.DynamicAuthConfiguration;
+import org.wso2.carbon.dataservices.common.conf.DynamicODataConfig;
+import org.wso2.carbon.dataservices.common.conf.ODataColumnsConfig;
+import org.wso2.carbon.dataservices.common.conf.ODataTableSchemaConfig;
 
 import javax.xml.namespace.QName;
 import java.util.ArrayList;
@@ -414,6 +417,14 @@ public class Data extends DataServiceConfigurationElement{
         if (enableOdataAttribute != null) {
             config.setExposeAsOData(Boolean.parseBoolean(enableOdataAttribute.getAttributeValue()));
         }
+        OMAttribute isPublicOdataAttribute = configEle.getAttribute(new QName(DBSFields.ISPUBLIC_ODATA));
+        if (isPublicOdataAttribute != null) {
+            config.setPublicOData(Boolean.parseBoolean(isPublicOdataAttribute.getAttributeValue()));
+        }
+        OMAttribute creator = configEle.getAttribute(new QName(DBSFields.CREATOR));
+        if (creator != null) {
+            config.setCreator(creator.getAttributeValue());
+        }
         
 		Iterator<OMElement> properties = configEle.getChildrenWithName(new QName("property"));
 		while (properties.hasNext()) {
@@ -485,6 +496,38 @@ public class Data extends DataServiceConfigurationElement{
                          nestedProperty.add(nestedProp);
                      }
                     property.setValue(nestedProperty);
+                } else if (name.getAttributeValue().equals(DBConstants.RDBMS.DYNAMIC_ODATA_TABLE_MAPPING)) {
+                    property.setName(name.getAttributeValue());
+                    ArrayList<ODataTableSchemaConfig> dynamicTableList = new ArrayList<ODataTableSchemaConfig>();
+                    DynamicODataConfig dynamicODataTableConfiguration = new DynamicODataConfig();
+                    Iterator<OMElement> dynamicODataTablesConfigs = propertyEle.getChildrenWithName(new QName("tblname"));
+                    ODataTableSchemaConfig odataTableSchema = new ODataTableSchemaConfig();
+                    while (dynamicODataTablesConfigs.hasNext()) {
+                        OMElement dynamicUserConfig = dynamicODataTablesConfigs.next();
+                        String tblname = dynamicUserConfig.getAttributeValue(new QName("name"));
+                        String schemaname = dynamicUserConfig.getAttributeValue(new QName("schema"));
+                        odataTableSchema = new ODataTableSchemaConfig();
+                        odataTableSchema.setTableName(tblname);
+                        odataTableSchema.setSchemaName(schemaname);
+                        Iterator<OMElement> dynamicODataColumnsConfigs = dynamicUserConfig.getChildrenWithName(new QName("column"));
+                        ODataColumnsConfig columnsConf = new ODataColumnsConfig();
+                        List<ODataColumnsConfig> columnsList = new ArrayList<ODataColumnsConfig>();
+                        while(dynamicODataColumnsConfigs.hasNext()) {
+                        	OMElement dynamicColumnsonfig = dynamicODataColumnsConfigs.next();
+                        	String columnname = dynamicColumnsonfig.getText();
+                            String type = dynamicColumnsonfig.getAttributeValue(new QName("type"));
+                            columnsConf = new ODataColumnsConfig();
+                            columnsConf.setColumnName(columnname);
+                            columnsConf.setType(type);
+                            columnsList.add(columnsConf);
+                        }
+                        odataTableSchema.setColumns(columnsList);
+                        dynamicTableList.add(odataTableSchema);
+                    }
+                    String maxLimit = propertyEle.getAttributeValue(new QName("maxLimit"));
+                    dynamicODataTableConfiguration.setMaxLimit(maxLimit);
+                    dynamicODataTableConfiguration.setTables(dynamicTableList);
+                    property.setValue(dynamicODataTableConfiguration);
                 } else {
                 	property.setName(name.getAttributeValue());
                 	if (name.getAttributeValue().equals(DBConstants.RDBMS.PASSWORD) || 

@@ -70,7 +70,16 @@ public abstract class SQLConfig extends Config {
 	};
 
 	public SQLConfig(DataService dataService, String configId, String type, Map<String, String> properties,
-	                 boolean odataEnable) throws DataServiceFault {
+	                 boolean odataEnable, boolean isPublicOData, String creator) throws DataServiceFault {
+		super(dataService, configId, type, properties, odataEnable, isPublicOData, creator);
+		/* set validation query, if exists */
+		this.validationQuery = this.getProperty(RDBMS.VALIDATION_QUERY);
+		this.processAutoCommitValue();
+		this.processDynamicAuth();
+	}
+	
+	public SQLConfig(DataService dataService, String configId, String type, Map<String, String> properties,
+            boolean odataEnable) throws DataServiceFault {
 		super(dataService, configId, type, properties, odataEnable);
 		/* set validation query, if exists */
 		this.validationQuery = this.getProperty(RDBMS.VALIDATION_QUERY);

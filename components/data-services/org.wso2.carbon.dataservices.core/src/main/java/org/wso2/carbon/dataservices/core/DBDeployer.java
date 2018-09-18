@@ -810,10 +810,14 @@ public class DBDeployer extends AbstractDeployer {
 			/*create the odata service */
 			for (String configId : dataService.getConfigs().keySet()) {
 				Config config = dataService.getConfig(configId);
+				String creator = config.getCreator();
+				boolean isOdataPublic = config.IsOdataPublic();
 				if (config.isODataEnabled()) {
 					ODataServiceHandler serviceHandler = new ODataServiceHandler(config.createODataHandler(),
 					                                                             dataService.getServiceNamespace(),
-					                                                             configId);
+					                                                             configId,
+					                                                             isOdataPublic,
+					                                                             creator);
 					CarbonContext cCtx = CarbonContext.getThreadLocalCarbonContext();
 					registerODataHandler(dataService.getName(), serviceHandler, cCtx.getTenantDomain(), configId);
 				}

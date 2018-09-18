@@ -22,10 +22,16 @@ import org.apache.axis2.context.ConfigurationContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.dataservices.ui.beans.AuthProvider;
+import org.wso2.carbon.dataservices.ui.stub.DataServiceAdminExceptionException;
 import org.wso2.carbon.dataservices.ui.stub.DataServiceAdminStub;
 import org.wso2.carbon.dataservices.ui.stub.admin.core.xsd.PaginatedTableInfo;
+import org.wso2.carbon.dataservices.ui.stub.admin.core.xsd.GeneratedListTables;
+import org.wso2.carbon.dataservices.ui.stub.admin.core.xsd.ColumnsList;
 
 import java.rmi.RemoteException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
 public class DataServiceAdminClient {
@@ -116,6 +122,22 @@ public class DataServiceAdminClient {
 		return response;
     }
  
+    public GeneratedListTables[] generateTableList(String driverClass, String jdbcURL, String username,
+            String password, String passwordAlias, String[] schemas, String type) throws RemoteException, DataServiceAdminExceptionException {
+    	
+    	GeneratedListTables[] response = {} ;
+		response = stub.generateTableList(driverClass, jdbcURL, username, password, passwordAlias,schemas, type);
+		return response;
+    }
+    
+    public ColumnsList[] generateTableColumnsList(String driverClass, String jdbcURL, String username,
+            String password, String passwordAlias, String schemas, String tablename) throws RemoteException, DataServiceAdminExceptionException {
+    	
+    	ColumnsList[] response = {} ;
+		response = stub.generateTableColumnsList(driverClass, jdbcURL, username, password, passwordAlias,schemas, tablename);
+		return response;
+    }
+ 
 	public String testGSpreadConnection(String clientId,
             String clientSecret,
             String refreshToken,
@@ -157,6 +179,11 @@ public class DataServiceAdminClient {
 
     public String[]  getdbSchemaList(String datasourceId) throws Exception {
         return stub.getdbSchemaList(datasourceId);
+    }
+    
+    public String[]  getdbSchemaListUsingParams(String driverClass, String jdbcURL, String username,
+            String password, String passwordAlias) throws Exception {
+        return stub.getdbSchemaListUsingParams(driverClass, jdbcURL, username, password, passwordAlias);
     }
     
     /*

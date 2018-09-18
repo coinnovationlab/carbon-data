@@ -63,7 +63,17 @@ public class CassandraConfig extends Config {
     public CassandraConfig(DataService dataService, String configId, Map<String, String> properties,
                            boolean odataEnable) throws DataServiceFault {
         super(dataService, configId, DataSourceTypes.CASSANDRA, properties, odataEnable);
-        Builder builder = Cluster.builder();
+        initializeClusterSession(properties);
+    }
+    
+    public CassandraConfig(DataService dataService, String configId, Map<String, String> properties,
+            boolean odataEnable, boolean isPublicOData, String creator) throws DataServiceFault {
+        super(dataService, configId, DataSourceTypes.CASSANDRA, properties, odataEnable, isPublicOData, creator);
+        initializeClusterSession(properties);
+    }
+    
+    private void initializeClusterSession(Map<String, String> properties) throws DataServiceFault {
+    	Builder builder = Cluster.builder();
         this.populateSettings(builder, properties);
         String keyspace = properties.get(DBConstants.Cassandra.KEYSPACE);
         this.cluster = builder.build();

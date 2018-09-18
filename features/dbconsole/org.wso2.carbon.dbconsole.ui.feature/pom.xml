@@ -18,9 +18,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <parent>
-        <groupId>org.wso2.carbon.data</groupId>
+        <groupId>co.innovation.lab.wso2.dss</groupId>
         <artifactId>dbconsole-feature</artifactId>
-        <version>4.4.44-SNAPSHOT</version>
+        <version>4.4.1</version>
 	    <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -34,7 +34,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.wso2.carbon.data</groupId>
+            <groupId>co.innovation.lab.wso2.dss</groupId>
             <artifactId>org.wso2.carbon.dbconsole.ui</artifactId>
         </dependency>
         <dependency>
@@ -66,7 +66,7 @@
                                 </properties>
                             </adviceFile>
                             <bundles>
-                                <bundleDef>org.wso2.carbon.data:org.wso2.carbon.dbconsole.ui</bundleDef>
+                                <bundleDef>co.innovation.lab.wso2.dss:org.wso2.carbon.dbconsole.ui</bundleDef>
                             </bundles>                            
                             <importBundles>
                                   <importBundleDef>org.wso2.carbon:org.wso2.carbon.ui.menu.tools</importBundleDef>

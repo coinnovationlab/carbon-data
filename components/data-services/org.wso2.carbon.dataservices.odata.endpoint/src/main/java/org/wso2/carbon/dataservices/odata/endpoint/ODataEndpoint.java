@@ -23,6 +23,10 @@ import org.wso2.carbon.core.multitenancy.utils.TenantAxisUtils;
 import org.wso2.carbon.dataservices.core.odata.ODataServiceFault;
 import org.wso2.carbon.dataservices.core.odata.ODataServiceHandler;
 import org.wso2.carbon.dataservices.core.odata.ODataServiceRegistry;
+import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilter;
+import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilterInterface;
+import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilterUtils;
+import org.wso2.carbon.identity.authenticator.oauth2.sso.common.Util;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -30,6 +34,7 @@ import javax.servlet.http.HttpServletResponse;
 public class ODataEndpoint {
     private static final Log log = LogFactory.getLog(ODataEndpoint.class);
     private static final int NOT_IMPLEMENTED = 501;
+    private static final int UNAUTHORIZED = 401;
     private static final int BAD_REQUEST = 400;
 
     /**
@@ -39,7 +44,7 @@ public class ODataEndpoint {
      * @param response HTTPServlet Response
      * @see ODataServiceRegistry
      */
-    public static void process(HttpServletRequest request, HttpServletResponse response) {
+    public static void process(HttpServletRequest request, HttpServletResponse response){
         String tenantDomain = TenantAxisUtils.getTenantDomain(request.getRequestURI());
         if (log.isDebugEnabled()) {
             log.debug("OData Request received to DSS: Request body - " + request.toString() + ", ThreadID - " +
@@ -68,7 +73,28 @@ public class ODataEndpoint {
                 if (log.isDebugEnabled()) {
                     log.debug(serviceRootPath + " Service invoked.");
                 }
-                handler.process(request, response, serviceRootPath);
+                boolean isAuthEnabled = Util.isAuthenticatorEnabled();
+                if(!isAuthEnabled) {
+                	handler.process(request, response, serviceRootPath);
+                } else {
+                    boolean isPublicOData = handler.isPublicOdata();
+                    if(isPublicOData) {
+                    	handler.process(request, response, serviceRootPath);
+                    }else{
+                    	ServicesSecurityFilterUtils secureUtils = new ServicesSecurityFilterUtils();
+                        ServicesSecurityFilterInterface security = secureUtils.initializeSecurityFilter();
+                        boolean isUserAllowed = security.securityFilter(request,response,tenantDomain);
+                        if(isUserAllowed) {
+                        	handler.process(request, response, serviceRootPath);
+                        }else {
+                        	if (log.isDebugEnabled()) {
+                                log.debug("ODataService Handler for " + serviceRootPath + " Service is not Public.You are not authorized to access this service.");
+                            }
+                        	response.setStatus(UNAUTHORIZED);
+                        }
+                    }
+                    
+                }                
             } else {
                 if (log.isDebugEnabled()) {
                     log.debug("Couldn't find the ODataService Handler for " + serviceRootPath + " Service.");
@@ -80,7 +106,9 @@ public class ODataEndpoint {
             if (log.isDebugEnabled()) {
                 log.debug("Bad Request invoked. :" + e.getMessage());
             }
-        } finally {
+        } catch (Exception e) {
+			e.printStackTrace();
+		} finally {
             if (log.isDebugEnabled()) {
                 log.debug("OData Response send from DSS: Response body - " + response.toString() + ", ThreadID - " +
                           Thread.currentThread().getId());
@@ -120,4 +148,6 @@ public class ODataEndpoint {
         }
         throw new ODataServiceFault("Bad OData request.");
     }
+    
+    
 }
