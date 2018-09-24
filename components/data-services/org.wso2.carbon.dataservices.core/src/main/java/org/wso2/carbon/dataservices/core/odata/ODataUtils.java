@@ -30,6 +30,7 @@ import org.apache.olingo.commons.core.edm.primitivetype.EdmString;
 import org.wso2.carbon.dataservices.common.DBConstants;
 
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
@@ -99,6 +100,9 @@ public class ODataUtils {
 				propertyType = propertyType.substring(4);
 			}
 			EdmPrimitiveTypeKind kind = EdmPrimitiveTypeKind.valueOf(propertyType);
+			if (propertyValue instanceof BigDecimal) {
+				BigDecimal bd = (BigDecimal) propertyValue;
+			}
 			String value =  EdmPrimitiveTypeFactory.getInstance(kind).valueToString(
 				propertyValue, true, property.getMaxLength(), property.getPrecision(), property.getScale(), true);
 			if (kind == EdmPrimitiveTypeKind.String) {
@@ -108,5 +112,12 @@ public class ODataUtils {
 		}
 		location.append(")");
 		return location.toString();
+	}
+	
+	public static String dbPrefix(String db, String dbType) {
+		String result = "";
+		if (db != null && !db.equals("") && dbType.toLowerCase().contains(RDBMSDataHandler.MYSQL))
+				result = db + ".";
+		return result;
 	}
 }

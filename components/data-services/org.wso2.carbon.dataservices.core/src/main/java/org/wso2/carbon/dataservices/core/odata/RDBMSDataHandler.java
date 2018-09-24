@@ -462,6 +462,8 @@ public class RDBMSDataHandler implements ODataDataHandler {
         OrderByOption orderByOption = uriInfo.getOrderByOption();
         SkipOption skipOption = uriInfo.getSkipOption();
         TopOption topOption = uriInfo.getTopOption();
+        if (topOption != null && topOption.getValue() == 0) // MSSQL and Oracle will throw an exception when queried with $top=0: might as well return an empty set here, since no records must be extracted anyway
+            return new ArrayList<ODataEntry>(); 
         ExpandOption expandOption = uriInfo.getExpandOption();
         
         RDBMSODataQuery rdbmsQuery = new RDBMSODataQuery();
@@ -495,7 +497,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
             for (Property p : navProperties) {
                 if (rdbmsQuery.getWhere() != null && !rdbmsQuery.getWhere().equals(""))
                 	rdbmsQuery.appendWhere(" AND ");
-                rdbmsQuery.appendWhere(tableName + "." + p.getName() + " = " + p.getValue());
+                rdbmsQuery.appendWhere(tableName + "." + p.getName() + " = '" + p.getValue() + "'");
             }
         try {
             connection = initializeConnection();
@@ -566,7 +568,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
 		OrderByOption expandOrderBy;
 		
 		rdbmsQuery.addSelect(tableName + ".*"); // SELECT all fields of the "main" table
-		if (dbName != null && !dbName.equals("")) // if database was specified, attach it
+		if (dbName != null && !dbName.equals("") && dbType.contains(MYSQL)) // if database was specified, attach it
 			rdbmsQuery.appendFrom(dbName + "."); // name of the database plus dot
 		rdbmsQuery.appendFrom(tableName); // name of the table
 		buildFromSubQuery(rdbmsQuery, dbName, tableName); // Used when FROM needs a subquery, which happens when both $expand and $top/$skip are present in the OData query
@@ -587,7 +589,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
 			boolean addJoin = true;
 			for (ForeignKey fk : toForeignTableFKs) {
 				if (addJoin) { // add join command
-					rdbmsQuery.appendFrom(" LEFT OUTER JOIN " + foreignDB + "." + targetTable + " ON "); // joins this foreign table
+					rdbmsQuery.appendFrom(" LEFT OUTER JOIN " + ODataUtils.dbPrefix(foreignDB, dbType) + targetTable + " ON "); // joins this foreign table
 					addJoin = false;
 				} else
 					rdbmsQuery.appendFrom(" AND "); // additional foreign key
@@ -601,10 +603,10 @@ public class RDBMSDataHandler implements ODataDataHandler {
 			expandOrderBy = expandItem.getOrderByOption();
 			if (expandOrderBy != null) { // if there are nested $orderby's, adds the parameters to the already present ORDER BY
 				for (String s : getOrderBy(expandOrderBy))
-					rdbmsQuery.addOrderBy(foreignDB + "." + targetTable + "." + s);
+					rdbmsQuery.addOrderBy(ODataUtils.dbPrefix(foreignDB, dbType) + targetTable + "." + s);
 			} else if (foreignPKs != null) { // adds default ordering for consistency
 				for (String s : foreignPKs)
-					rdbmsQuery.addOrderBy(foreignDB + "." + targetTable + "." + s);
+					rdbmsQuery.addOrderBy(ODataUtils.dbPrefix(foreignDB, dbType) + targetTable + "." + s);
 			}
 		}
 	}
@@ -637,9 +639,12 @@ public class RDBMSDataHandler implements ODataDataHandler {
 	 * @param table		Name of the table
 	 */
 	private void addSelectColumns(RDBMSODataQuery rdbmsQuery, String db, String table) {
+		String quote = "\""; // default
+		if (dbType.contains(MYSQL))
+			quote = "`";
 		for (DataColumn column : this.tableMetaData.get(table).values()) {
-			rdbmsQuery.addSelect(db + "." + table + "." + column.getColumnName() + " AS " +
-					"`" + table + "." + column.getColumnName() + "`"); // note that there will be a trailing comma
+			rdbmsQuery.addSelect(ODataUtils.dbPrefix(db, dbType) + table + "." + column.getColumnName() + " AS " +
+					quote + table + "." + column.getColumnName() + quote); // note that there will be a trailing comma
 		}
 	}
 	
@@ -678,17 +683,17 @@ public class RDBMSDataHandler implements ODataDataHandler {
      */
     private String queryGeneratorOracle (String select, String where, int row_count, int offset, String orderBy) {
     	String query = "",limit= "";
-    	if(row_count != 0) {
+    	if(row_count > 0) {
         	if(offset != 0) {
-        		limit = " OFFSET "+ offset + " ROWS";
-        		limit += " FETCH NEXT "+ row_count +" ROWS ONLY ";
+        		limit = " OFFSET " + offset + " ROWS";
+        		limit += " FETCH NEXT " + row_count + " ROWS ONLY ";
             }
         	else {
-        		limit += " FETCH FIRST "+ row_count +" ROWS ONLY ";
+        		limit += " FETCH FIRST " + row_count + " ROWS ONLY ";
         	}
         }
         else if(offset != 0 ){
-        	limit =" OFFSET "+ offset + " ROWS";
+        	limit =" OFFSET " + offset + " ROWS";
         }
     	// ROWNUM <= number;  // old versions
     	query = select + where + orderBy + limit;
@@ -700,14 +705,13 @@ public class RDBMSDataHandler implements ODataDataHandler {
      */
     private String queryGeneratorMSSql (String select, String where, int row_count, int offset, String orderBy) {
         String query = "",limit= "";
-        orderBy = orderBy.trim();
-        if(orderBy.equals("")) {
+        if(orderBy.equals("") && (offset != 0 || row_count > 0)) {
             orderBy = " ORDER BY (SELECT 1) ";
         }
-        limit = " OFFSET "+ offset + " ROWS";
-        if (row_count < 0)
-            row_count = 0;
-        limit += " FETCH NEXT "+ row_count +" ROWS ONLY ";
+        if (offset != 0 || row_count > 0)
+            limit = " OFFSET " + offset + " ROWS";
+        if (row_count > 0)
+            limit += " FETCH NEXT " + row_count + " ROWS ONLY ";
         // Select TOP 3 * // old versions
         query = select + where + orderBy + limit;
         return query;
@@ -724,8 +728,12 @@ public class RDBMSDataHandler implements ODataDataHandler {
                 limit += " offset " + offset;
             }
         } else if (offset != 0 ) {
+            limit = " offset " + offset;
             // Adding 'limit MYSQL_MAX_LIMIT' is necessary for MySQL, which does not allow OFFSET without LIMIT. It is equal to 2^64-1, the highest number allowed by MySQL.
-            limit = " limit " + RDBMSODataQuery.MYSQL_MAX_LIMIT + " offset " + offset;
+            if (dbType.contains(MYSQL))
+                limit = " limit " + RDBMSODataQuery.MYSQL_MAX_LIMIT + limit;
+            else if (dbType.contains(H2))
+                limit = " limit " + RDBMSODataQuery.H2_MAX_LIMIT + limit;
         }
         query = select + where + orderBy + limit;
         return query;
@@ -1447,7 +1455,11 @@ public class RDBMSDataHandler implements ODataDataHandler {
 	                int size = resultSet.getInt("COLUMN_SIZE");
 	                boolean nullable = resultSet.getBoolean("NULLABLE");
 	                String columnDefaultVal = resultSet.getString("COLUMN_DEF");
-	                String autoIncrement = resultSet.getString("IS_AUTOINCREMENT").toLowerCase();
+	                String autoIncrement = "";
+	                try { // Oracle 11g and older versions have no concept of AUTO_INCREMENT, so this will throw an exception
+	                    autoIncrement = resultSet.getString("IS_AUTOINCREMENT").toLowerCase();
+	                } catch (SQLException e) { // to allow some compatibility with 11g and older, we enclose it in a try-catch segment that does nothing
+	                }
 	                boolean isAutoIncrement = false;
 	                if (autoIncrement.contains("yes") || autoIncrement.contains("true")) {
 	                    isAutoIncrement = true;
@@ -1467,6 +1479,12 @@ public class RDBMSDataHandler implements ODataDataHandler {
 	                        column.setScale(scale);
 	                    } else {
 	                        column.setScale(scale);
+	                    }
+	                    if (dbType.contains(ORACLE_SERVER)) { // for Oracle servers, which do not set scale and precision properly
+	                        if (size < 1)
+	                            column.setPrecision(1);
+	                        if (scale < 0)
+	                            column.setScale(5);
 	                    }
 	                }
 	                columnMap.put(columnName, column);
@@ -1502,8 +1520,12 @@ public class RDBMSDataHandler implements ODataDataHandler {
                 this.primaryKeys.put(tableName, readTablePrimaryKeys(tableName, metadata, catalog));
             }
             for (String tableName : this.tableList) { // executes this in a separate loop because it needs the tableMetaData structure to be complete
-                this.navigationProperties.put(tableName, readForeignKeys(tableName, metadata, catalog, metadata.storesLowerCaseIdentifiers(), metadata.storesUpperCaseIdentifiers()));
+                NavigationTable nt = readForeignKeys(tableName, metadata, catalog, metadata.storesLowerCaseIdentifiers(), metadata.storesUpperCaseIdentifiers());
+                if (nt != null)
+                    this.navigationProperties.put(tableName, nt);
             }
+            if (dbType.contains(MSSQL_SERVER))
+                fillNavPropertiesForMSSQL(metadata, catalog, metadata.storesLowerCaseIdentifiers(), metadata.storesUpperCaseIdentifiers());
         } catch (SQLException e) {
             throw new ODataServiceFault(e, "Error in reading tables from the database. :" + e.getMessage());
         } finally {
@@ -1528,14 +1550,16 @@ public class RDBMSDataHandler implements ODataDataHandler {
             
             if (lowerCaseDB.contains(ORACLE_SERVER)) {
                 rs = meta.getTables(null, meta.getUserName(), null, new String[] { TABLE, VIEW });
-            } else if (lowerCaseDB.contains(MYSQL)) {
+            } else if (meta.getDatabaseProductName().toLowerCase().contains(MSSQL_SERVER)) {
+                rs = meta.getTables(null, connection.getSchema(), null, new String[] { TABLE, VIEW });
+            } else if (lowerCaseDB.contains(MYSQL) || lowerCaseDB.contains(POSTGRESQL) || lowerCaseDB.contains(H2)) {
                 rs = meta.getTables(connection.getCatalog(), null, "%", new String[] { TABLE, VIEW });
             } else {
                 rs = meta.getTables(null, null, null, new String[] { TABLE, VIEW });
             }
             while (rs.next()) {
                 String tableName = rs.getString(TABLE_NAME);
-                if(lowerCaseDB.contains(MYSQL) || oDataTableList.contains(tableName)) {
+                if(oDataTableList.contains(tableName)) {
                     tableList.add(tableName);
                 }
             }
@@ -1585,65 +1609,112 @@ public class RDBMSDataHandler implements ODataDataHandler {
         ResultSet resultSetExp = null;
         ResultSet resultSetImp = null;
         
-        Map<String, List<ForeignKey>> tableFKs = new HashMap<String, List<ForeignKey>>(); // Map: Foreign table name -> Foreign keys to reach such foreign table
         if (foreignKeys == null)
             foreignKeys = new HashMap<String, Map<String, List<ForeignKey>>>(); // initializes the Table->Foreign Keys map
-        foreignKeys.put(tableName, tableFKs);
+        Map<String, List<ForeignKey>> tableFKs = foreignKeys.get(tableName); // Map: Foreign table name -> Foreign keys to reach such foreign table
+        if (tableFKs == null) {
+            tableFKs = new HashMap<String, List<ForeignKey>>();
+            foreignKeys.put(tableName, tableFKs);
+        }
         
         try {
-            resultSetExp = metaData.getExportedKeys(catalog, null, tableName); // retrieves the set of foreign keys of other tables that point to this table
-            resultSetImp = metaData.getImportedKeys(catalog, null, tableName); // retrieves the set of foreign keys of this table that point to other tables
+            resultSetExp = metaData.getExportedKeys(catalog, null, tableName); // Retrieves the set of foreign keys of other tables that point to this table. MicroSoft SQL does not seem to work with this method, which will always return an empty set.
+            resultSetImp = metaData.getImportedKeys(catalog, null, tableName); // Retrieves the set of foreign keys of this table that point to other tables.
             NavigationTable navigationLinks = new NavigationTable();
-            while (resultSetExp.next()) {
-                String primaryKeyColumnName = resultSetExp.getString("PKCOLUMN_NAME");
-                String foreignKeyTableName = resultSetExp.getString("FKTABLE_NAME"); // name of the foreign table related to tableName
-                String foreignKeyColumnName = resultSetExp.getString("FKCOLUMN_NAME");
-                for (String s : tableMetaData.get(tableName).keySet()) { // corrects case
-                    if ( (storesLower && s.toLowerCase().equals(primaryKeyColumnName)) ||
-                            (storesUpper && s.toUpperCase().equals(primaryKeyColumnName)) )
-                        primaryKeyColumnName = s;
+            if (!dbType.equals(MSSQL_SERVER)) { // getExportedKeys does not work with MicroSoft SQL, so this would just throw exceptions
+                while (resultSetExp.next()) { 
+                    String primaryKeyColumnName = resultSetExp.getString("PKCOLUMN_NAME");
+                    String foreignKeyTableName = resultSetExp.getString("FKTABLE_NAME"); // name of the foreign table related to tableName
+                    String foreignKeyColumnName = resultSetExp.getString("FKCOLUMN_NAME");
+                    for (String s : tableMetaData.get(tableName).keySet()) { // corrects case
+                        if ( (storesLower && s.toLowerCase().equals(primaryKeyColumnName)) ||
+                                (storesUpper && s.toUpperCase().equals(primaryKeyColumnName)) )
+                            primaryKeyColumnName = s;
+                    }
+                    List<NavigationKeys> columnList = navigationLinks.getNavigationKeys(foreignKeyTableName);
+                    if (columnList == null) {
+                        columnList = new ArrayList<>();
+                        navigationLinks.addNavigationKeys(foreignKeyTableName, columnList);
+                    }
+                    columnList.add(new NavigationKeys(primaryKeyColumnName, foreignKeyColumnName));
+                    
+                    List<ForeignKey> toForeignTableFKs = tableFKs.get(foreignKeyTableName); // foreign keys that connect the two tables
+                    if (toForeignTableFKs == null) {
+                        toForeignTableFKs = new ArrayList<ForeignKey>();
+                        tableFKs.put(foreignKeyTableName,  toForeignTableFKs); // adds the list of foreign keys involved in the connection
+                    }
+                    ForeignKey fk = new ForeignKey(ForeignKey.FKType.EXPORTED, resultSetExp.getString("PKTABLE_CAT"), resultSetExp.getString("PKTABLE_NAME"), primaryKeyColumnName,
+                            resultSetExp.getString("FKTABLE_CAT"), foreignKeyTableName, foreignKeyColumnName);
+                    toForeignTableFKs.add(fk); // adds the foreign key to the list
                 }
-                List<NavigationKeys> columnList = navigationLinks.getNavigationKeys(foreignKeyTableName);
-                if (columnList == null) {
-                    columnList = new ArrayList<>();
-                    navigationLinks.addNavigationKeys(foreignKeyTableName, columnList);
-                }
-                columnList.add(new NavigationKeys(primaryKeyColumnName, foreignKeyColumnName));
-                
-                List<ForeignKey> toForeignTableFKs = tableFKs.get(foreignKeyTableName); // foreign keys that connect the two tables
-                if (toForeignTableFKs == null) {
-                    toForeignTableFKs = new ArrayList<ForeignKey>();
-                    tableFKs.put(foreignKeyTableName,  toForeignTableFKs); // adds the list of foreign keys involved in the connection
-                }
-                ForeignKey fk = new ForeignKey(ForeignKey.FKType.EXPORTED, resultSetExp.getString("PKTABLE_CAT"), resultSetExp.getString("PKTABLE_NAME"), primaryKeyColumnName,
-                        resultSetExp.getString("FKTABLE_CAT"), foreignKeyTableName, foreignKeyColumnName);
-                toForeignTableFKs.add(fk); // adds the foreign key to the list
             }
             
-            while (resultSetImp.next()) {
-                String foreignKeyTableName = resultSetImp.getString("PKTABLE_NAME");
-                String foreignKeyColumnName = resultSetImp.getString("PKCOLUMN_NAME");
-                for (String s : tableMetaData.get(foreignKeyTableName).keySet()) { // corrects case
-                    if ( (storesLower && s.toLowerCase().equals(foreignKeyColumnName)) ||
-                            (storesUpper && s.toUpperCase().equals(foreignKeyColumnName)) )
-                        foreignKeyColumnName = s;
+            try { // MicroSoft SQL throws an exception when there are no more elements, instead of just returning false, so this try-catch is necessary
+                while (resultSetImp.next()) { // thankfully at least getImportedKeys works in MicroSoft SQL
+                    String foreignKeyTableName = resultSetImp.getString("PKTABLE_NAME");
+                    String foreignKeyColumnName = resultSetImp.getString("PKCOLUMN_NAME");
+                    for (String s : tableMetaData.get(foreignKeyTableName).keySet()) { // corrects case
+                        if ( (storesLower && s.toLowerCase().equals(foreignKeyColumnName)) ||
+                                (storesUpper && s.toUpperCase().equals(foreignKeyColumnName)) )
+                         foreignKeyColumnName = s;
+                    }
+                    
+                    List<ForeignKey> toForeignTableFKs = tableFKs.get(foreignKeyTableName); // foreign keys that connect the two tables
+                    if (toForeignTableFKs == null) {
+                        toForeignTableFKs = new ArrayList<ForeignKey>();
+                        tableFKs.put(foreignKeyTableName, toForeignTableFKs); // adds the list of foreign keys involved in the connection
+                    }
+                    ForeignKey fk = new ForeignKey(ForeignKey.FKType.IMPORTED, resultSetImp.getString("FKTABLE_CAT"), resultSetImp.getString("FKTABLE_NAME"), resultSetImp.getString("FKCOLUMN_NAME"),
+                            resultSetImp.getString("PKTABLE_CAT"), foreignKeyTableName, foreignKeyColumnName);
+                    toForeignTableFKs.add(fk); // adds the foreign key to the list
+                    
+                    if (dbType.contains(MSSQL_SERVER)) { // this section is only for MicroSoft SQL: since getExportedKeys does not work with it, we need to build exported keys here
+                        Map<String, List<ForeignKey>> foreignTableFKs = foreignKeys.get(foreignKeyTableName);
+                        if (foreignTableFKs == null) {
+                            foreignTableFKs = new HashMap<String, List<ForeignKey>>();
+                            foreignKeys.put(foreignKeyTableName, foreignTableFKs);
+                        }
+                        List<ForeignKey> toTableFKs = foreignTableFKs.get(tableName); // foreign keys that connect the two tables
+                        if (toTableFKs == null) {
+                            toTableFKs = new ArrayList<ForeignKey>();
+                            foreignTableFKs.put(tableName, toTableFKs); // adds the list of foreign keys involved in the connection
+                        }
+                        ForeignKey fkMS = new ForeignKey(ForeignKey.FKType.EXPORTED, resultSetImp.getString("PKTABLE_CAT"),foreignKeyTableName,foreignKeyColumnName,
+                                resultSetImp.getString("FKTABLE_CAT"), resultSetImp.getString("FKTABLE_NAME"), resultSetImp.getString("FKCOLUMN_NAME"));
+                        toTableFKs.add(fkMS);
+                    }
                 }
-                
-                List<ForeignKey> toForeignTableFKs = tableFKs.get(foreignKeyTableName); // foreign keys that connect the two tables
-                if (toForeignTableFKs == null) {
-                    toForeignTableFKs = new ArrayList<ForeignKey>();
-                    tableFKs.put(foreignKeyTableName, toForeignTableFKs); // adds the list of foreign keys involved in the connection
-                }
-                ForeignKey fk = new ForeignKey(ForeignKey.FKType.IMPORTED, resultSetImp.getString("FKTABLE_CAT"), resultSetImp.getString("FKTABLE_NAME"), resultSetImp.getString("FKCOLUMN_NAME"),
-                        resultSetImp.getString("PKTABLE_CAT"), foreignKeyTableName, foreignKeyColumnName);
-                toForeignTableFKs.add(fk); // adds the foreign key to the list
+            } catch (SQLException e) {
+                if (dbType.contains(MSSQL_SERVER)){ // do nothing
+                } else
+                    throw new ODataServiceFault(e, e.getMessage()); // error occurred
             }
+            if (dbType.contains(MSSQL_SERVER))
+                return null;
             return navigationLinks;
         } catch (SQLException e) {
             throw new ODataServiceFault(e, "Error in reading " + tableName + " table meta data. :" + e.getMessage());
         } finally {
             releaseResources(resultSetExp, null);
             releaseResources(resultSetImp, null);
+        }
+    }
+    
+    private void fillNavPropertiesForMSSQL(DatabaseMetaData metaData, String catalog, boolean storesLower, boolean storesUpper) {
+        for (String tableName : tableList) {
+            NavigationTable navigationLinks = new NavigationTable();
+            Map<String, List<ForeignKey>> tableFKs = foreignKeys.get(tableName);
+            for (String foreignTable : tableFKs.keySet()) {
+            	List<NavigationKeys> columnList = new ArrayList<>();
+                for (ForeignKey fk : tableFKs.get(foreignTable)) {
+                    if (fk.getType() == ForeignKey.FKType.EXPORTED) {
+                        columnList.add(new NavigationKeys(fk.getName(),fk.getForeignName()));
+                    }
+                }
+                if (columnList.size() > 0)
+                    navigationLinks.addNavigationKeys(foreignTable, columnList);
+            }
+            navigationProperties.put(tableName,  navigationLinks);
         }
     }
 
@@ -1748,7 +1819,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
         }
         sql.append(rdbmsQuery.printSelect() + rdbmsQuery.printFrom()).append(" WHERE ");
         String columnPrefix = "";
-        if (dbName != null && !dbName.equals(""))
+        if (dbName != null && !dbName.equals("") && dbType.contains(MYSQL))
             columnPrefix = dbName + ".";
         boolean propertyMatch = false;
         for (String column : this.rdbmsDataTypes.get(tableName).keySet()) {
@@ -1918,13 +1989,16 @@ public class RDBMSDataHandler implements ODataDataHandler {
 	 * Prints foreign keys belonging to all tables. For debugging purposes only.
 	 */
 	private void printForeignKeys() {
+		System.out.println("Database Type: " + dbType);
 		for (String table : tableList) {
 			System.out.println("FOREIGN TABLE FOR " + table);
 			Map <String, List<ForeignKey>> foreignTables = foreignKeys.get(table);
-			for (String foreignTable : foreignTables.keySet()) {
-				System.out.println(" To " + foreignTable + ": ");
-				for (ForeignKey zkey : foreignTables.get(foreignTable)) {
-					System.out.println("  " + zkey);
+			if (foreignTables != null) {
+				for (String foreignTable : foreignTables.keySet()) {
+					System.out.println(" To " + foreignTable + ": ");
+					for (ForeignKey zkey : foreignTables.get(foreignTable)) {
+						System.out.println("  " + zkey);
+					}
 				}
 			}
 			System.out.println("");
@@ -1935,13 +2009,16 @@ public class RDBMSDataHandler implements ODataDataHandler {
 	 * Prints the navigationProperties map. For debugging purposes only.
 	 */
 	private void printNavigationProperties() {
+		System.out.println("Database Type: " + dbType);
 		for (String table : tableList) {
 			System.out.println("NAVIGATION PROPERTIES FOR " + table);
 			NavigationTable navTable = navigationProperties.get(table);
-			for (String foreignTable : navTable.getTables()) {
-				System.out.println(" To " + foreignTable + ": ");
-				for (NavigationKeys nk : navTable.getNavigationKeys(foreignTable)) {
-					System.out.println("  " + nk.getForeignKey() + " -> " + nk.getPrimaryKey());
+			if (navTable != null) {
+				for (String foreignTable : navTable.getTables()) {
+					System.out.println(" To " + foreignTable + ": ");
+					for (NavigationKeys nk : navTable.getNavigationKeys(foreignTable)) {
+						System.out.println("  " + nk.getForeignKey() + " -> " + nk.getPrimaryKey());
+					}
 				}
 			}
 			System.out.println("");
