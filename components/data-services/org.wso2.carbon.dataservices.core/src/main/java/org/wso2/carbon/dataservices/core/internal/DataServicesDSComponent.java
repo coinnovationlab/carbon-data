@@ -24,6 +24,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.context.CarbonContext;
 import org.wso2.carbon.dataservices.core.DataServiceFault;
+import org.wso2.carbon.dataservices.core.admin.rest.DataServiceManager;
 import org.wso2.carbon.dataservices.core.description.event.EventTrigger;
 import org.wso2.carbon.event.core.EventBroker;
 import org.wso2.carbon.ndatasource.core.DataSourceService;
@@ -77,6 +78,7 @@ public class DataServicesDSComponent {
     private static TenantRegistryLoader tenantRegLoader;
 
     private static ConfigurationContextService contextService;
+    
 
     private static Object dsComponentLock = new Object(); /* class level lock for controlling synchronized access to static variables */
 
@@ -94,6 +96,8 @@ public class DataServicesDSComponent {
             bundleContext.registerService(DSDummyService.class.getName(), new DSDummyService(), null);
             bundleContext.registerService(TransactionManagerDummyService.class.getName(),
                                           new TransactionManagerDummyService(), null);
+            bundleContext.registerService(DataServiceManager.class.getName(),
+                    new DataServiceManager(), null);
 
             log.debug("Data Services bundle is activated ");
         } catch (Throwable e) {
@@ -246,5 +250,5 @@ public class DataServicesDSComponent {
     public static ConfigurationContextService getContextService() {
         return contextService;
     }
-
+    
 }
