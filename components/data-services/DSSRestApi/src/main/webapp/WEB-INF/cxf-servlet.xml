@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?><beans xmlns="http://www.springframework.org/schema/beans" xmlns:jaxrs="http://cxf.apache.org/jaxrs" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd http://cxf.apache.org/bindings/soap http://cxf.apache.org/schemas/configuration/soap.xsd http://cxf.apache.org/jaxrs http://cxf.apache.org/schemas/jaxrs.xsd">
+    
+	<bean id="DataServiceAdminRestBean" class="co.innovation.lab.dss.rest.api.resources.DataServicesResource"/>
+    <bean id="jacksonJsonProvider" class="com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider"/>
+    <bean id="authenticationFilter" class="co.innovation.lab.dss.rest.api.filter.AuthenticationFilter">
+    </bean>
+    <jaxrs:server id="DataServiceAdminRest" address="/rest_services">
+        <jaxrs:serviceBeans>
+            <ref  bean="DataServiceAdminRestBean"/>
+        </jaxrs:serviceBeans>
+        <jaxrs:providers>
+            <ref bean="authenticationFilter"/>
+            <ref bean="jacksonJsonProvider"/>
+        </jaxrs:providers>
+    </jaxrs:server>
+</beans>
