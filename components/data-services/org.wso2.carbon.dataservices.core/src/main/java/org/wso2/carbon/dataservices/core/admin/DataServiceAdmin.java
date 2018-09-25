@@ -37,6 +37,7 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.CarbonConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.core.AbstractAdmin;
+import org.wso2.carbon.core.multitenancy.utils.TenantAxisUtils;
 import org.wso2.carbon.dataservices.common.DBConstants;
 import org.wso2.carbon.dataservices.core.DBDeployer;
 import org.wso2.carbon.dataservices.core.DBUtils;
@@ -46,6 +47,7 @@ import org.wso2.carbon.dataservices.core.description.config.SQLCarbonDataSourceC
 import org.wso2.carbon.dataservices.core.description.query.QueryFactory;
 import org.wso2.carbon.dataservices.core.engine.DataService;
 import org.wso2.carbon.dataservices.core.engine.DataServiceSerializer;
+import org.wso2.carbon.dataservices.core.internal.DataServicesDSComponent;
 import org.wso2.carbon.dataservices.core.odata.DataColumn.ODataDataType;
 import org.wso2.carbon.dataservices.core.odata.ODataServiceFault;
 import org.wso2.carbon.dataservices.core.odata.RDBMSDataHandler;
@@ -54,6 +56,7 @@ import org.wso2.carbon.dataservices.core.script.GeneratedListTables;
 import org.wso2.carbon.dataservices.core.script.ColumnsList;
 import org.wso2.carbon.dataservices.core.script.PaginatedTableInfo;
 import org.wso2.carbon.dataservices.core.sqlparser.SQLParserUtil;
+import org.wso2.carbon.utils.ConfigurationContextService;
 import org.wso2.carbon.utils.Pageable;
 
 import java.io.BufferedReader;
@@ -98,7 +101,30 @@ public class DataServiceAdmin extends AbstractAdmin {
 
 	public DataServiceAdmin() {
 	}
-
+	
+	@Override
+	public AxisConfiguration getAxisConfig () {
+		String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+		ConfigurationContextService contextService = DataServicesDSComponent.getContextService();
+        ConfigurationContext configContext = contextService.getServerConfigContext();
+        AxisConfiguration axis = configContext.getAxisConfiguration();
+		if(!tenantDomain.equals("carbon.super")) {
+	        ConfigurationContext tenantConfigContx = TenantAxisUtils.getTenantConfigurationContext(tenantDomain, configContext);           
+	        axis = tenantConfigContx.getAxisConfiguration();
+		}
+		return axis;
+	}
+	
+	@Override
+	public ConfigurationContext getConfigContext() {
+		String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+		ConfigurationContextService contextService = DataServicesDSComponent.getContextService();
+        ConfigurationContext configContext = contextService.getServerConfigContext();
+		if(!tenantDomain.equals("carbon.super")) {
+	        configContext = TenantAxisUtils.getTenantConfigurationContext(tenantDomain, configContext);
+		}
+		return configContext;
+	}
 	/**
 	 * Returns data service content as a String.
 	 *
