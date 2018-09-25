@@ -2,8 +2,8 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>data-sources-features</artifactId>
-        <groupId>org.wso2.carbon.data</groupId>
-        <version>4.4.44-SNAPSHOT</version>
+        <groupId>co.innovation.lab.wso2.dss</groupId>
+        <version>4.4.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -20,8 +20,9 @@
             <artifactId>mongo-java-driver</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wso2.carbon.data</groupId>
+            <groupId>co.innovation.lab.wso2.dss</groupId>
             <artifactId>org.wso2.carbon.datasource.reader.mongo</artifactId>
+	    <version>4.4.1</version>
         </dependency>
     </dependencies>
     <build>
@@ -47,7 +48,7 @@
                                 </properties>
                             </adviceFile>
                             <bundles>
-                                <bundleDef>org.wso2.carbon.data:org.wso2.carbon.datasource.reader.mongo</bundleDef>
+                                <bundleDef>co.innovation.lab.wso2.dss:org.wso2.carbon.datasource.reader.mongo</bundleDef>
                                 <bundleDef>org.mongodb:mongo-java-driver</bundleDef>
                             </bundles>
                             <importFeatures>
