@@ -3,15 +3,12 @@ package co.innovation.lab.dss.rest.api.resources;
 import co.innovation.lab.dss.rest.api.Constants;
 import co.innovation.lab.dss.rest.api.beans.*;
 import org.wso2.carbon.dataservices.ui.beans.Data;
-
 import javax.ws.rs.core.Response;
-
 import org.wso2.carbon.service.mgt.ServiceMetaData;
 
 public abstract class AbstractResource {
 
     //private static final Log LOG = LogFactory.getLog(AbstractResource.class);
-
 
     public Response handleResponse(ResponseStatus responseStatus, String services) {
         Response response;

@@ -13,4 +13,27 @@
             <ref bean="jacksonJsonProvider"/>
         </jaxrs:providers>
     </jaxrs:server>
+    
+   
+    <bean id="swaggerWriter" class="io.swagger.jaxrs.listing.SwaggerSerializers"/>
+    <bean id="swaggerResource" class="io.swagger.jaxrs.listing.ApiListingResource"/>
+    <bean id="swaggerConfig" class="io.swagger.jaxrs.config.BeanConfig">
+        <property name="resourcePackage" value="co.innovation.lab.dss.rest.api.resources"/>
+        <property name="version" value="1.0.0"/>
+        <property name="basePath" value="/api"/>
+        <property name="title" value="WSO2 DataServicesServer REST DataServices Endpoint"/>
+        <property name="description" value="Access DataServices through REST methods"/>
+        <property name="scan" value="true"/>
+    </bean>
+     <jaxrs:server id="swaggerR" address="/api">
+        <jaxrs:serviceBeans>
+            <ref bean="swaggerResource"/>
+        </jaxrs:serviceBeans>
+
+        <jaxrs:providers>
+            <ref bean="jacksonJsonProvider"/>
+            <ref bean="swaggerWriter"/>
+        </jaxrs:providers>
+    </jaxrs:server>
+     
 </beans>

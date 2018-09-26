@@ -12,10 +12,11 @@ import org.apache.cxf.jaxrs.ext.RequestHandler;
 import org.apache.cxf.jaxrs.model.ClassResourceInfo;
 import org.apache.cxf.message.Message;
 import org.apache.cxf.transport.http.AbstractHTTPDestination;
+import org.wso2.carbon.dataservices.core.admin.rest.authentication.AuthenticationHandler;
+
 import co.innovation.lab.dss.rest.api.Configuration;
 import co.innovation.lab.dss.rest.api.Constants;
 import co.innovation.lab.dss.rest.api.beans.StandardResponse;
-import org.wso2.carbon.dataservices.core.admin.rest.authentication.AuthenticationHandler;
 
 public class AuthenticationFilter implements RequestHandler {
 

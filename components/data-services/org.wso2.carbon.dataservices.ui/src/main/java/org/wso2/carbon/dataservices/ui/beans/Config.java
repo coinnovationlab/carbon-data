@@ -41,7 +41,7 @@ public class Config extends DataServiceConfigurationElement {
 
     private boolean exposeAsODataService;
     
-    private boolean isPublic;
+    private boolean publicODataService;
     
     private String opMode;
     
@@ -171,11 +171,11 @@ public class Config extends DataServiceConfigurationElement {
     }
 
     public boolean isPublicODataService() {
-        return isPublic;
+        return publicODataService;
     }
     
     public void setPublicOData(boolean value) {
-    	isPublic = value;
+    	publicODataService = value;
     }
 
     public String getOpMode() {
@@ -212,8 +212,8 @@ public class Config extends DataServiceConfigurationElement {
         if (this.getId() != null) {
             confEl.addAttribute("id", this.getId(), null);
             confEl.addAttribute(DBSFields.ENABLE_ODATA, String.valueOf(exposeAsODataService), null);
-            if(String.valueOf(isPublic) != null)
-            	confEl.addAttribute(DBSFields.ISPUBLIC_ODATA, String.valueOf(isPublic), null);
+            if(String.valueOf(publicODataService) != null)
+            	confEl.addAttribute(DBSFields.ISPUBLIC_ODATA, String.valueOf(publicODataService), null);
             if(creator != null)
             	confEl.addAttribute(DBSFields.CREATOR, creator, null);
         }

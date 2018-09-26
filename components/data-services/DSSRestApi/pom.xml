@@ -45,6 +45,26 @@
 	    <artifactId>org.wso2.carbon.dataservices.ui</artifactId>
 	    <version>4.4.1</version>
 	</dependency>
+	<dependency>
+        <groupId>io.swagger</groupId>
+        <artifactId>swagger-jaxrs</artifactId>
+        <version>1.5.20</version>
+    </dependency>
+    <dependency>
+	  <groupId>io.swagger</groupId>
+	  <artifactId>swagger-jersey-jaxrs</artifactId>
+	  <version>1.5.0</version>
+	</dependency>
+    <dependency>
+        <groupId>com.sun.jersey</groupId>
+        <artifactId>jersey-client</artifactId>
+        <version>1.19.1</version>
+    </dependency>
+    <dependency>
+        <groupId>com.sun.jersey.contribs</groupId>
+        <artifactId>jersey-multipart</artifactId>
+        <version>1.19.1</version>
+    </dependency>
     
   </dependencies>
   <repositories>

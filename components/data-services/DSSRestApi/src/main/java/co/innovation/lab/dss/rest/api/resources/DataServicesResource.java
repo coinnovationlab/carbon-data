@@ -1,10 +1,5 @@
 package co.innovation.lab.dss.rest.api.resources;
 
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -19,29 +14,23 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.util.AXIOMUtil;
-import org.wso2.carbon.dataservices.ui.beans.Config;
 import org.wso2.carbon.dataservices.ui.beans.Data;
-import org.wso2.carbon.dataservices.ui.beans.Property;
 import org.wso2.carbon.service.mgt.ServiceMetaData;
 import org.wso2.carbon.service.mgt.ServiceMetaDataWrapper;
 
 import co.innovation.lab.dss.rest.api.Utils;
 import co.innovation.lab.dss.rest.api.beans.DataService;
 
-import org.wso2.carbon.dataservices.common.conf.DynamicAuthConfiguration;
-import org.wso2.carbon.dataservices.common.conf.DynamicODataConfig;
-import org.wso2.carbon.dataservices.common.conf.ODataColumnsConfig;
-import org.wso2.carbon.dataservices.common.conf.ODataTableSchemaConfig;
 import org.wso2.carbon.dataservices.core.admin.rest.DataServiceManager;
 
-import javax.xml.bind.*;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.namespace.QName;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
+@Path("/")
+@Api(value = "/", description = "REST API for manipulating dataservices")
 @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
 @Produces(MediaType.APPLICATION_JSON)
 public class DataServicesResource extends AbstractResource {
@@ -60,8 +49,14 @@ public class DataServicesResource extends AbstractResource {
     
     @POST
     @Path("/{tenantDomain}/saveDataService")
-    public Response saveDataService(@PathParam("tenantDomain") String tenantDomain,
-                                   DataService data) {
+    @ApiOperation(value = "Save and Update dataservice providing new parameters",
+    	httpMethod = "POST")
+	@ApiResponses(value = {
+	    @ApiResponse(code = 200, message = "Method call success"),
+	    @ApiResponse(code = 500, message = "Error while saving dataservice ")
+	})    
+    public Response saveDataService(@ApiParam(value = "The tenant containing the dataservice", required = true)@PathParam("tenantDomain") String tenantDomain,
+    		@ApiParam(value = "Service Parameters", required = true) DataService data) {
         Data dataService = data.getData();
         Data toReturn = dataService;
         try {
@@ -76,9 +71,15 @@ public class DataServicesResource extends AbstractResource {
     
     @GET
     @Path("/{tenantDomain}/listDataService")
-    public Response listDataService(@PathParam("tenantDomain") String tenantDomain, 
-	    		@QueryParam("search") String search,
-	    		@QueryParam("page") int page) {
+    @ApiOperation(value = "Paginate through the dataservices of specific tenant, 15 services per page",
+	httpMethod = "GET")
+	@ApiResponses(value = {
+	    @ApiResponse(code = 200, message = "Method call success"),
+	    @ApiResponse(code = 500, message = "Error while listing dataservices")
+	})
+    public Response listDataService(@ApiParam(value = "The tenant containing the dataservices", required = true)@PathParam("tenantDomain") String tenantDomain, 
+    		@ApiParam(value = "The term to search", required = true)@QueryParam("search") String search,
+    		@ApiParam(value = "The total number of pages: starting from 0", required = true)	@QueryParam("page") int page) {
     	
     	ServiceMetaData[] services = null;
     	int pages = 0;
@@ -95,8 +96,14 @@ public class DataServicesResource extends AbstractResource {
     
 	@GET
     @Path("/{tenantDomain}/getDataService")
-    public Response getDataService(@PathParam("tenantDomain") String tenantDomain, 
-	    		@QueryParam("serviceid") String serviceid) {
+	@ApiOperation(value = "Get the parameters of the specific dataservice",
+		httpMethod = "GET")
+	@ApiResponses(value = {
+	    @ApiResponse(code = 200, message = "Method call success"),
+	    @ApiResponse(code = 500, message = "Error while getting dataservice information")
+	})
+    public Response getDataService(@ApiParam(value = "The tenant containing the dataservice", required = true)@PathParam("tenantDomain") String tenantDomain, 
+    		@ApiParam(value = "The service name", required = true)@QueryParam("serviceid") String serviceid) {
     	
     	String content;
     	Data data = null;
@@ -111,8 +118,15 @@ public class DataServicesResource extends AbstractResource {
     }
     
     @DELETE
-    @Path("/{tenantDomain}/dataService/{servicename}")
-    public Response deleteDataService(@PathParam("tenantDomain") String tenantDomain, @PathParam("servicename") String servicename) {
+    @Path("/{tenantDomain}/dataService/{servicename:.*}")
+    @ApiOperation(value = "Delete specific dataservice",
+		httpMethod = "DELETE")
+	@ApiResponses(value = {
+	    @ApiResponse(code = 200, message = "Method call success"),
+	    @ApiResponse(code = 500, message = "Error while deleting dataservices")
+	})
+    public Response deleteDataService(@ApiParam(value = "The tenant containing the dataservice", required = true)@PathParam("tenantDomain") String tenantDomain, 
+    		@ApiParam(value = "The service name", required = true)@PathParam("servicename") String servicename) {
     	try {
     		dataServiceManager.deleteDataService(servicename, tenantDomain);
         } catch (Exception e) {

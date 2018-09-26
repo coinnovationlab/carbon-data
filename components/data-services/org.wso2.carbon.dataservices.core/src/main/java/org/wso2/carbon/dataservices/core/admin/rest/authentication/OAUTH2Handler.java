@@ -15,6 +15,7 @@ import org.wso2.carbon.dataservices.core.admin.rest.Utils;
 import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilter;
 import org.wso2.carbon.identity.authenticator.oauth2.sso.OAUTH2SSOAuthenticator;
 import org.wso2.carbon.identity.authenticator.oauth2.sso.common.OAUTH2SSOAuthenticatorConstants;
+import org.wso2.carbon.identity.authenticator.oauth2.sso.common.Util;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.service.RealmService;
 
@@ -24,6 +25,10 @@ public class OAUTH2Handler implements AuthenticationHandler{
     ServicesSecurityFilter secFilter = new ServicesSecurityFilter();
 
 	public boolean canHandle(Map httpHeaders, HttpServletRequest request, HttpServletResponse response) {
+		boolean isAuthEnabled = Util.isAuthenticatorEnabled();
+        if(!isAuthEnabled) {
+        	return true;
+        }
 		String authToken = getAuthHeaderToken(request);
     	String apiKey = getApiKey(request);
     	boolean containsAuthToken = authToken != null && !authToken.equals("");
@@ -36,6 +41,10 @@ public class OAUTH2Handler implements AuthenticationHandler{
 
 	public boolean isAuthenticated(Map httpHeaders, HttpServletRequest request, HttpServletResponse response) throws Exception {
 		String tenantDomain = getTenantDomain(request.getRequestURI());	
+		boolean isAuthEnabled = Util.isAuthenticatorEnabled();
+        if(!isAuthEnabled) {
+        	return true;
+        }
         if (tenantDomain != null ) {
             try {
                 //get super tenant context and get realm service which is an osgi service
