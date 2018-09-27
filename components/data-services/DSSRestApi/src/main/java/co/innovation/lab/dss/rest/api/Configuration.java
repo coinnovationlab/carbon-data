@@ -23,6 +23,7 @@ public class Configuration {
 
     private static void readAuthenticationHandlers() {
         AUTHENTICATION_HANDLERS.add("org.wso2.carbon.dataservices.core.admin.rest.authentication.OAUTH2Handler");
+        AUTHENTICATION_HANDLERS.add("org.wso2.carbon.dataservices.core.admin.rest.authentication.BasicAuthHandler");
     }
 
 }

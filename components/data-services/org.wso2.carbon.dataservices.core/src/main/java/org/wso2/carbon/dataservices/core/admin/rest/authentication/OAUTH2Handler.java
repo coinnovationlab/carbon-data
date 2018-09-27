@@ -25,12 +25,9 @@ public class OAUTH2Handler implements AuthenticationHandler{
     ServicesSecurityFilter secFilter = new ServicesSecurityFilter();
 
 	public boolean canHandle(Map httpHeaders, HttpServletRequest request, HttpServletResponse response) {
-		boolean isAuthEnabled = Util.isAuthenticatorEnabled();
-        if(!isAuthEnabled) {
-        	return true;
-        }
 		String authToken = getAuthHeaderToken(request);
     	String apiKey = getApiKey(request);
+    	System.out.println("header: "+authToken+" "+apiKey);
     	boolean containsAuthToken = authToken != null && !authToken.equals("");
     	boolean containsApiKey = apiKey != null && !apiKey.equals("");  
         if(containsAuthToken || containsApiKey){
@@ -41,11 +38,7 @@ public class OAUTH2Handler implements AuthenticationHandler{
 
 	public boolean isAuthenticated(Map httpHeaders, HttpServletRequest request, HttpServletResponse response) throws Exception {
 		String tenantDomain = getTenantDomain(request.getRequestURI());	
-		boolean isAuthEnabled = Util.isAuthenticatorEnabled();
-        if(!isAuthEnabled) {
-        	return true;
-        }
-        if (tenantDomain != null ) {
+		if (tenantDomain != null ) {
             try {
                 //get super tenant context and get realm service which is an osgi service
                 RealmService realmService = (RealmService)PrivilegedCarbonContext.getThreadLocalCarbonContext().
@@ -97,9 +90,11 @@ public class OAUTH2Handler implements AuthenticationHandler{
     private static String getAuthHeaderToken(HttpServletRequest request) {
     	String authToken = "";
         String authorization = request.getHeader("Authorization");
+        String type = authorization.substring(0,6);
         if(authorization != null) {
-        	assert authorization.substring(0, 7).equals("Bearer ");
-            authToken = authorization.substring(7);
+        	if ("bearer".equalsIgnoreCase(type)) {
+        		authToken = authorization.substring(7);
+            }
         }
         return authToken;
     }
