@@ -43,6 +43,7 @@ In order to expose a SOAP-based admin service as a REST API there are several ta
 The Swagger for the dataservices API is available at: ``https://mydomain.com/dss_proxy_context_path/DSSRestApi/api/swagger.json``.  <br/>
 All the list of webservices is exposed in te following endpoint: ``https://mydomain.com/dss_proxy_context_path/DSSRestApi/rest_services`` <br/>
 They are protected by OAuth2 token-based authentication method, therefore the token must be provided in the Header or it can be used the apikey as a query parameter. <br/>
+The API can be accesed also by using Basic Authorization Header : Basic base64Encode(admin:admin)
 
 ### 3.1. Save dataservice   
 To save or update the configuration of one dataservice inside specific tenant the following call should be performed:   
