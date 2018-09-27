@@ -5,6 +5,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -55,7 +56,10 @@ public class DataServicesResource extends AbstractResource {
 	    @ApiResponse(code = 200, message = "Method call success"),
 	    @ApiResponse(code = 500, message = "Error while saving dataservice ")
 	})    
-    public Response saveDataService(@ApiParam(value = "The tenant containing the dataservice", required = true)@PathParam("tenantDomain") String tenantDomain,
+    public Response saveDataService(
+    		@ApiParam(value = "The authorization bearer token", required = true)@HeaderParam("bearerToken") String bearerToken,
+    		@ApiParam(value = "The authorization apikey: required if there is no header token provided", required = true)@QueryParam("apikey") String apikey,
+    		@ApiParam(value = "The tenant containing the dataservice", required = true)@PathParam("tenantDomain") String tenantDomain,
     		@ApiParam(value = "Service Parameters", required = true) DataService data) {
         Data dataService = data.getData();
         Data toReturn = dataService;
@@ -77,7 +81,10 @@ public class DataServicesResource extends AbstractResource {
 	    @ApiResponse(code = 200, message = "Method call success"),
 	    @ApiResponse(code = 500, message = "Error while listing dataservices")
 	})
-    public Response listDataService(@ApiParam(value = "The tenant containing the dataservices", required = true)@PathParam("tenantDomain") String tenantDomain, 
+    public Response listDataService(
+    		@ApiParam(value = "The authorization bearer token", required = true)@HeaderParam("bearerToken") String bearerToken,
+    		@ApiParam(value = "The authorization apikey: required if there is no header token provided", required = true)@QueryParam("apikey") String apikey,
+    		@ApiParam(value = "The tenant containing the dataservices", required = true)@PathParam("tenantDomain") String tenantDomain, 
     		@ApiParam(value = "The term to search", required = true)@QueryParam("search") String search,
     		@ApiParam(value = "The total number of pages: starting from 0", required = true)	@QueryParam("page") int page) {
     	
@@ -102,7 +109,10 @@ public class DataServicesResource extends AbstractResource {
 	    @ApiResponse(code = 200, message = "Method call success"),
 	    @ApiResponse(code = 500, message = "Error while getting dataservice information")
 	})
-    public Response getDataService(@ApiParam(value = "The tenant containing the dataservice", required = true)@PathParam("tenantDomain") String tenantDomain, 
+    public Response getDataService(
+    		@ApiParam(value = "The authorization bearer token", required = true)@HeaderParam("bearerToken") String bearerToken,
+    		@ApiParam(value = "The authorization apikey: required if there is no header token provided", required = true)@QueryParam("apikey") String apikey,
+    		@ApiParam(value = "The tenant containing the dataservice", required = true)@PathParam("tenantDomain") String tenantDomain, 
     		@ApiParam(value = "The service name", required = true)@QueryParam("serviceid") String serviceid) {
     	
     	String content;
@@ -114,7 +124,7 @@ public class DataServicesResource extends AbstractResource {
         	System.out.println(e.getMessage());
             return handleResponse(ResponseStatus.FAILED, "Error while getting dataservice information ");
         } 
-        return handleResponseData(ResponseStatus.LISTSERVICES, content, data);
+        return handleResponseData(ResponseStatus.SUCCESS, "OK", data);
     }
     
     @DELETE
@@ -125,7 +135,10 @@ public class DataServicesResource extends AbstractResource {
 	    @ApiResponse(code = 200, message = "Method call success"),
 	    @ApiResponse(code = 500, message = "Error while deleting dataservices")
 	})
-    public Response deleteDataService(@ApiParam(value = "The tenant containing the dataservice", required = true)@PathParam("tenantDomain") String tenantDomain, 
+    public Response deleteDataService(
+    		@ApiParam(value = "The authorization bearer token", required = true)@HeaderParam("bearerToken") String bearerToken,
+    		@ApiParam(value = "The authorization apikey: required if there is no header token provided", required = true)@QueryParam("apikey") String apikey,
+    		@ApiParam(value = "The tenant containing the dataservice", required = true)@PathParam("tenantDomain") String tenantDomain, 
     		@ApiParam(value = "The service name", required = true)@PathParam("servicename") String servicename) {
     	try {
     		dataServiceManager.deleteDataService(servicename, tenantDomain);
