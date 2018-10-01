@@ -82,3 +82,8 @@ To delete one dataservice inside specific tenant the following call should be pe
     b. ApiKey query param https://wso2server.com/dss/DSSRestApi/rest_services/newdomain.com/dataService/DATASERVICENAME&apikey=APIKEY_VALUE
 
 Consider the fact that you can delete a dataservice that could be placed inside specific folder,in that case you can provide the exact value: /dataService/FOLDERNAME/DATASERVICENAME 
+
+## 4. REST WebApp Deployment
+
+In order to deploy the JAX-RS webapp it is important to get the .war from components/data-services/DSSRestApi/target which can be genenrated after compiling the [carbon-data](https://github.com/coinnovationlab/carbon-data) module.
+Then you should put that .war in the folder repository/deployment/server/webapps.
