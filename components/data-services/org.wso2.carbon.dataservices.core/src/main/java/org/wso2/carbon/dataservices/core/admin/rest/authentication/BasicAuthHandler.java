@@ -19,13 +19,8 @@ public class BasicAuthHandler implements AuthenticationHandler {
     public static final String AUTHORIZATION_HEADER = "Authorization";
 
     public boolean canHandle(Map headers, HttpServletRequest request, HttpServletResponse response) {
-        ArrayList authzHeaders = (ArrayList) headers.get(AUTHORIZATION_HEADER);
-        if(authzHeaders == null){
-            return false;
-        }
-        String authzHeader = (String) authzHeaders.get(0);
-        String type = authzHeader.split(" ")[0];
-        if ("basic".equalsIgnoreCase(type)) {
+    	String value = getAuthHeaderValue(request);
+        if (value != "") {
             return true;
         }
         return false;
@@ -43,51 +38,58 @@ public class BasicAuthHandler implements AuthenticationHandler {
                 //decode it and extract username and password
                 byte[] decodedAuthHeader = Base64.decode(authzHeader.split(" ")[1]);
                 String authHeader = new String(decodedAuthHeader);
-                userName = authHeader.split(":")[0];
-                String password = authHeader.split(":")[1];
-                if (userName != null && password != null) {
-                    String tenantDomain = MultitenantUtils.getTenantDomain(userName);
-                    String tenantLessUserName = MultitenantUtils.getTenantAwareUsername(userName);
-
-                    if( tenantDomain.equals(tenantDomainAPI) || tenantDomain.equals("carbon.super")) {
-                    	
-	                    try {
-	                        //get super tenant context and get realm service which is an osgi service
-	                        RealmService realmService = (RealmService)
-	                                PrivilegedCarbonContext.getThreadLocalCarbonContext().
-	                                        getOSGiService(RealmService.class);
-	                        if (realmService != null) {
-	                            int tenantId = realmService.getTenantManager().getTenantId(tenantDomain);
-	                            if (tenantId == -1) {
-	                                LOG.error("Invalid tenant domain " + tenantDomain);
-	                                return false;
-	                            }
-	                            //get tenant's user realm
-	                            UserRealm userRealm = realmService.getTenantUserRealm(tenantId);
-	                            boolean authenticated = userRealm.getUserStoreManager().
-	                                    authenticate(tenantLessUserName, password);
-	                            if (authenticated) {
-	                                //authentication success. set the username for authorization header
-	                                //and proceed the REST call
-	                                authzHeaders.set(0, userName);
-	                                return true;
-	                            } else {
-	                                return false;
-	                            }
-	                        } else {
-	                            return false;
-	                        }
-	                    } catch (UserStoreException e) {
-	                        LOG.debug("UserStoreException. Return Unauthorized.", e);
+                if(authHeader != null) {
+                	String[] val = authHeader.split(":");
+                	if(val.length < 2) return false;
+	                userName = authHeader.split(":")[0];
+	                String password = authHeader.split(":")[1];
+	                if (userName != null && password != null) {
+	                    String tenantDomain = MultitenantUtils.getTenantDomain(userName);
+	                    String tenantLessUserName = MultitenantUtils.getTenantAwareUsername(userName);
+	
+	                    if( tenantDomain.equals(tenantDomainAPI) || tenantDomain.equals("carbon.super")) {
+	                    	
+		                    try {
+		                        //get super tenant context and get realm service which is an osgi service
+		                        RealmService realmService = (RealmService)
+		                                PrivilegedCarbonContext.getThreadLocalCarbonContext().
+		                                        getOSGiService(RealmService.class);
+		                        if (realmService != null) {
+		                            int tenantId = realmService.getTenantManager().getTenantId(tenantDomain);
+		                            if (tenantId == -1) {
+		                                LOG.error("Invalid tenant domain " + tenantDomain);
+		                                return false;
+		                            }
+		                            //get tenant's user realm
+		                            UserRealm userRealm = realmService.getTenantUserRealm(tenantId);
+		                            boolean authenticated = userRealm.getUserStoreManager().
+		                                    authenticate(tenantLessUserName, password);
+		                            if (authenticated) {
+		                                //authentication success. set the username for authorization header
+		                                //and proceed the REST call
+		                                authzHeaders.set(0, userName);
+		                                return true;
+		                            } else {
+		                                return false;
+		                            }
+		                        } else {
+		                            return false;
+		                        }
+		                    } catch (UserStoreException e) {
+		                        LOG.debug("UserStoreException. Return Unauthorized.", e);
+		                        return false;
+		                    }
+		                }
+	                    else{
 	                        return false;
 	                    }
+	                } else {
+	                    return false;
 	                }
-                    else{
-                        return false;
-                    }
                 } else {
                     return false;
                 }
+
             } else {
                 return false;
             }
@@ -95,6 +97,25 @@ public class BasicAuthHandler implements AuthenticationHandler {
             LOG.error("Error while trying to authenticate user", e);
             return false;
         }
+    }
+    
+    /**
+     * 
+     * Retrieve the header token 
+     * @param uri
+     * @param tenantDomain
+     * @return
+     */
+    private static String getAuthHeaderValue(HttpServletRequest request) {
+    	String authValue = "";
+        String authorization = request.getHeader("Authorization");
+        if(authorization != null) {
+        	String type = authorization.substring(0,5);
+        	if ("basic".equalsIgnoreCase(type)) {
+        		authValue = authorization.substring(6);
+            }
+        }
+        return authValue;
     }
     
     /**

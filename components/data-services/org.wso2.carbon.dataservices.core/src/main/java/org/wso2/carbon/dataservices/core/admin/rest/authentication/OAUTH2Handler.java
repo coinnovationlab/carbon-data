@@ -82,7 +82,7 @@ public class OAUTH2Handler implements AuthenticationHandler{
     }
     /**
      * 
-     * Retrieve the apikey parameter 
+     * Retrieve the header token 
      * @param uri
      * @param tenantDomain
      * @return
@@ -90,8 +90,8 @@ public class OAUTH2Handler implements AuthenticationHandler{
     private static String getAuthHeaderToken(HttpServletRequest request) {
     	String authToken = "";
         String authorization = request.getHeader("Authorization");
-        String type = authorization.substring(0,6);
         if(authorization != null) {
+        	String type = authorization.substring(0,6);
         	if ("bearer".equalsIgnoreCase(type)) {
         		authToken = authorization.substring(7);
             }

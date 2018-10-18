@@ -20,8 +20,8 @@
     </dependency>
     <dependency>
 	    <groupId>org.wso2.carbon</groupId>
-	    <artifactId>org.wso2.carbon.context</artifactId>
-	    <version>4.0.1</version>
+	    <artifactId>org.wso2.carbon.core</artifactId>
+	    <version>5.2.4</version>
 	    <scope>provided</scope>
 	</dependency>
 	<dependency>
@@ -39,6 +39,7 @@
 	    <groupId>org.apache.cxf</groupId>
 	    <artifactId>cxf-bundle-jaxrs</artifactId>
 	    <version>2.7.18</version>
+	    <scope>provided</scope>
 	</dependency>
 	<dependency>
 	    <groupId>co.innovation.lab.wso2.dss</groupId>

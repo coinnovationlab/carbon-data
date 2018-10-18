@@ -49,13 +49,13 @@ public class AuthenticationFilter implements RequestHandler {
                 return handleError();
             }
         } catch(Exception e){
+        	e.printStackTrace();
         	return handleError();
         } finally {
         }
     }
 
     private Response handleError() {
-    	System.out.println("Failed authentication");
         return Response.status(401).
                 entity(new StandardResponse(Constants.Status.FAILED,
                                             "failed authentication")).build();

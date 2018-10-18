@@ -14,16 +14,12 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import org.wso2.carbon.dataservices.ui.beans.Data;
 import org.wso2.carbon.service.mgt.ServiceMetaData;
 import org.wso2.carbon.service.mgt.ServiceMetaDataWrapper;
-
 import co.innovation.lab.dss.rest.api.Utils;
 import co.innovation.lab.dss.rest.api.beans.DataService;
-
 import org.wso2.carbon.dataservices.core.admin.rest.DataServiceManager;
-
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -58,7 +54,7 @@ public class DataServicesResource extends AbstractResource {
 	})    
     public Response saveDataService(
     		@ApiParam(value = "The authorization bearer token", required = true)@HeaderParam("bearerToken") String bearerToken,
-    		@ApiParam(value = "The authorization apikey: required if there is no header token provided", required = true)@QueryParam("apikey") String apikey,
+    		@ApiParam(value = "The authorization apikey: required if there is no header token provided", required = false)@QueryParam("apikey") String apikey,
     		@ApiParam(value = "The tenant containing the dataservice", required = true)@PathParam("tenantDomain") String tenantDomain,
     		@ApiParam(value = "Service Parameters", required = true) DataService data) {
         Data dataService = data.getData();
@@ -83,7 +79,7 @@ public class DataServicesResource extends AbstractResource {
 	})
     public Response listDataService(
     		@ApiParam(value = "The authorization bearer token", required = true)@HeaderParam("bearerToken") String bearerToken,
-    		@ApiParam(value = "The authorization apikey: required if there is no header token provided", required = true)@QueryParam("apikey") String apikey,
+    		@ApiParam(value = "The authorization apikey: required if there is no header token provided", required = false)@QueryParam("apikey") String apikey,
     		@ApiParam(value = "The tenant containing the dataservices", required = true)@PathParam("tenantDomain") String tenantDomain, 
     		@ApiParam(value = "The term to search", required = true)@QueryParam("search") String search,
     		@ApiParam(value = "The total number of pages: starting from 0", required = true)	@QueryParam("page") int page) {
@@ -111,7 +107,7 @@ public class DataServicesResource extends AbstractResource {
 	})
     public Response getDataService(
     		@ApiParam(value = "The authorization bearer token", required = true)@HeaderParam("bearerToken") String bearerToken,
-    		@ApiParam(value = "The authorization apikey: required if there is no header token provided", required = true)@QueryParam("apikey") String apikey,
+    		@ApiParam(value = "The authorization apikey: required if there is no header token provided", required = false)@QueryParam("apikey") String apikey,
     		@ApiParam(value = "The tenant containing the dataservice", required = true)@PathParam("tenantDomain") String tenantDomain, 
     		@ApiParam(value = "The service name", required = true)@QueryParam("serviceid") String serviceid) {
     	
@@ -137,7 +133,7 @@ public class DataServicesResource extends AbstractResource {
 	})
     public Response deleteDataService(
     		@ApiParam(value = "The authorization bearer token", required = true)@HeaderParam("bearerToken") String bearerToken,
-    		@ApiParam(value = "The authorization apikey: required if there is no header token provided", required = true)@QueryParam("apikey") String apikey,
+    		@ApiParam(value = "The authorization apikey: required if there is no header token provided", required = false)@QueryParam("apikey") String apikey,
     		@ApiParam(value = "The tenant containing the dataservice", required = true)@PathParam("tenantDomain") String tenantDomain, 
     		@ApiParam(value = "The service name", required = true)@PathParam("servicename") String servicename) {
     	try {
