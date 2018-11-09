@@ -1662,6 +1662,9 @@ public class RDBMSDataHandler implements ODataDataHandler {
                 while (resultSetImp.next()) { // thankfully at least getImportedKeys works in MicroSoft SQL
                     String foreignKeyTableName = resultSetImp.getString("PKTABLE_NAME");
                     String foreignKeyColumnName = resultSetImp.getString("PKCOLUMN_NAME");
+                    System.out.println("here foreignKeyTableName: " + foreignKeyTableName);
+                    System.out.println("here2  tableMetaData.get(foreignKeyTableName): " + tableMetaData.get(foreignKeyTableName));
+                    if(tableMetaData.get(foreignKeyTableName) == null) continue; 
                     for (String s : tableMetaData.get(foreignKeyTableName).keySet()) { // corrects case
                         if ( (storesLower && s.toLowerCase().equals(foreignKeyColumnName)) ||
                                 (storesUpper && s.toUpperCase().equals(foreignKeyColumnName)) )
