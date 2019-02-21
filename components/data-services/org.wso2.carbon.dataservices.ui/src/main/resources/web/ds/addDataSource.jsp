@@ -2738,25 +2738,25 @@ if (propertyIterator != null) {
 			  <table>
 	    		<% for(int i=0;i<viewsList.size();i=i+5){%>
 		    	<tr>
-	    			<td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i %>" value="<%=viewsList.get(i)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i)) || dynamicTableList.size()==0  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'optviews')"/></td>
-	    			<td><label for="tablesOdata<%=i %>" ><%=viewsList.get(i) %></label></td>
+	    			<td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+"View_"+schemaList[j] %>" value="<%=viewsList.get(i)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i)) || dynamicTableList.size()==0  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'optviews')"/></td>
+	    			<td><label for="tablesOdata<%=i +"View_"+schemaList[j]%>" ><%=viewsList.get(i) %></label></td>
 	    			<td></td><td></td>
                     <% if (i+1<viewsList.size() ) { %>
-                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+1 %>" value="<%=viewsList.get(i+1)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i+1)) || dynamicTableList.size()==0 ? "checked='checked'" : ""  %> onchange="addTableToList(this,'optviews')"/></td>
-	    			<td><label for="tablesOdata<%=i+1 %>"><%=viewsList.get(i+1) %></label></td>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+1+"View_"+schemaList[j] %>" value="<%=viewsList.get(i+1)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i+1)) || dynamicTableList.size()==0 ? "checked='checked'" : ""  %> onchange="addTableToList(this,'optviews')"/></td>
+	    			<td><label for="tablesOdata<%=i+1 +"View_"+schemaList[j]%>"><%=viewsList.get(i+1) %></label></td>
 	    			<td></td><td></td>
                     <%} if (i+2<viewsList.size() ) {%>
-                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+2 %>" value="<%=viewsList.get(i+2)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i+2)) || dynamicTableList.size()==0 ? "checked='checked'" : ""  %> onchange="addTableToList(this,'optviews')"/></td>
-	    			<td><label for="tablesOdata<%=i+2 %>"><%=viewsList.get(i+2) %></label></td>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+2+"View_"+schemaList[j] %>" value="<%=viewsList.get(i+2)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i+2)) || dynamicTableList.size()==0 ? "checked='checked'" : ""  %> onchange="addTableToList(this,'optviews')"/></td>
+	    			<td><label for="tablesOdata<%=i+2 +"View_"+schemaList[j] %>"><%=viewsList.get(i+2) %></label></td>
 	    			<td></td><td></td>
 	    			<% }%>
 	    			<% if (i+3<viewsList.size() ) { %>
-                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+3 %>" value="<%=viewsList.get(i+3)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i+3)) || dynamicTableList.size()==0 ? "checked='checked'" : ""  %> onchange="addTableToList(this,'optviews')"/></td>
-	    			<td><label for="tablesOdata<%=i+3 %>"><%=viewsList.get(i+3) %></label></td>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+3+"View_"+schemaList[j] %>" value="<%=viewsList.get(i+3)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i+3)) || dynamicTableList.size()==0 ? "checked='checked'" : ""  %> onchange="addTableToList(this,'optviews')"/></td>
+	    			<td><label for="tablesOdata<%=i+3 +"View_"+schemaList[j]%>"><%=viewsList.get(i+3) %></label></td>
 	    			<td></td><td></td>
                     <%} if (i+4<viewsList.size() ) {%>
-                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+4 %>" value="<%=viewsList.get(i+4)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i+4))  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'optviews')"/></td>
-	    			<td><label for="tablesOdata<%=i+4 %>"><%=viewsList.get(i+4) %></label></td>
+                    <td><input type="checkbox" name="tablesOdata" id="tablesOdata<%=i+4+"View_"+schemaList[j] %>" value="<%=viewsList.get(i+4)%>::<%=schemaList[j]%>" <%= dynamicTableList.contains(viewsList.get(i+4))  ? "checked='checked'" : ""  %> onchange="addTableToList(this,'optviews')"/></td>
+	    			<td><label for="tablesOdata<%=i+4 +"View_"+schemaList[j] %>"><%=viewsList.get(i+4) %></label></td>
 	    			<td></td><td></td>
 	    			<% }%>
 		    	</tr>

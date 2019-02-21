@@ -123,13 +123,16 @@ public class RDBMSDataHandler implements ODataDataHandler {
      */
     private List<String> tableList;
     private List<String> oDataTableList;
-    private Map<String,String> oDataTableSchema = new HashMap<String,String>();
+    private String dbTable;
+    private String dbSchema;
+    //private Map<String,String> oDataTableSchema = new HashMap<String,String>();
     private Map<String,List<ODataColumnsConfig>> oDataColumnsConfig = new HashMap<String,List<ODataColumnsConfig>>();
     private int oDataMaxLimit;
     private String dbType;
 
     public static final String TABLE_CAT = "TABLE_CAT";
     public static final String TABLE_NAME = "TABLE_NAME";
+    public static final String TABLE_SCHEM = "TABLE_SCHEM";
     public static final String TABLE = "TABLE";
     public static final String VIEW = "VIEW";
     public static final String ORACLE_SERVER = "oracle";
@@ -169,10 +172,13 @@ public class RDBMSDataHandler implements ODataDataHandler {
 	                OMElement dynamicOdataConfig = dynamicODataTablesConfigs.next();
 	                String tblname = dynamicOdataConfig.getAttributeValue(new QName("name"));
 	                String schemaname = dynamicOdataConfig.getAttributeValue(new QName("schema"));
-	                dynamicTableList.add(tblname);
-	                this.oDataTableSchema.put(tblname, schemaname);
-	                String key = schemaname+"."+tblname;
-	                //TODO
+	                String key = schemaname+"__"+tblname;
+	                if(schemaname.equals(DBConstants.NO_SCHEMA)) {
+	                	dynamicTableList.add(tblname);
+	                } else {
+	                	dynamicTableList.add(key);
+	                }
+	                //this.oDataTableSchema.put(tblname, schemaname);
 	                Iterator<OMElement> dynamicColConfigs = dynamicOdataConfig.getChildrenWithName(new QName("column"));
 	                columnsConfAll = new ArrayList<ODataColumnsConfig>();
 	                while (dynamicColConfigs.hasNext()) {
@@ -465,6 +471,12 @@ public class RDBMSDataHandler implements ODataDataHandler {
         if (topOption != null && topOption.getValue() == 0) // MSSQL and Oracle will throw an exception when queried with $top=0: might as well return an empty set here, since no records must be extracted anyway
             return new ArrayList<ODataEntry>(); 
         ExpandOption expandOption = uriInfo.getExpandOption();
+        dbSchema = "";
+    	dbTable = tableName;
+        if(tableName.contains("__")) {  //takes in consideration dbs that don't use schema like MySQL
+        	dbSchema = tableName.split("__")[0];
+        	dbTable = tableName.split("__")[1];
+        }
         
         RDBMSODataQuery rdbmsQuery = new RDBMSODataQuery();
         String dbType = this.dbType;
@@ -477,41 +489,43 @@ public class RDBMSDataHandler implements ODataDataHandler {
         List<String> primaryKeys = getPrimaryKeys().get(tableName);
         if (primaryKeys != null && primaryKeys.size() > 0) {
             for (String s : primaryKeys)
-                rdbmsQuery.addOrderBy(tableName + "." + s);
+                rdbmsQuery.addOrderBy(dbTable + "." + s);
         }
         
         if (topOption != null) {
             rdbmsQuery.setLimit(topOption.getValue());
+        } else {
+        	rdbmsQuery.setLimit(this.oDataMaxLimit);
         }
+        
         if(skipOption != null) {
             rdbmsQuery.setOffset(skipOption.getValue());
         }
         if(orderByOption != null) { // Overrides the default ordering explained above. Not an issue, because it still provides consistency.
             rdbmsQuery.setOrderBy(null);
             for (String s : getOrderBy(orderByOption))
-                rdbmsQuery.addOrderBy(tableName + "." + s);
+                rdbmsQuery.addOrderBy(dbTable + "." + s);
         }
         if (filterOption != null)
-            rdbmsQuery.setWhere("" + filterOption.getExpression().accept(new FilterExpressionVisitor(tableName, getPrimaryKeys(), getForeignKeys(), false, dbType)));
+            rdbmsQuery.setWhere("" + filterOption.getExpression().accept(new FilterExpressionVisitor(dbTable, getPrimaryKeys(), getForeignKeys(), false, dbType)));
         if (navProperties != null && navProperties.size() > 0)
             for (Property p : navProperties) {
                 if (rdbmsQuery.getWhere() != null && !rdbmsQuery.getWhere().equals(""))
                 	rdbmsQuery.appendWhere(" AND ");
-                rdbmsQuery.appendWhere(tableName + "." + p.getName() + " = '" + p.getValue() + "'");
+                rdbmsQuery.appendWhere(dbTable + "." + p.getName() + " = '" + p.getValue() + "'");
             }
         try {
             connection = initializeConnection();
             // Sets proper SELECT statement if there are JOINs to perform. Also updates ORDER BY, if necessary.
-            handleExpand(rdbmsQuery, connection.getCatalog(), tableName, expandOption);
+            handleExpand(rdbmsQuery, connection.getCatalog(), dbTable, expandOption);
             
             log.info("limit: " + rdbmsQuery.getLimit() + " offset: " + rdbmsQuery.getOffset() + " orderBy: " + rdbmsQuery.getOrderBy() + " where: " + rdbmsQuery.getWhere());
-            String schema_prefix = this.oDataTableSchema.get(tableName)+".";
-            if(this.oDataTableSchema.get(tableName) == null || this.oDataTableSchema.get(tableName).equals(DBConstants.NO_SCHEMA)) { //takes in consideration dbs that don't use schema like MySQL
-                schema_prefix = "";
-            }
             if (rdbmsQuery.getSelect() == null || rdbmsQuery.getSelect().size() == 0) { // There is no expand option, so we can just SELECT * from the table
-                rdbmsQuery.addSelect(schema_prefix + tableName + ".*");
-                rdbmsQuery.setFrom(schema_prefix + tableName);
+                String schema_prefix = "";
+                if(!dbSchema.equals(""))
+                	schema_prefix = dbSchema + ".";
+            	rdbmsQuery.addSelect(schema_prefix + dbTable + ".*");
+                rdbmsQuery.setFrom(schema_prefix + dbTable);
             }
             query = queryBasedOnDBType(rdbmsQuery.printSelect() + rdbmsQuery.printFrom(), rdbmsQuery.printWhere(), rdbmsQuery.getLimit(), rdbmsQuery.getOffset(), rdbmsQuery.printOrderBy());
             log.info("Generated query: " + query);
@@ -729,9 +743,8 @@ public class RDBMSDataHandler implements ODataDataHandler {
             }
         } else if (offset != 0 ) {
             limit = " offset " + offset;
-            // Adding 'limit MYSQL_MAX_LIMIT' is necessary for MySQL, which does not allow OFFSET without LIMIT. It is equal to 2^64-1, the highest number allowed by MySQL.
             if (dbType.contains(MYSQL))
-                limit = " limit " + RDBMSODataQuery.MYSQL_MAX_LIMIT + limit;
+                limit = " limit " + this.oDataMaxLimit + limit; // if limit is not >0 then use the default max limit value
             else if (dbType.contains(H2))
                 limit = " limit " + RDBMSODataQuery.H2_MAX_LIMIT + limit;
         }
@@ -756,14 +769,10 @@ public class RDBMSDataHandler implements ODataDataHandler {
     public int countRecords(UriInfo uriInfo, String tableName) throws ODataServiceFault, ExpressionVisitException, ODataApplicationException {
         String query = "" , where = "";
         int total = 0;
-        String schema_prefix = this.oDataTableSchema.get(tableName)+".";
-        if(this.oDataTableSchema.get(tableName) == null || this.oDataTableSchema.get(tableName).equals(DBConstants.NO_SCHEMA)) { //takes in consideration dbs that don't use schema like MySQL
-            schema_prefix = "";
-        }
         CountOption countOption = uriInfo.getCountOption();
         FilterOption filterOption = uriInfo.getFilterOption();
         if (filterOption != null) {
-            where = " where " + filterOption.getExpression().accept(new FilterExpressionVisitor(tableName, getPrimaryKeys(), getForeignKeys(), false, this.dbType));
+            where = " where " + filterOption.getExpression().accept(new FilterExpressionVisitor(this.dbTable, getPrimaryKeys(), getForeignKeys(), false, this.dbType));
         }
         Boolean count = countOption.getValue();
         Connection connection = null;
@@ -773,7 +782,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
         if (count) {
             try {
                 connection = initializeConnection();
-                query = "select count(*) as total from " + schema_prefix + tableName + where;
+                query = "select count(*) as total from " +  this.dbSchema + "." + this.dbTable + where;
                 log.info("Count query: " + query);
                 statement = connection.prepareStatement(query);
                 resultSet = statement.executeQuery();
@@ -1434,10 +1443,8 @@ public class RDBMSDataHandler implements ODataDataHandler {
         String name = "";
         String type ="";
         try {
-            
-            int j;
-            String schema = this.oDataTableSchema.get(tableName);
-            List<ODataColumnsConfig> definedCols = this.oDataColumnsConfig.get(schema+"."+tableName);
+        	int j;
+            List<ODataColumnsConfig> definedCols = this.oDataColumnsConfig.get(tableName);
             Map<String,String> colTypeMap = new HashMap<String,String>();
             if(definedCols != null) {
                 for(j=0;j<definedCols.size();j++) {
@@ -1446,10 +1453,15 @@ public class RDBMSDataHandler implements ODataDataHandler {
                     colTypeMap.put(name, type);
                 }
             }
+            String schema = null,dbTable = tableName;
+            if(tableName.contains("__")) {
+            	schema = tableName.split("__")[0];
+            	dbTable = tableName.split("__")[1];
+            }
             if (meta.getDatabaseProductName().toLowerCase().contains(ORACLE_SERVER)) {
-                resultSet = meta.getColumns(null, meta.getUserName(), tableName, null);
+                resultSet = meta.getColumns(null, meta.getUserName(), dbTable, null);
             } else {
-                resultSet = meta.getColumns(null, null, tableName, null);
+            	resultSet = meta.getColumns(null, schema, dbTable, null);
             }
             int i = 1;
             while (resultSet.next()) {
@@ -1525,7 +1537,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
                 this.primaryKeys.put(tableName, readTablePrimaryKeys(tableName, metadata, catalog));
             }
             for (String tableName : this.tableList) { // executes this in a separate loop because it needs the tableMetaData structure to be complete
-                NavigationTable nt = readForeignKeys(tableName, metadata, catalog, metadata.storesLowerCaseIdentifiers(), metadata.storesUpperCaseIdentifiers());
+            	NavigationTable nt = readForeignKeys(tableName, metadata, catalog, metadata.storesLowerCaseIdentifiers(), metadata.storesUpperCaseIdentifiers());
                 if (nt != null)
                     this.navigationProperties.put(tableName, nt);
             }
@@ -1548,6 +1560,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
         List<String> tableList = new ArrayList<>();
         Connection connection = null;
         ResultSet rs = null;
+        String odataTbl = null;
         try {
             connection = initializeConnection();
             DatabaseMetaData meta = connection.getMetaData();
@@ -1564,8 +1577,12 @@ public class RDBMSDataHandler implements ODataDataHandler {
             }
             while (rs.next()) {
                 String tableName = rs.getString(TABLE_NAME);
-                if(oDataTableList.contains(tableName)) {
-                    tableList.add(tableName);
+                String tableSchem = rs.getString(TABLE_SCHEM);
+                odataTbl = tableName;
+                if(tableSchem != null)
+                	odataTbl = tableSchem + "__" + tableName;
+                if(oDataTableList.contains(odataTbl)) {
+                    tableList.add(odataTbl);
                 }
             }
             return tableList;
@@ -1589,10 +1606,15 @@ public class RDBMSDataHandler implements ODataDataHandler {
         ResultSet resultSet = null;
         List<String> keys = new ArrayList<>();
         try {
+        	String schema = null;
+            if(tableName.contains("__")) {
+            	schema = tableName.split("__")[0];
+            	tableName = tableName.split("__")[1];
+            }
             if (metaData.getDatabaseProductName().toLowerCase().contains(ORACLE_SERVER)) {
                 resultSet = metaData.getPrimaryKeys(catalog, metaData.getUserName(), tableName);
             } else {
-                resultSet = metaData.getPrimaryKeys(catalog, null, tableName);
+                resultSet = metaData.getPrimaryKeys(catalog, schema, tableName);
             }
             while (resultSet.next()) {
                 String primaryKey = resultSet.getString("COLUMN_NAME");
