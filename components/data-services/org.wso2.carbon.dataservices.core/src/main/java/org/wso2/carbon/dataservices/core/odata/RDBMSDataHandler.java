@@ -140,6 +140,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
     public static final String MYSQL = "mysql";
     public static final String POSTGRESQL = "postgresql";
     public static final String H2 = "h2";
+    public static final String SPECIAL_CHAR_SCHEMA_TBL_SEPARATOR = "__";
 
     private ThreadLocal<Connection> transactionalConnection = new ThreadLocal<Connection>() {
         protected synchronized Connection initialValue() {
@@ -172,7 +173,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
 	                OMElement dynamicOdataConfig = dynamicODataTablesConfigs.next();
 	                String tblname = dynamicOdataConfig.getAttributeValue(new QName("name"));
 	                String schemaname = dynamicOdataConfig.getAttributeValue(new QName("schema"));
-	                String key = schemaname+"__"+tblname;
+	                String key = schemaname + SPECIAL_CHAR_SCHEMA_TBL_SEPARATOR + tblname;
 	                if(schemaname.equals(DBConstants.NO_SCHEMA)) {
 	                	dynamicTableList.add(tblname);
 	                } else {
@@ -473,9 +474,10 @@ public class RDBMSDataHandler implements ODataDataHandler {
         ExpandOption expandOption = uriInfo.getExpandOption();
         dbSchema = "";
     	dbTable = tableName;
-        if(tableName.contains("__")) {  //takes in consideration dbs that don't use schema like MySQL
-        	dbSchema = tableName.split("__")[0];
-        	dbTable = tableName.split("__")[1];
+        if(tableName.contains(SPECIAL_CHAR_SCHEMA_TBL_SEPARATOR)) {  //takes in consideration dbs that don't use schema like MySQL
+        	dbSchema = tableName.split(SPECIAL_CHAR_SCHEMA_TBL_SEPARATOR)[0];
+        	int pos = tableName.indexOf(SPECIAL_CHAR_SCHEMA_TBL_SEPARATOR) +2;
+        	dbTable = tableName.substring(pos);
         }
         
         RDBMSODataQuery rdbmsQuery = new RDBMSODataQuery();
@@ -1454,9 +1456,10 @@ public class RDBMSDataHandler implements ODataDataHandler {
                 }
             }
             String schema = null,dbTable = tableName;
-            if(tableName.contains("__")) {
-            	schema = tableName.split("__")[0];
-            	dbTable = tableName.split("__")[1];
+            if(tableName.contains(SPECIAL_CHAR_SCHEMA_TBL_SEPARATOR)) {
+            	schema = tableName.split(SPECIAL_CHAR_SCHEMA_TBL_SEPARATOR)[0];
+            	int pos = tableName.indexOf(SPECIAL_CHAR_SCHEMA_TBL_SEPARATOR) +2;
+            	dbTable = tableName.substring(pos);
             }
             if (meta.getDatabaseProductName().toLowerCase().contains(ORACLE_SERVER)) {
                 resultSet = meta.getColumns(null, meta.getUserName(), dbTable, null);
@@ -1580,7 +1583,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
                 String tableSchem = rs.getString(TABLE_SCHEM);
                 odataTbl = tableName;
                 if(tableSchem != null)
-                	odataTbl = tableSchem + "__" + tableName;
+                	odataTbl = tableSchem + SPECIAL_CHAR_SCHEMA_TBL_SEPARATOR + tableName;
                 if(oDataTableList.contains(odataTbl)) {
                     tableList.add(odataTbl);
                 }
@@ -1607,9 +1610,10 @@ public class RDBMSDataHandler implements ODataDataHandler {
         List<String> keys = new ArrayList<>();
         try {
         	String schema = null;
-            if(tableName.contains("__")) {
-            	schema = tableName.split("__")[0];
-            	tableName = tableName.split("__")[1];
+            if(tableName.contains(SPECIAL_CHAR_SCHEMA_TBL_SEPARATOR)) {
+            	schema = tableName.split(SPECIAL_CHAR_SCHEMA_TBL_SEPARATOR)[0];
+            	int pos = tableName.indexOf(SPECIAL_CHAR_SCHEMA_TBL_SEPARATOR) +2;
+            	tableName = tableName.substring(pos);
             }
             if (metaData.getDatabaseProductName().toLowerCase().contains(ORACLE_SERVER)) {
                 resultSet = metaData.getPrimaryKeys(catalog, metaData.getUserName(), tableName);
