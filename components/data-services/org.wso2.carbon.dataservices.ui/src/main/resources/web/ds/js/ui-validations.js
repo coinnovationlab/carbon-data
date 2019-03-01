@@ -1366,7 +1366,7 @@ var urlValue = "";
 var usernameValue = "";
 var passwValue = "";
 var isOData = false;
-function reloadOdataConfig (createOp,driver,url,username,passw) {
+function reloadOdataConfig (createOp,driver,url,username,passw,configId,serviceId) {
 	selectedDS = document.getElementById('datasourceId').value;
 	driverClassName = document.getElementById(driver).value;
 	urlValue = document.getElementById(url).value;
@@ -1374,22 +1374,31 @@ function reloadOdataConfig (createOp,driver,url,username,passw) {
 	passwValue = document.getElementById(passw).value;
 	isOData = document.getElementById("isOData").checked;
 	if (isOData){
-		testConnODataCheck(driver,url,username,passw);
-	}
+		testConnODataCheck(createOp,driver,url,username,passw,configId,serviceId);
+	} 
 }
 
 function displayMsgODataCheck(msg) {
-	var successMsg  =  new RegExp("^Database connection is successful with driver class");
-	if (msg.search(successMsg)==-1) //if match failed
-	{
-		CARBON.showErrorDialog(msg);
-	} else {
-		location.href = 'addDataSource.jsp?configId='+selectedDS+'&ds=edit&flag=edit'+
-			'&driverClassName='+driverClassName+'&url='+urlValue+'&username='+usernameValue+'&password='+passwValue+'&isOData='+isOData;
-	}
+	document.getElementById("columns_content").innerHTML = "";
 }
 
-function testConnODataCheck(driver1,url1,username1,passw1) {
+function loadTableConfig(createOp,driver1,url1,username1,passw1,configId,serviceId) {
+	var driver = document.getElementById(driver1).value;
+    var jdbcUrl = document.getElementById(url1).value;
+    var userName = document.getElementById(username1).value;
+    var password = document.getElementById(passw1).value;
+    var useAlias = document.getElementById('useSecretAliasValue').value;
+    var url = 'getTablesSchemasList_ajaxprocessor.jsp?driver=' + encodeURIComponent(driver) + '&jdbcUrl=' + encodeURIComponent(jdbcUrl) + '&userName=' + encodeURIComponent(userName) + '&password=' + encodeURIComponent(password) + '&configId=' + encodeURIComponent(configId) + '&serviceId=' + encodeURIComponent(serviceId) + '&createView=' + createOp;
+    if (useAlias == 'true') {
+    	if (document.getElementById('pwdalias') != null) {
+    		var pwdalias = document.getElementById('pwdalias').value;
+    	}
+        url += '&passwordAlias=' +pwdalias ;
+    }
+	jQuery('#dbtablesOdata_content').load(url,displayMsgODataCheck);
+}
+
+function testConnODataCheck(createOp,driver1,url1,username1,passw1,configId,serviceId) {
     var driver = document.getElementById(driver1).value;
     var jdbcUrl = document.getElementById(url1).value;
     var userName = document.getElementById(username1).value;
@@ -1405,7 +1414,32 @@ function testConnODataCheck(driver1,url1,username1,passw1) {
     } else {
     	var url = 'connection_test_ajaxprocessor.jsp?driver=' + encodeURIComponent(driver) + '&jdbcUrl=' + encodeURIComponent(jdbcUrl) + '&userName=' + encodeURIComponent(userName) + '&password=' + encodeURIComponent(password);
     }
-    jQuery('#connectionTestMsgDiv').load(url, displayMsgODataCheck);
+    jQuery.ajax({
+        type: 'GET',
+        url: url,
+        async: false,
+        cache: false,
+        complete: function(r) {
+            var successMsg = new RegExp("^Database connection is successful with driver class");
+            if (r.responseText.search(successMsg) == -1) {
+            	CARBON.showErrorDialog(r.responseText);
+        	} else {
+        		loadTableConfig(createOp,driver1,url1,username1,passw1,configId,serviceId);
+        	}
+        }
+    });
+}
+
+function reloadContentOData(){
+	  var advODataSymbolMax =  document.getElementById('advODataSymbolMax');
+	  var advancedConfigFields = document.getElementById('advancedConfigODataTables');
+	  advODataSymbolMax.setAttribute('style','background-image:url(images/plus.gif);');
+	  advancedConfigFields.style.display = 'none';
+
+	  var advODataSymbolMax =  document.getElementById('advODataColumnsSymbolMax');
+	  var advancedConfigFields = document.getElementById('advancedConfigODataTablesColumns');
+	  advODataSymbolMax.setAttribute('style','background-image:url(images/plus.gif);');
+      advancedConfigFields.style.display = 'none';
 }
 
 function select_unselect (type,forced) {
@@ -2069,7 +2103,7 @@ function showAdvancedConfigODataTables() {
 	  var advancedConfigFields = document.getElementById('advancedConfigODataTables');
 	  if(advancedConfigFields.style.display == 'none') {
 		  advODataSymbolMax.setAttribute('style','background-image:url(images/minus.gif);');
-	    advancedConfigFields.style.display = '';
+		  advancedConfigFields.style.display = '';
 	  } else {
 		  advODataSymbolMax.setAttribute('style','background-image:url(images/plus.gif);');
 	      advancedConfigFields.style.display = 'none';
@@ -2081,15 +2115,59 @@ function showAdvancedConfigODataTablesColumns(createView){
 	  var advODataSymbolMax =  document.getElementById('advODataColumnsSymbolMax');
 	  var advancedConfigFields = document.getElementById('advancedConfigODataTablesColumns');
 	  if(advancedConfigFields.style.display == 'none') {
-		  if(createView){
-			  select_unselect("tablesOdata",true); // force selection of tables and the population of tables list inside columns's block on first time enabling OData (by default select all tbls)
-		  }
 		  advODataSymbolMax.setAttribute('style','background-image:url(images/minus.gif);');
-	    advancedConfigFields.style.display = '';
+		  advancedConfigFields.style.display = '';
 	  } else {
 		  advODataSymbolMax.setAttribute('style','background-image:url(images/plus.gif);');
 	      advancedConfigFields.style.display = 'none';
 	  }
+}
+
+function populateTablesInCombo(){
+	var schemaSupport = document.getElementById("schemaSupport").value;
+	var dynamicTableList = document.getElementById("SchemaTblConfig").value;
+    var allSchemaTables = document.getElementsByName("listAllSchemasTables");
+    jQuery("#opttables option").remove();
+    for(var i=0;i<allSchemaTables.length;i++){
+    	var id = allSchemaTables[i].id;
+    	var schemaName = id.split("__")[1];
+    	var prefix = schemaName+".";
+    	if (schemaSupport == "false") prefix = "";
+    	if(allSchemaTables[i].value != null && allSchemaTables[i].value != undefined && allSchemaTables[i].value != ""){
+    		var allTables = allSchemaTables[i].value.split(";");
+	    	for(var j=0;j<allTables.length;j++){
+	    		var fullTblName = schemaName +"." + allTables[j];
+	    		var selectedTable = dynamicTableList.indexOf(fullTblName) !== -1;
+				if(selectedTable){
+					var option   = document.createElement("option");
+					option.text  = prefix + allTables[j];
+					option.value = fullTblName;
+					document.getElementById("opttables").append(option);
+				}
+	    	}
+	    }
+    }
+    jQuery("#optviews option").remove();
+    var allSchemaTables = document.getElementsByName("listAllSchemasViews");
+    for(var i=0;i<allSchemaTables.length;i++){
+    	var id = allSchemaTables[i].id;
+    	var schemaName = id.split("__")[1];
+    	var prefix = schemaName+".";
+    	if (schemaSupport == "false") prefix = "";
+    	if(allSchemaTables[i].value != null && allSchemaTables[i].value != undefined && allSchemaTables[i].value != ""){
+	    	var allTables = allSchemaTables[i].value.split(";");
+	    	for(var j=0;j<allTables.length;j++){
+	    		var fullTblName = schemaName +"." + allTables[j];
+	    		var selectedTable = dynamicTableList.indexOf(fullTblName) !== -1;
+				if(selectedTable){
+					var option   = document.createElement("option");
+					option.text  = prefix + allTables[j];
+					option.value = fullTblName;
+					document.getElementById("optviews").append(option);
+				}
+	    	}
+    	}
+    }
 }
 
 function saveColState(key){
