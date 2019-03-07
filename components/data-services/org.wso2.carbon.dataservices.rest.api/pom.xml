@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  ~ Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <parent>
+        <groupId>co.innovation.lab.wso2.dss</groupId>
+        <artifactId>data-services</artifactId>
+        <version>4.4.1</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>org.wso2.carbon.dataservices.rest.api</artifactId>
+    <packaging>war</packaging>
+    <name>WSO2 Carbon - Data Services RESTful API for CRUD of services</name>
+    <url>http://wso2.org</url>
+    <description>WSO2 Data Services - REST CRUD services</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>co.innovation.lab.wso2.dss</groupId>
+            <artifactId>org.wso2.carbon.dataservices.core</artifactId>
+            <scope>provided</scope>
+            <exclusions>
+        	<exclusion>
+        		<groupId>org.slf4j</groupId>
+        		<artifactId>slf4j-api</artifactId>
+        	</exclusion>
+        	<exclusion>
+		    		<groupId>com.fasterxml.jackson.core</groupId>
+		    		<artifactId>jackson-core</artifactId>
+		    	</exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>co.innovation.lab.wso2.dss</groupId>
+            <artifactId>org.wso2.carbon.dataservices.odata.endpoint</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>co.innovation.lab.wso2.dss</groupId>
+            <artifactId>org.wso2.carbon.dataservices.ui</artifactId>
+            <scope>provided</scope>
+            <exclusions>
+            	<exclusion>
+            		<groupId>org.slf4j</groupId>
+            		<artifactId>slf4j-api</artifactId>
+            	</exclusion>
+            </exclusions>
+        </dependency>
+        <!-- swagger servlet -->
+        <dependency>
+            <groupId>com.wordnik</groupId>
+            <artifactId>swagger-annotations</artifactId>
+            <version>1.3.11</version>
+        </dependency>
+        <dependency>
+            <groupId>com.wordnik</groupId>
+            <artifactId>swagger-servlet_2.10</artifactId>
+            <version>1.3.13</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.swagger</groupId>
+            <artifactId>swagger-servlet</artifactId>
+            <version>1.5.7</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+                <exclusion>
+                	<groupId>org.slf4j</groupId>
+                	<artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.wordnik</groupId>
+            <artifactId>swagger-jersey-jaxrs_2.10</artifactId>
+            <version>1.3.13</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>19.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.wordnik</groupId>
+            <artifactId>swagger-core_2.10</artifactId>
+            <version>1.3.13</version>
+            <scope>compile</scope>
+            <exclusions>
+            	<exclusion>
+            		<groupId>org.slf4j</groupId>
+            		<artifactId>slf4j-api</artifactId>
+            	</exclusion>
+            	<exclusion>
+            		<groupId>com.fasterxml.jackson.core</groupId>
+            		<artifactId>jackson-core</artifactId>
+            	</exclusion>
+            </exclusions>
+        </dependency>
+        <!-- jackson -->
+        <dependency>
+	    	<groupId>com.fasterxml.jackson.core</groupId>
+		    <artifactId>jackson-databind</artifactId>
+		    <version>2.8.2</version>
+		    <scope>provided</scope>
+		    <exclusions>
+		    	<exclusion>
+		    		<groupId>com.fasterxml.jackson.core</groupId>
+		    		<artifactId>jackson-core</artifactId>
+		    	</exclusion>
+		    </exclusions>
+        </dependency>
+        <dependency>
+		    <groupId>com.fasterxml.jackson.core</groupId>
+		    <artifactId>jackson-core</artifactId>
+		    <version>2.8.2</version>
+		</dependency>
+		<dependency>
+		    <groupId>com.fasterxml.jackson.dataformat</groupId>
+		    <artifactId>jackson-dataformat-xml</artifactId>
+		    <version>2.8.2</version>
+		    <scope>provided</scope>
+		    <exclusions>
+		    	<exclusion>
+		    		<groupId>com.fasterxml.jackson.core</groupId>
+		    		<artifactId>jackson-core</artifactId>
+		    	</exclusion>
+		    </exclusions>
+		</dependency>
+		
+   </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.1</version>
+                <configuration>
+                    <source>1.7</source>
+                    <target>1.7</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?><beans xmlns="http://www.springframework.org/schema/beans" xmlns:jaxrs="http://cxf.apache.org/jaxrs" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd http://cxf.apache.org/bindings/soap http://cxf.apache.org/schemas/configuration/soap.xsd http://cxf.apache.org/jaxrs http://cxf.apache.org/schemas/jaxrs.xsd">
+    
+	<bean id="DataServiceAdminRestBean" class="co.innovation.lab.dss.rest.api.resources.DataServicesResource"/>
+    <bean id="jacksonJsonProvider" class="com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider"/>
+    <bean id="jaxbXmlProvider" class="org.apache.cxf.jaxrs.provider.JAXBElementProvider"/>
+    <bean id="authenticationFilter" class="co.innovation.lab.dss.rest.api.filter.AuthenticationFilter">
+    </bean>
+    <jaxrs:server id="DataServiceAdminRest" address="/rest_services">
+        <jaxrs:serviceBeans>
+            <ref  bean="DataServiceAdminRestBean"/>
+        </jaxrs:serviceBeans>
+        <jaxrs:providers>
+            <ref bean="authenticationFilter"/>
+            <ref bean="jacksonJsonProvider"/>
+            <ref bean="jaxbXmlProvider" />
+        </jaxrs:providers>
+    </jaxrs:server>
+    
+   <!-- 
+    <bean id="swaggerWriter" class="io.swagger.jaxrs.listing.SwaggerSerializers"/>
+    <bean id="swaggerResource" class="io.swagger.jaxrs.listing.ApiListingResource"/>
+    <bean id="swaggerConfig" class="io.swagger.jaxrs.config.BeanConfig">
+        <property name="resourcePackage" value="co.innovation.lab.dss.rest.api.resources"/>
+        <property name="version" value="1.0.0"/>
+        <property name="basePath" value="/api"/>
+        <property name="title" value="WSO2 DataServicesServer REST DataServices Endpoint"/>
+        <property name="description" value="Access DataServices through REST methods"/>
+        <property name="scan" value="true"/>
+    </bean>
+     <jaxrs:server id="swaggerR" address="/api">
+        <jaxrs:serviceBeans>
+            <ref bean="swaggerResource"/>
+        </jaxrs:serviceBeans>
+
+        <jaxrs:providers>
+            <ref bean="jacksonJsonProvider"/>
+            <ref bean="swaggerWriter"/>
+        </jaxrs:providers>
+    </jaxrs:server>
+      -->
+</beans>

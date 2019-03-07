@@ -413,6 +413,11 @@
                 <version>${dataservices.version}</version>
             </dependency>
             <dependency>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
+                <artifactId>org.wso2.carbon.dataservices.rest.api</artifactId>
+                <version>${dataservices.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.wso2.orbit.org.webharvest</groupId>
                 <artifactId>webharvest-core</artifactId>
                 <version>${webharvest-core.orbit.version}</version>
@@ -547,6 +552,12 @@
             <dependency>
                 <groupId>co.innovation.lab.wso2.dss</groupId>
                 <artifactId>org.wso2.carbon.dataservices.odata</artifactId>
+                <version>${dataservices.version}</version>
+                <type>war</type>
+            </dependency>
+            <dependency>
+                <groupId>co.innovation.lab.wso2.dss</groupId>
+                <artifactId>org.wso2.carbon.dataservices.rest.api</artifactId>
                 <version>${dataservices.version}</version>
                 <type>war</type>
             </dependency>
@@ -1117,6 +1128,8 @@
         </pluginRepository>
     </pluginRepositories>
 
+
+	
 	
     <profiles>
         <profile>
