@@ -209,6 +209,11 @@
         </dependency>
         <dependency>
             <groupId>co.innovation.lab.wso2.dss</groupId>
+            <artifactId>org.wso2.carbon.dataservices.rest.api</artifactId>
+            <type>war</type>
+        </dependency>
+        <dependency>
+            <groupId>co.innovation.lab.wso2.dss</groupId>
             <artifactId>org.wso2.carbon.dataservices.odata.endpoint</artifactId>
         </dependency>
     </dependencies>
@@ -244,6 +249,26 @@
                             <!-- other configurations here -->
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>copyrest</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>co.innovation.lab.wso2.dss</groupId>
+                                    <artifactId>org.wso2.carbon.dataservices.rest.api</artifactId>
+                                    <type>war</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${basedir}/src/main/resources/</outputDirectory>
+                                    <destFileName>rest.war</destFileName>
+                                </artifactItem>
+                            </artifactItems>
+                            <!-- other configurations here -->
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -273,6 +298,7 @@
                                     <directory>resources</directory>
                                     <includes>
                                         <include>odata.war</include>
+                                        <include>rest.war</include>
                                         <include>p2.inf</include>
                                         <include>build.properties</include>
                                         <include>dataServices.xml</include>

@@ -3,3 +3,5 @@ org.eclipse.equinox.p2.touchpoint.natives.mkdir(path:${installFolder}/../../depl
 org.eclipse.equinox.p2.touchpoint.natives.mkdir(path:${installFolder}/../../deployment/server/);\
 org.eclipse.equinox.p2.touchpoint.natives.mkdir(path:${installFolder}/../../deployment/server/webapps/);\
 org.eclipse.equinox.p2.touchpoint.natives.copy(source:${installFolder}/../features/org.wso2.carbon.dataservices.server_${feature.version}/odata.war,target:${installFolder}/../../deployment/server/webapps/odata.war,overwrite:true);\
+org.eclipse.equinox.p2.touchpoint.natives.copy(source:${installFolder}/../features/org.wso2.carbon.dataservices.server_${feature.version}/rest.war,target:${installFolder}/../../deployment/server/webapps/rest.war,overwrite:true);\
+
