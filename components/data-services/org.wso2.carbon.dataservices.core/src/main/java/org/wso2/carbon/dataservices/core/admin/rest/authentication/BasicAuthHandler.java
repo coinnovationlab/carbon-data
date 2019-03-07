@@ -129,7 +129,7 @@ public class BasicAuthHandler implements AuthenticationHandler {
         boolean foundTenantDelimiter = false;
         String tenant = null;
         for (String str : strings) {
-            if (!foundTenantDelimiter && str.equals("rest_services")) {
+            if (!foundTenantDelimiter && str.equals("rest")) {
                 foundTenantDelimiter = true;
                 continue;
             }
