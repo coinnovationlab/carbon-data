@@ -40,6 +40,7 @@ import java.util.UUID;
  */
 public class ODataUtils {
 	
+	public static final String SPECIAL_CHAR_SCHEMA_TBL_SEPARATOR = "__";
 	/**
 	* This method generates an unique ETag for each data row entry.
 	*
@@ -79,6 +80,10 @@ public class ODataUtils {
 		int i = 0;
 		boolean usename = type.getKeyPredicateNames().size() > 1;
 		location.append("(");
+		if(entitySetName.contains(SPECIAL_CHAR_SCHEMA_TBL_SEPARATOR)) { 
+        	int pos = entitySetName.indexOf(SPECIAL_CHAR_SCHEMA_TBL_SEPARATOR) + 2;
+        	entitySetName = entitySetName.substring(pos);
+        }
 		String columnPrefix = entitySetName + ".";
 		for (String key : type.getKeyPredicateNames()) {
 			if (i > 0) {
@@ -91,6 +96,9 @@ public class ODataUtils {
 			if (entity.getProperty(key) != null)
 				columnPrefix = "";
 			EdmProperty property = (EdmProperty)type.getProperty(key);
+			if(entity.getProperty(columnPrefix + key) == null) { // this means the key is not included in the odata columns configuration
+				continue;
+			}
 			String propertyType = entity.getProperty(columnPrefix + key).getType();
 			Object propertyValue = entity.getProperty(columnPrefix + key).getValue();
 			if (propertyValue == null) {
