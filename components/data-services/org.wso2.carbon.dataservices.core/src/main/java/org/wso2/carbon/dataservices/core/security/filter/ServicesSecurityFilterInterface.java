@@ -13,4 +13,12 @@ public interface ServicesSecurityFilterInterface {
      */
     public boolean securityFilter(HttpServletRequest request, HttpServletResponse resp, String tenantDomain);
     
+    /**
+     * Security control to filter data services CRUD Rest API requests according to authorization
+     * @param request
+     * @param tenantDomain
+     * @return
+     */
+    public boolean managementSecurityFilter(HttpServletRequest request, HttpServletResponse resp, String tenantDomain);
+    
 }

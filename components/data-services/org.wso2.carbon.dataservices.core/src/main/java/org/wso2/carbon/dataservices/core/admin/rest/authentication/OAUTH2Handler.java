@@ -2,20 +2,16 @@ package org.wso2.carbon.dataservices.core.admin.rest.authentication;
 
 import java.util.Hashtable;
 import java.util.Map;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.CarbonConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.core.services.authentication.CarbonServerAuthenticator;
-import org.wso2.carbon.dataservices.core.admin.rest.Utils;
 import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilter;
 import org.wso2.carbon.identity.authenticator.oauth2.sso.OAUTH2SSOAuthenticator;
 import org.wso2.carbon.identity.authenticator.oauth2.sso.common.OAUTH2SSOAuthenticatorConstants;
-import org.wso2.carbon.identity.authenticator.oauth2.sso.common.Util;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.service.RealmService;
 
@@ -27,9 +23,9 @@ public class OAUTH2Handler implements AuthenticationHandler{
 	public boolean canHandle(Map httpHeaders, HttpServletRequest request, HttpServletResponse response) {
 		String authToken = getAuthHeaderToken(request);
     	String apiKey = getApiKey(request);
-    	System.out.println("header: "+authToken+" "+apiKey);
-    	boolean containsAuthToken = authToken != null && !authToken.equals("");
-    	boolean containsApiKey = apiKey != null && !apiKey.equals("");  
+    	log.info("OAUTH2Handler-> header parameters: "+"authToken: "+authToken+" apiKey: "+apiKey);
+    	boolean containsAuthToken = authToken != null && !authToken.trim().equals("");
+    	boolean containsApiKey = apiKey != null && !apiKey.trim().equals("");  
         if(containsAuthToken || containsApiKey){
             return true;
         }
@@ -53,7 +49,8 @@ public class OAUTH2Handler implements AuthenticationHandler{
                         log.error("Invalid tenant domain " + tenantDomain);
                         return false;
                     }
-                    boolean authorized = secFilter.securityFilter(request, response, tenantDomain);
+                    boolean authorized = secFilter.managementSecurityFilter(request, response, tenantDomain);
+                    log.info("OAUTH2Handler-> is authorized? " + authorized);
                     if (authorized) {
                         return true;
                     } else {

@@ -4,6 +4,7 @@ import org.apache.axiom.om.util.Base64;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.dataservices.core.security.filter.ServicesSecurityFilter;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -17,9 +18,11 @@ import javax.servlet.http.HttpServletResponse;
 public class BasicAuthHandler implements AuthenticationHandler {
     private static final Log LOG = LogFactory.getLog(BasicAuthHandler.class);
     public static final String AUTHORIZATION_HEADER = "Authorization";
+    public ServicesSecurityFilter secFilter = new ServicesSecurityFilter();
 
     public boolean canHandle(Map headers, HttpServletRequest request, HttpServletResponse response) {
     	String value = getAuthHeaderValue(request);
+    	LOG.info("BasicAuth -> "+value);
         if (value != "") {
             return true;
         }
@@ -30,10 +33,11 @@ public class BasicAuthHandler implements AuthenticationHandler {
     	String tenantDomainAPI = getTenantDomain(request.getRequestURI());	
     	String userName = null;
         try {
-            ArrayList authzHeaders = (ArrayList) headers.get(AUTHORIZATION_HEADER);
+        	String authzHeaders = request.getHeader("Authorization");         
+            String method = request.getMethod();
             if (authzHeaders != null) {
                 //get the authorization header value, if provided
-                String authzHeader = (String) authzHeaders.get(0);
+                String authzHeader = (String) authzHeaders;
 
                 //decode it and extract username and password
                 byte[] decodedAuthHeader = Base64.decode(authzHeader.split(" ")[1]);
@@ -45,8 +49,8 @@ public class BasicAuthHandler implements AuthenticationHandler {
 	                String password = authHeader.split(":")[1];
 	                if (userName != null && password != null) {
 	                    String tenantDomain = MultitenantUtils.getTenantDomain(userName);
-	                    String tenantLessUserName = MultitenantUtils.getTenantAwareUsername(userName);
-	
+	                    String tenantAwareUserName = MultitenantUtils.getTenantAwareUsername(userName);
+	                    String userNameLessTenant = getUsernameLessTenant(userName);
 	                    if( tenantDomain.equals(tenantDomainAPI) || tenantDomain.equals("carbon.super")) {
 	                    	
 		                    try {
@@ -63,11 +67,10 @@ public class BasicAuthHandler implements AuthenticationHandler {
 		                            //get tenant's user realm
 		                            UserRealm userRealm = realmService.getTenantUserRealm(tenantId);
 		                            boolean authenticated = userRealm.getUserStoreManager().
-		                                    authenticate(tenantLessUserName, password);
-		                            if (authenticated) {
-		                                //authentication success. set the username for authorization header
-		                                //and proceed the REST call
-		                                authzHeaders.set(0, userName);
+		                                    authenticate(tenantAwareUserName, password);
+		                            boolean checkUserRights = secFilter.checkUserHasRights(userNameLessTenant, tenantDomain, method); 
+		                            LOG.info("Inside Basic Auth, authenticated? " + authenticated + " hasRights? " + checkUserRights);
+		                            if (authenticated && checkUserRights) {
 		                                return true;
 		                            } else {
 		                                return false;
@@ -139,5 +142,13 @@ public class BasicAuthHandler implements AuthenticationHandler {
             }
         }
         return tenant;
+    }
+    
+    public String getUsernameLessTenant(String username) {
+    	String userNameLessTenant = username;
+    	int lastPos = username.lastIndexOf("@");
+    	if(lastPos != -1)
+    		userNameLessTenant = username.substring(0, lastPos);
+		return userNameLessTenant;
     }
 }

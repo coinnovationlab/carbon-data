@@ -35,14 +35,20 @@ import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
+import edu.emory.mathcs.backport.java.util.Arrays;
+
 public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 	
 	private static final Log log = LogFactory.getLog(ServicesSecurityFilter.class);
-	private static String SECURITY_FILTER_TOKEN_ID = "securityFilterTokenId";
-	private static String SECURITY_FILTER_TOKEN_EXPIRE = "securityFilterTokenExpire";
-	private static String SECURITY_FILTER_TOKEN_GENERATION_TIME = "securityFilterTokenGenerationTime";
-	private static int MAX_EXPIRE = Integer.parseInt(OAUTH2SSOAuthenticatorConstants.MAX_EXPIRE_SEC_TOKEN_VALUE);		/**
-     * 
+	private static final String SECURITY_FILTER_TOKEN_ID 				= "securityFilterTokenId";
+	private static final String SECURITY_FILTER_TOKEN_EXPIRE 			= "securityFilterTokenExpire";
+	private static final String SECURITY_FILTER_TOKEN_GENERATION_TIME 	= "securityFilterTokenGenerationTime";
+	private static final String SECURITY_FILTER_4SERVICES	 			= "SECURITY_FILTER_4SERVICES";
+	private static final String SECURITY_FILTER_4MGT 					= "SECURITY_FILTER_4MGT";
+	private static int MAX_EXPIRE = Integer.parseInt(OAUTH2SSOAuthenticatorConstants.MAX_EXPIRE_SEC_TOKEN_VALUE);		
+	private static String method;
+	
+	/**
      * Retrieve the apikey parameter 
      * @param request
      * @return
@@ -52,8 +58,8 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
         String apikey = request.getParameter("apikey");
         return apikey;
     }
+    
     /**
-     * 
      * Retrieve the apikey parameter 
      * @param uri
      * @param tenantDomain
@@ -85,12 +91,49 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 	    	boolean containsAuthToken = authToken != null && !authToken.equals("");
 	    	boolean containsApiKey = apiKey != null && !apiKey.equals("");  
 	    	if(containsAuthToken) {
-	    		boolean isAllowedUserAuthToken = checkAACUserOfAuthToken(authToken, tenantDomain, request, resp);
+	    		String userAuthToken = checkAACUserOfAuthToken(authToken, tenantDomain, request, resp);
+	    		boolean isAllowedUserAuthToken = checkValidityOfUser(userAuthToken, tenantDomain, authToken, request, resp, SECURITY_FILTER_4SERVICES, "");
 	    		if (isAllowedUserAuthToken) {
 	    			isAllowed = true;
 	    		}
 	    	} else if(containsApiKey) {
-	    		boolean isAllowedUserApiKey = checkAACUserOfApiKey(apiKey, tenantDomain, request, resp);
+	    		String userApiKey = checkAACUserOfApiKey(apiKey, tenantDomain, request, resp);
+	    		boolean isAllowedUserApiKey = checkValidityOfUser(userApiKey, tenantDomain, authToken, request, resp, SECURITY_FILTER_4SERVICES, "");
+	    		if (isAllowedUserApiKey) {
+	    			isAllowed = true;
+	    		}
+	    	} 
+    	}catch(Exception e) {
+    		log.error("Security Filter error: "+e.getMessage());
+    		return isAllowed;
+    	}
+    	return isAllowed;
+    }
+    
+    /**
+     * Security control to filter  data services CRUD Rest API requests according to authorization token / apikey
+     * @param request
+     * @param tenantDomain
+     * @return
+     */
+    @Override
+    public boolean managementSecurityFilter(HttpServletRequest request, HttpServletResponse resp, String tenantDomain) {
+    	boolean isAllowed = false;
+    	try{
+	    	String authToken = getAuthHeaderToken(request);
+	    	String apiKey = getApiKey(request);
+	    	method = request.getMethod();
+	    	boolean containsAuthToken = authToken != null && !authToken.trim().equals("");
+	    	boolean containsApiKey = apiKey != null && !apiKey.trim().equals("");  
+	    	if(containsAuthToken) {
+	    		String userAuthToken = checkAACUserOfAuthToken(authToken, tenantDomain, request, resp);
+	    		boolean isAllowedUserAuthToken = checkValidityOfUser(userAuthToken, tenantDomain, authToken, request, resp, SECURITY_FILTER_4MGT, method);
+	    		if (isAllowedUserAuthToken) {
+	    			isAllowed = true;
+	    		}
+	    	} else if(containsApiKey) {
+	    		String userApiKey = checkAACUserOfApiKey(apiKey, tenantDomain, request, resp);
+	    		boolean isAllowedUserApiKey = checkValidityOfUser(userApiKey, tenantDomain, authToken, request, resp, SECURITY_FILTER_4MGT, method);
 	    		if (isAllowedUserApiKey) {
 	    			isAllowed = true;
 	    		}
@@ -114,8 +157,8 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
      * @param tenantDomain
      * @return
      */
-    private static boolean checkAACUserOfApiKey(String apiKey, String oDataTenant, HttpServletRequest request, HttpServletResponse resp) {
-    	boolean checkApiKey = false;
+    private static String checkAACUserOfApiKey(String apiKey, String oDataTenant, HttpServletRequest request, HttpServletResponse resp) {
+    	String userApiKey = "";
     	try {
     	String urlApiKeyCheck = ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.APIKEY_CHECK_URL)+ "/"+apiKey; 
     	Map <String,Object> response = handleGetRequest(urlApiKeyCheck,null);
@@ -124,28 +167,16 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
     		if(username != null ) {
 				String [] usernameArray = username.split("@");
 				int length = usernameArray.length;
-				String user = (length == 3 ? usernameArray[0]+"@"+usernameArray[1] : usernameArray[0]);
+				userApiKey = (length == 3 ? usernameArray[0]+"@"+usernameArray[1] : usernameArray[0]);
 				String userDomain = usernameArray[length-1];
-				log.info("(apikey)user trying to request data: "+user+" context: "+userDomain+" odataTenant: "+oDataTenant);
-				
-				boolean existsInDSS = checkUserExistsInDSS(user, oDataTenant);
-				if(existsInDSS) {
-					return true;
-				}else {
-					@SuppressWarnings("unchecked")
-					List<Map<String,Object>> rolesListResp =  (List<Map<String, Object>>) response.get("roles");
-					boolean roleAccordingContext = elaborateRolesList(rolesListResp, oDataTenant);
-					if(roleAccordingContext) {
-						return true;
-					}
-				}
+				log.info("(apikey)user trying to request data: "+userApiKey+" context: "+userDomain+" odataTenant: "+oDataTenant);
 	    	}
 		}
     	}catch(Exception e) {
     		log.error("checkAACUserOfApiKey error: "+e.getMessage());
-    		return checkApiKey;
+    		return userApiKey;
     	}
-    	return checkApiKey;
+    	return userApiKey;
     }
     
     /**
@@ -162,8 +193,8 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
      * @param tenantDomain
      * @return
      */
-    private static boolean checkAACUserOfAuthToken(String authToken, String oDataTenant, HttpServletRequest request, HttpServletResponse resp) {
-    	boolean checkAuthToken = false;
+    private static String checkAACUserOfAuthToken(String authToken, String oDataTenant, HttpServletRequest request, HttpServletResponse resp) {
+    	String userAuthToken = "";
     	try {
 	    	String urlTokenApi = ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.CHECK_TOKEN_ENDPOINT_URL); 
 	    	Map <String,Object> response = handleGetRequest(urlTokenApi,authToken);
@@ -172,29 +203,17 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 				if(username != null) {
 					String [] usernameArray = username.split("@");
 					int length = usernameArray.length;
-					String user = (length == 3 ? usernameArray[0]+"@"+usernameArray[1] : usernameArray[0]);
+					userAuthToken = (length == 3 ? usernameArray[0]+"@"+usernameArray[1] : usernameArray[0]);
 					String userDomain = usernameArray[length-1];
-					log.info("(authtoken)user trying to request data: "+user+" context: "+userDomain+" odataTenant: "+oDataTenant);
-					
-					boolean existsInDSS = checkUserExistsInDSS(user, oDataTenant);
-					if(existsInDSS) {
-						return true;
-					}else {
-						String urlRolesApi =  ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.ROLES_OF_TOKEN_URL);
-						List<Map<String,Object>> rolesListResp =  handleGetRoles(urlRolesApi,authToken,request,resp);
-						boolean roleAccordingContext = elaborateRolesList(rolesListResp,oDataTenant);
-						if(roleAccordingContext) {
-							return true;
-						}
-					}
+					log.info("(authtoken)user trying to request data: "+userAuthToken+" context: "+userDomain+" odataTenant: "+oDataTenant);				
 				}
 			}
 		}
     	catch(Exception e) {
     		log.error("checkAACUserOfAuthToken error: "+e.toString());
-    		return checkAuthToken;
+    		return userAuthToken;
     	}
-    	return checkAuthToken;
+    	return userAuthToken;
     }
     
     private static boolean compareContext(String userContext) {
@@ -203,6 +222,47 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
     	theyMatch = definedContext.equalsIgnoreCase(userContext);
     	log.info("comparing context: "+ " defined:"+definedContext+" serviceTenantContext: "+userContext+" " +theyMatch);
     	return theyMatch;
+    }
+    
+    /**
+     * Check if user exists in DSS in order to allow him to access the ODATA/REST services of the data service being exposed.(4Services reason)
+     * Check if user is provider of the domain in order to be able to manage new or existing data services
+     * by accessing the data services CRUD Rest API (4Mgt reason)
+     * @param username
+     * @param tenantDomain
+     * @param authToken
+     * @param request
+     * @param resp
+     * @param reason  '4Services' in case of REST/ODATA service access, '4Managment' in case of data services CRUD Rest API
+     * @return
+     */
+    private static boolean checkValidityOfUser(String username, String tenantDomain, String authToken, HttpServletRequest request, HttpServletResponse resp, String reason, String method) {
+    	if(reason.equals(SECURITY_FILTER_4SERVICES)) {
+    		boolean existsInDSS = checkUserExistsInDSS(username, tenantDomain);
+    		if(existsInDSS) {
+    			return true;
+    		} else {
+    			boolean roleAccordingContext = checkIsRoleAccordingly(tenantDomain,authToken,request,resp,false, "");
+    			return roleAccordingContext;
+    		}
+    	} else if(reason.equals(SECURITY_FILTER_4MGT)) {
+    		boolean existsInDSS = checkUserExistsInDSS(username, tenantDomain);
+    		boolean userHasRights = checkUserHasRights(username, tenantDomain, method);
+    		if(existsInDSS && userHasRights) {
+    			return true;
+    		} else {
+    			boolean roleAccordingContext = checkIsRoleAccordingly(tenantDomain,authToken,request,resp,true,method);
+    			return roleAccordingContext;
+    		}
+		}
+    	return false;
+    }
+    
+    private static boolean checkIsRoleAccordingly(String tenantDomain, String authToken, HttpServletRequest request, HttpServletResponse resp, boolean checkIsProvider, String method) {
+    	String urlRolesApi =  ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.ROLES_OF_TOKEN_URL);
+		List<Map<String,Object>> rolesListResp =  handleGetRoles(urlRolesApi,authToken,request,resp);
+		boolean roleAccordingContext = elaborateRolesList(rolesListResp,tenantDomain,checkIsProvider,method);
+		return roleAccordingContext;
     }
     
     private static boolean checkUserExistsInDSS(String username, String tenantDomain) {
@@ -225,6 +285,31 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 		}
         log.info("User "+username+" exists in DSS? "+exists+" Tenant: "+tenantDomain);
     	return exists;
+    }
+    
+    public static boolean checkUserHasRights(String username, String tenantDomain, String method) {
+    	boolean hasRights = false;
+    	RegistryService registryService = DataServicesDSComponent.getRegistryService();
+        RealmService realmService = DataServicesDSComponent.getRealmService();
+        try {
+			UserRealm realm = AnonymousSessionUtil.getRealmByTenantDomain(registryService,realmService, tenantDomain);
+			if(realm != null) {
+				UserStoreManager userstore = realm.getUserStoreManager();
+				if (userstore.isExistingUser(username)) {
+					String [] roleList = userstore.getRoleListOfUser(username);
+					List<String> rolesList = Arrays.asList(roleList);
+					boolean isAdmin = rolesList.contains("admin");
+					if(isAdmin || method.equals("GET")) {
+						hasRights = true;
+					}
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return hasRights;
+		}
+        log.info("User "+username+" has proper rights in DSS? "+hasRights+" Tenant: "+tenantDomain);
+    	return hasRights;
     }
     
     private static List<Map<String,Object>> handleGetRoles(String urlApi, String tokenToBeChecked, HttpServletRequest request, HttpServletResponse resp){
@@ -271,11 +356,13 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
     }
     
    
-    private static boolean elaborateRolesList(List<Map<String,Object>> rolesListResp, String serviceTenant) {
+    private static boolean elaborateRolesList(List<Map<String,Object>> rolesListResp, String serviceTenant, boolean checkIsProvider, String method) {
     	boolean containsProperRole = false;
+    	boolean roleAccordingly = false;
     	String definedContext = ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.ROLE_CONTEXT);
     	Map<String,Object> record;
     	String context,role,space;
+    	boolean isProvider = false;
     	log.info("elaborating roles: "+rolesListResp.toString());
     	if(rolesListResp != null) {
 	    	for(int i = 0;i<rolesListResp.size();i++) {
@@ -285,13 +372,27 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 	    		space = (String) record.get("space");
 	    		log.info("oDataTenant: "+serviceTenant+" roleName: " +role+" context: " +context+" spaceName: " +space);
 	    		if(context!= null && role!= null && context.equals(definedContext) && space.equals(serviceTenant)) {
+	    			if(!isProvider)
+	    				isProvider = isProvider(role, context, definedContext);
 	    			containsProperRole = true;
-	    			break;
 	    		}
 	    	}
+	    	roleAccordingly = containsProperRole;
+	    	if(checkIsProvider) {
+	    		roleAccordingly = (containsProperRole && (isProvider || method.equals("GET")) );
+	    	} 			
 	    }
-    	log.info("containsProperRole? "+containsProperRole);
-    	return containsProperRole;
+    	log.info("containsProperRole? " + containsProperRole + " check4Provider? " + checkIsProvider + " roleAccordingly? " + roleAccordingly);
+    	return roleAccordingly;
+    }
+    
+    private static boolean isProvider(String roleName, String context, String definedContext) {
+    	boolean isProvider = false;
+    	if(context != null && roleName!= null && context.equals(definedContext) 
+    			&& roleName.equals(OAUTH2SSOAuthenticatorConstants.ROLE_PROVIDER)) {
+    		isProvider = true;
+    	}
+    	return isProvider;
     }
     
     private static String retrieveClientToken(HttpServletRequest request, HttpServletResponse resp) {
