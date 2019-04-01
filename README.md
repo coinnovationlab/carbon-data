@@ -40,9 +40,9 @@ In order to expose a SOAP-based admin service as a REST API there are several ta
 
 ## 3. REST API Usage
 
-All the list of webservices is exposed in the following endpoint: https://mydomain.com/dss_proxy_context_path/rest/ 
-They are protected by OAuth2 token-based authentication method, therefore the token must be provided in the Header or it can be used the apikey as a query parameter. 
-The API can be accesed also by using Basic Authorization Header : Basic base64Encode(username:password)
+All the list of webservices is exposed in the following endpoint: https://mydomain.com/dss_proxy_context_path/rest/ <br/>
+They are protected by OAuth2 token-based authentication method, therefore the token must be provided in the Header or it can be used the apikey as a query parameter. <br/>
+The API can be accesed also by using Basic Authorization Header : Basic base64Encode(username:password)<br/>
 
 ### 3.1. Save dataservice   
 To save or update the configuration of one dataservice inside specific tenant the following call should be performed:   
