@@ -63,7 +63,7 @@ public class ConfigFactory {
 		} else if (DataSourceTypes.JNDI.equals(configType)) {
 			return getJNDIConfig(dataService, configId, properties, odataEnable);
 		} else if (DataSourceTypes.MONGODB.equals(configType)) {
-			return getMongoConfig(dataService, configId, properties, odataEnable);
+			return getMongoConfig(dataService, configId, properties, odataEnable,isPublicOData,creator);
 		} else if (DataSourceTypes.EXCEL.equals(configType)) {
 			return getExcelConfig(dataService, configId, properties, odataEnable);
 		} else if (DataSourceTypes.RDF.equals(configType)) {
@@ -102,8 +102,8 @@ public class ConfigFactory {
 	}
 
 	private static MongoConfig getMongoConfig(DataService dataService, String configId, Map<String, String> properties,
-	                                          boolean odataEnable) throws DataServiceFault {
-		MongoConfig config = new MongoConfig(dataService, configId, properties, odataEnable);
+	                                          boolean odataEnable, boolean isPublicOData, String creator) throws DataServiceFault {
+		MongoConfig config = new MongoConfig(dataService, configId, properties, odataEnable,isPublicOData,creator);
 		return config;
 	}
 

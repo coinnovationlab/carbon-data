@@ -57,9 +57,9 @@ public class MongoConfig extends Config {
 
     private Jongo jongo;
 
-    public MongoConfig(DataService dataService, String configId, Map<String, String> properties, boolean odataEnable)
+    public MongoConfig(DataService dataService, String configId, Map<String, String> properties, boolean odataEnable, boolean isPublicOData, String creator)
             throws DataServiceFault {
-        super(dataService, configId, DBConstants.DataSourceTypes.MONGODB, properties, odataEnable);
+        super(dataService, configId, DBConstants.DataSourceTypes.MONGODB, properties, odataEnable, isPublicOData, creator);
         String serversParam = properties.get(DBConstants.MongoDB.SERVERS);
         if (DBUtils.isEmptyString(serversParam)) {
             throw new DataServiceFault("The data source param '" + DBConstants.MongoDB.SERVERS + "' is required");
