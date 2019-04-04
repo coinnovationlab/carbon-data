@@ -291,9 +291,7 @@
                     dataService.removeConfig(dsConfig);
                 }
             } else {
-            	if(DBConstants.getSupportedODataDBTypes().contains(datasourceType)){
-            		dsConfig.setPublicOData(isPublicOData);
-            	}
+            	dsConfig.setPublicOData(isPublicOData);
                 dsConfig.setCreator(creator);
                 if (DBConstants.DataSourceTypes.RDBMS.equals(datasourceType)) {
                     if (isXAType) {

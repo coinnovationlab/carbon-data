@@ -49,8 +49,8 @@ public class WebConfig extends Config {
     /*path of the web harvest configuration exists*/
     private String webHarvestConfigPath;
 
-    public WebConfig(DataService dataService, String configId, Map<String, String> properties, boolean odataEnable) {
-        super(dataService, configId, DBConstants.DataSourceTypes.WEB, properties, odataEnable);
+    public WebConfig(DataService dataService, String configId, Map<String, String> properties, boolean odataEnable, boolean isPublicOData, String creator) {
+        super(dataService, configId, DBConstants.DataSourceTypes.WEB, properties, odataEnable, isPublicOData, creator);
         this.webHarvestConfigPath = this.getProperty("web_harvest_config");
     }
 

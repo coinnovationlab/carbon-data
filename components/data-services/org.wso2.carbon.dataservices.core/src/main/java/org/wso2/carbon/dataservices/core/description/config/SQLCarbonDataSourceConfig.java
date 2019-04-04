@@ -55,8 +55,8 @@ public class SQLCarbonDataSourceConfig extends SQLConfig {
 	private String dataSourceName;
 
 	public SQLCarbonDataSourceConfig(DataService dataService, String configId, Map<String, String> properties,
-	                                 boolean odataEnable) throws DataServiceFault {
-		super(dataService, configId, DataSourceTypes.CARBON, properties, odataEnable);
+	                                 boolean odataEnable, boolean isPublicOData, String creator) throws DataServiceFault {
+		super(dataService, configId, DataSourceTypes.CARBON, properties, odataEnable, isPublicOData, creator);
 		this.dataSourceName = properties.get(DBConstants.CarbonDatasource.NAME);
         this.dataSource = initDataSource();
         if (!dataService.isServiceInactive()) {

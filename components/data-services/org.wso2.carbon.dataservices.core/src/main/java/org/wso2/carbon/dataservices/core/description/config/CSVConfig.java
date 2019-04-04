@@ -58,9 +58,9 @@ public class CSVConfig extends Config {
 
     private Map<Integer, String> columnMappings;
 
-    public CSVConfig(DataService dataService, String configId, Map<String, String> properties, boolean odataEnable)
+    public CSVConfig(DataService dataService, String configId, Map<String, String> properties, boolean odataEnable, boolean isPublicOData, String creator)
             throws DataServiceFault {
-        super(dataService, configId, DataSourceTypes.CSV, properties, odataEnable);
+        super(dataService, configId, DataSourceTypes.CSV, properties, odataEnable, isPublicOData, creator);
 
         this.csvDataSourcePath = this.getProperty(DBConstants.CSV.DATASOURCE);
         String columnSeparatorStr = this.getProperty(DBConstants.CSV.COLUMN_SEPARATOR);

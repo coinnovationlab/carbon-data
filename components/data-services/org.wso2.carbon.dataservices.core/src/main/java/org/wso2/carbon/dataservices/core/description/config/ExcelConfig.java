@@ -44,8 +44,8 @@ public class ExcelConfig extends Config {
 	
 	private String excelDataSourcePath;
 
-	public ExcelConfig(DataService dataService, String configId, Map<String, String> properties, boolean odataEnable) {
-		super(dataService, configId, DataSourceTypes.EXCEL, properties, odataEnable);
+	public ExcelConfig(DataService dataService, String configId, Map<String, String> properties, boolean odataEnable, boolean isPublicOData, String creator) {
+		super(dataService, configId, DataSourceTypes.EXCEL, properties, odataEnable, isPublicOData, creator);
 		this.excelDataSourcePath = this.getProperty(DBConstants.Excel.DATASOURCE).trim();
 	}
 

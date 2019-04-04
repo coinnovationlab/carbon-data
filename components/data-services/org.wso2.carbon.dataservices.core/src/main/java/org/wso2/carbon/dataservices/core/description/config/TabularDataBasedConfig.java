@@ -61,8 +61,8 @@ public class TabularDataBasedConfig extends SQLConfig {
 	private CustomSQLDataSource dataSource;
 
 	public TabularDataBasedConfig(DataService dataService, String configId, Map<String, String> properties,
-	                              boolean odataEnable) throws DataServiceFault {
-		super(dataService, configId, DataSourceTypes.CUSTOM_TABULAR, properties, odataEnable);
+	                              boolean odataEnable, boolean isPublicOData, String creator) throws DataServiceFault {
+		super(dataService, configId, DataSourceTypes.CUSTOM_TABULAR, properties, odataEnable, isPublicOData, creator);
 		String dsClass = properties.get(DBConstants.CustomDataSource.DATA_SOURCE_TABULAR_CLASS);
 		try {
 			TabularDataBasedDS customDS = (TabularDataBasedDS) Class.forName(dsClass).newInstance();

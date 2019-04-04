@@ -35,8 +35,8 @@ public class SparqlEndpointConfig extends Config {
 	private String sparqlEndpointUrl;
 
 	public SparqlEndpointConfig(DataService dataService, String configId, Map<String, String> properties,
-	                            boolean odataEnable) {
-		super(dataService, configId, DataSourceTypes.SPARQL, properties, odataEnable);
+	                            boolean odataEnable, boolean isPublicOData, String creator) {
+		super(dataService, configId, DataSourceTypes.SPARQL, properties, odataEnable, isPublicOData, creator);
 		this.sparqlEndpointUrl = this.getProperty(DBConstants.SPARQL.DATASOURCE).trim();
 	}
 	

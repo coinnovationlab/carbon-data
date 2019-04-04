@@ -43,8 +43,8 @@ public class RDFConfig extends Config {
 	
 	private String rdfDataSourcePath;
 
-	public RDFConfig(DataService dataService, String configId, Map<String, String> properties, boolean odataEnable) {
-		super(dataService, configId, DataSourceTypes.RDF, properties, odataEnable);
+	public RDFConfig(DataService dataService, String configId, Map<String, String> properties, boolean odataEnable, boolean isPublicOData, String creator) {
+		super(dataService, configId, DataSourceTypes.RDF, properties, odataEnable, isPublicOData, creator);
 		this.rdfDataSourcePath = this.getProperty(DBConstants.RDF.DATASOURCE).trim();
 	}
 

@@ -61,27 +61,27 @@ public class ConfigFactory {
 		if (DataSourceTypes.RDBMS.equals(configType)) {
 			return getRDBMSConfig(dataService, configId, properties, odataEnable,isPublicOData,creator);
 		} else if (DataSourceTypes.JNDI.equals(configType)) {
-			return getJNDIConfig(dataService, configId, properties, odataEnable);
+			return getJNDIConfig(dataService, configId, properties, odataEnable,isPublicOData,creator);
 		} else if (DataSourceTypes.MONGODB.equals(configType)) {
 			return getMongoConfig(dataService, configId, properties, odataEnable,isPublicOData,creator);
 		} else if (DataSourceTypes.EXCEL.equals(configType)) {
-			return getExcelConfig(dataService, configId, properties, odataEnable);
+			return getExcelConfig(dataService, configId, properties, odataEnable,isPublicOData,creator);
 		} else if (DataSourceTypes.RDF.equals(configType)) {
-			return getRDFConfig(dataService, configId, properties, odataEnable);
+			return getRDFConfig(dataService, configId, properties, odataEnable,isPublicOData,creator);
 		} else if (DataSourceTypes.SPARQL.equals(configType)) {
-			return getSparqlEndpointConfig(dataService, configId, properties, odataEnable);
+			return getSparqlEndpointConfig(dataService, configId, properties, odataEnable,isPublicOData,creator);
 		} else if (DataSourceTypes.CSV.equals(configType)) {
-			return getCSVConfig(dataService, configId, properties, odataEnable);
+			return getCSVConfig(dataService, configId, properties, odataEnable,isPublicOData,creator);
 		} else if (DataSourceTypes.GDATA_SPREADSHEET.equals(configType)) {
-			return getGSpreadConfig(dataService, configId, properties, odataEnable);
+			return getGSpreadConfig(dataService, configId, properties, odataEnable,isPublicOData,creator);
 		} else if (DataSourceTypes.CARBON.equals(configType)) {
-			return getCarbonDataSourceConfig(dataService, configId, properties, odataEnable);
+			return getCarbonDataSourceConfig(dataService, configId, properties, odataEnable,isPublicOData,creator);
 		} else if (DataSourceTypes.WEB.equals(configType)) {
-			return getWebConfig(dataService, configId, properties, odataEnable);
+			return getWebConfig(dataService, configId, properties, odataEnable,isPublicOData,creator);
 		} else if (DataSourceTypes.CUSTOM_TABULAR.equals(configType)) {
-			return getCustomTabularConfig(dataService, configId, properties, odataEnable);
+			return getCustomTabularConfig(dataService, configId, properties, odataEnable,isPublicOData,creator);
 		} else if (DataSourceTypes.CUSTOM_QUERY.equals(configType)) {
-			return getCustomQueryConfig(dataService, configId, properties, odataEnable);
+			return getCustomQueryConfig(dataService, configId, properties, odataEnable,isPublicOData,creator);
 		} else if (DataSourceTypes.CASSANDRA.equals(configType)) {
 			return getCassandraConfig(dataService, configId, properties, odataEnable, isPublicOData, creator);
 		}
@@ -96,8 +96,8 @@ public class ConfigFactory {
 	}
 
 	private static JNDIConfig getJNDIConfig(DataService dataService, String configId, Map<String, String> properties,
-	                                        boolean odataEnable) throws DataServiceFault {
-		JNDIConfig config = new JNDIConfig(dataService, configId, properties, odataEnable);
+	                                        boolean odataEnable, boolean isPublicOData, String creator) throws DataServiceFault {
+		JNDIConfig config = new JNDIConfig(dataService, configId, properties, odataEnable, isPublicOData, creator);
 		return config;
 	}
 
@@ -108,26 +108,26 @@ public class ConfigFactory {
 	}
 
 	private static ExcelConfig getExcelConfig(DataService dataService, String configId, Map<String, String> properties,
-	                                          boolean odataEnable) throws DataServiceFault {
-		ExcelConfig config = new ExcelConfig(dataService, configId, properties, odataEnable);
+	                                          boolean odataEnable, boolean isPublicOData, String creator) throws DataServiceFault {
+		ExcelConfig config = new ExcelConfig(dataService, configId, properties, odataEnable, isPublicOData, creator);
 		return config;
 	}
 
 	private static RDFConfig getRDFConfig(DataService dataService, String configId, Map<String, String> properties,
-	                                      boolean odataEnable) throws DataServiceFault {
-		RDFConfig config = new RDFConfig(dataService, configId, properties, odataEnable);
+	                                      boolean odataEnable, boolean isPublicOData, String creator) throws DataServiceFault {
+		RDFConfig config = new RDFConfig(dataService, configId, properties, odataEnable, isPublicOData, creator);
 		return config;
 	}
 
     private static SparqlEndpointConfig getSparqlEndpointConfig(DataService dataService, String configId,
-			Map<String, String> properties, boolean odataEnable) throws DataServiceFault {
-		SparqlEndpointConfig config = new SparqlEndpointConfig(dataService, configId, properties, odataEnable);
+			Map<String, String> properties, boolean odataEnable, boolean isPublicOData, String creator) throws DataServiceFault {
+		SparqlEndpointConfig config = new SparqlEndpointConfig(dataService, configId, properties, odataEnable, isPublicOData, creator);
 		return config;
 	}
 	
 	private static CSVConfig getCSVConfig(DataService dataService, String configId, 
-			Map<String, String> properties, boolean odataEnable) throws DataServiceFault {
-		CSVConfig config = new CSVConfig(dataService, configId, properties, odataEnable);
+			Map<String, String> properties, boolean odataEnable, boolean isPublicOData, String creator) throws DataServiceFault {
+		CSVConfig config = new CSVConfig(dataService, configId, properties, odataEnable, isPublicOData, creator);
 		return config;
 	}
 
@@ -138,31 +138,31 @@ public class ConfigFactory {
 	}
 
     private static WebConfig getWebConfig(DataService dataService, String configId,
-             Map<String, String> properties, boolean odataEnable) throws DataServiceFault {
-        WebConfig config = new WebConfig(dataService, configId, properties, odataEnable);
+             Map<String, String> properties, boolean odataEnable, boolean isPublicOData, String creator) throws DataServiceFault {
+        WebConfig config = new WebConfig(dataService, configId, properties, odataEnable, isPublicOData, creator);
         return config;
     }
     
     private static TabularDataBasedConfig getCustomTabularConfig(DataService dataService, String configId,
-            Map<String, String> properties, boolean odataEnable) throws DataServiceFault {
-        TabularDataBasedConfig config = new TabularDataBasedConfig(dataService, configId, properties, odataEnable);
+            Map<String, String> properties, boolean odataEnable, boolean isPublicOData, String creator) throws DataServiceFault {
+        TabularDataBasedConfig config = new TabularDataBasedConfig(dataService, configId, properties, odataEnable, isPublicOData, creator);
         return config;
     }
     
     private static InlineCustomQueryBasedDSConfig getCustomQueryConfig(DataService dataService, String configId,
-            Map<String, String> properties, boolean odataEnable) throws DataServiceFault {
-    	InlineCustomQueryBasedDSConfig config = new InlineCustomQueryBasedDSConfig(dataService, configId, properties, odataEnable);
+            Map<String, String> properties, boolean odataEnable, boolean isPublicOData, String creator) throws DataServiceFault {
+    	InlineCustomQueryBasedDSConfig config = new InlineCustomQueryBasedDSConfig(dataService, configId, properties, odataEnable, isPublicOData, creator);
         return config;
     }
 
 	private static GSpreadConfig getGSpreadConfig(DataService dataService, String configId, 
-			Map<String, String> properties, boolean odataEnable) throws DataServiceFault {
-		GSpreadConfig config = new GSpreadConfig(dataService, configId, properties, odataEnable);
+			Map<String, String> properties, boolean odataEnable, boolean isPublicOData, String creator) throws DataServiceFault {
+		GSpreadConfig config = new GSpreadConfig(dataService, configId, properties, odataEnable, isPublicOData, creator);
 		return config;
 	}
 	
 	private static Config getCarbonDataSourceConfig(DataService dataService, 
-			String configId, Map<String, String> properties, boolean odataEnable) throws DataServiceFault {
+			String configId, Map<String, String> properties, boolean odataEnable, boolean isPublicOData, String creator) throws DataServiceFault {
 		DataSourceService dataSourceService = DataServicesDSComponent.getDataSourceService();
 		try {
 			String name = properties.get(DBConstants.CarbonDatasource.NAME);
@@ -173,9 +173,9 @@ public class ConfigFactory {
 		    String dsType = cds.getDSMInfo().getDefinition().getType();
 		    if (RDBMSDataSourceConstants.RDBMS_DATASOURCE_TYPE.equals(dsType) ||
 		    		CustomTabularDataSourceReader.DATA_SOURCE_TYPE.equals(dsType)) {
-			    return new SQLCarbonDataSourceConfig(dataService, configId, properties, odataEnable);
+			    return new SQLCarbonDataSourceConfig(dataService, configId, properties, odataEnable, isPublicOData, creator);
 		    } else if (CustomQueryDataSourceReader.DATA_SOURCE_TYPE.equals(dsType)) {
-		    	return new CustomQueryCarbonDataSourceConfig(dataService, configId, properties, odataEnable);
+		    	return new CustomQueryCarbonDataSourceConfig(dataService, configId, properties, odataEnable, isPublicOData, creator);
 		    } else {
 		    	throw new DataServiceFault("Unsupported Carbon data source type '" + dsType + "'");
 		    }

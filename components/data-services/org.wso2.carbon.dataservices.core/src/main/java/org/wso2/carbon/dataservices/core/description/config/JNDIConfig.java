@@ -41,9 +41,9 @@ public class JNDIConfig extends SQLConfig {
 
 	private DataSource dataSource;
 
-	public JNDIConfig(DataService dataService, String configId, Map<String, String> properties, boolean odataEnable)
+	public JNDIConfig(DataService dataService, String configId, Map<String, String> properties, boolean odataEnable, boolean isPublicOData, String creator)
 			throws DataServiceFault {
-		super(dataService, configId, DataSourceTypes.JNDI, properties, odataEnable);
+		super(dataService, configId, DataSourceTypes.JNDI, properties, odataEnable, isPublicOData, creator);
 		if (!dataService.isServiceInactive()) {
 			this.validateJNDIConfig();
 		    this.dataSource = this.createDataSource();

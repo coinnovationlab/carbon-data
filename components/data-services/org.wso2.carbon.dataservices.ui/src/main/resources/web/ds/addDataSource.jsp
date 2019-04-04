@@ -209,12 +209,10 @@ private Config addNotAvailableFunctions(Config config,String selectedType, HttpS
     String url = request.getParameter (DBConstants.RDBMS.URL) ==  null ? "" : request.getParameter (DBConstants.RDBMS.URL);
     String username = request.getParameter (DBConstants.RDBMS.USERNAME) ==  null ? "" : request.getParameter (DBConstants.RDBMS.USERNAME);
     String passw = request.getParameter (DBConstants.RDBMS.PASSWORD) ==  null ? "" : request.getParameter (DBConstants.RDBMS.PASSWORD);
-    if(DBConstants.getSupportedODataDBTypes().contains(selectedType)){
-		if (config.isPublicODataService() == true) {
-			isPublic = true;
-		 } else {
-			isPublic = false;
-		 }
+	if (config.isPublicODataService() == true) {
+		isPublic = true;
+	} else {
+		isPublic = false;
 	}
     user_logged_in = config.getCreator();
     if (DBConstants.DataSourceTypes.RDBMS.equals(selectedType)) {
@@ -2589,7 +2587,8 @@ if (propertyIterator != null) {
         <input type="text" name="ODataMaxLimit" id="ODataMaxLimit" value="<%=maxLimit %>" >
     </td>
 </tr>
-	<% if(Util.isAuthenticatorEnabled()) { %>
+<%  } %>
+<% if(Util.isAuthenticatorEnabled()) { %>
 	<tr>
 		<td class="leftCol-small" style="white-space: nowrap;">
 	        <fmt:message key="odata.config.is.public"/>
@@ -2598,8 +2597,7 @@ if (propertyIterator != null) {
 	        <input type="checkbox" id="isPublicOData" name="isPublicOData"  <%=(isPublic==true ? "checked" : "") %>/>
 	    </td>
 	</tr>
-	<% }
-} %>
+<% } %>
 <%if ("GDATA_SPREADSHEET".equals(dataSourceType)) {%>
     <tr id="tr:gspread_redirect_uris" style='display:<%=((!(visibility == null || visibility.equals("public")))?"":"none")%>'>
         <td style="width:150px"><fmt:message key="gspread_redirect_uris"/><span

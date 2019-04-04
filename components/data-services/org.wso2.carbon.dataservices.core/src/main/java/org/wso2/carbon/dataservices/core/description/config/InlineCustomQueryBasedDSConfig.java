@@ -43,8 +43,8 @@ public class InlineCustomQueryBasedDSConfig extends CustomQueryBasedDSConfig {
 	private CustomQueryBasedDS dataSource;
 
 	public InlineCustomQueryBasedDSConfig(DataService dataService, String configId, Map<String, String> properties,
-	                                      boolean odataEnable) throws DataServiceFault {
-		super(dataService, configId, DataSourceTypes.CUSTOM_QUERY, properties, odataEnable);
+	                                      boolean odataEnable, boolean isPublicOData, String creator) throws DataServiceFault {
+		super(dataService, configId, DataSourceTypes.CUSTOM_QUERY, properties, odataEnable, isPublicOData, creator);
 		String dsClass = properties.get(DBConstants.CustomDataSource.DATA_SOURCE_QUERY_CLASS);
 		try {
 			this.dataSource = (CustomQueryBasedDS) Class.forName(dsClass).newInstance();

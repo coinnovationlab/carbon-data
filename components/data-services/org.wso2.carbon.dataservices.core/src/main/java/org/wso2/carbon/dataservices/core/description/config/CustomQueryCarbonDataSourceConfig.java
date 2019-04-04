@@ -43,8 +43,8 @@ public class CustomQueryCarbonDataSourceConfig extends CustomQueryBasedDSConfig 
 	private CustomQueryBasedDS dataSource;
 
 	public CustomQueryCarbonDataSourceConfig(DataService dataService, String configId, Map<String, String> properties,
-	                                         boolean odataEnable) throws DataServiceFault {
-		super(dataService, configId, DataSourceTypes.CUSTOM_QUERY, properties, odataEnable);
+	                                         boolean odataEnable, boolean isPublicOData, String creator) throws DataServiceFault {
+		super(dataService, configId, DataSourceTypes.CUSTOM_QUERY, properties, odataEnable, isPublicOData, creator);
 		this.dataSourceName = properties.get(DBConstants.CarbonDatasource.NAME);
 		this.dataSource = this.initDataSource();
 	}

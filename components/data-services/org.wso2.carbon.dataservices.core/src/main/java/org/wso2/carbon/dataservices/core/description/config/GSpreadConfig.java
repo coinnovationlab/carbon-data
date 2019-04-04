@@ -54,9 +54,9 @@ public class GSpreadConfig extends Config {
 
     private GSpreadFeedProcessor feedProcessor;
 
-	public GSpreadConfig(DataService dataService, String configId, Map<String, String> properties, boolean odataEnable)
+	public GSpreadConfig(DataService dataService, String configId, Map<String, String> properties, boolean odataEnable, boolean isPublicOData, String creator)
 			throws DataServiceFault {
-		super(dataService, configId, DataSourceTypes.GDATA_SPREADSHEET, properties, odataEnable);
+		super(dataService, configId, DataSourceTypes.GDATA_SPREADSHEET, properties, odataEnable, isPublicOData, creator);
 
         this.key = extractKey(this.getProperty(GSpread.DATASOURCE));
 

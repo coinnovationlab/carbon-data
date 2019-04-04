@@ -29,8 +29,8 @@ import org.wso2.carbon.dataservices.core.engine.DataService;
 public abstract class CustomQueryBasedDSConfig extends Config {
 
 	public CustomQueryBasedDSConfig(DataService dataService, String configId, String type,
-	                                Map<String, String> properties, boolean odataEnable) {
-		super(dataService, configId, type, properties, odataEnable);
+	                                Map<String, String> properties, boolean odataEnable, boolean isPublicOData, String creator) {
+		super(dataService, configId, type, properties, odataEnable, isPublicOData, creator);
 	}
 	
 	public abstract CustomQueryBasedDS getDataSource();
