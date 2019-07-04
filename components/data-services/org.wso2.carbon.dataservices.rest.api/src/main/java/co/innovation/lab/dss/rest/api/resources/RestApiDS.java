@@ -34,6 +34,7 @@ import io.swagger.annotations.SwaggerDefinition;
 import io.swagger.annotations.*;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.regex.Matcher;
@@ -85,8 +86,8 @@ public class RestApiDS extends HttpServlet {
 		Matcher matcherDataServiceList	= regExPatternDataServiceList.matcher(pathInfo);
 		if (matcherDataService.find()) {
 			tenantDomain = matcherDataService.group(1);
-			String serviceId = request.getParameter("serviceid");
-			getDataService(response, serviceId);
+			String servicename = request.getParameter("servicename");
+			getDataService(response, servicename);
 	    } else if(matcherDataServiceList.find()){
 	    	if(request.getParameter("page") != null) {
 	    		page = Integer.parseInt(request.getParameter("page"));
@@ -143,7 +144,7 @@ public class RestApiDS extends HttpServlet {
 		    	return;
 		    }
         } catch (Exception e) {
-        	handleError("Error while saving dataservice ", response);
+        	handleError("Error while saving dataservice ", response, ResponseStatus.FAILED.toString());
         } 
 	}
 	
@@ -171,7 +172,7 @@ public class RestApiDS extends HttpServlet {
 		    	return;
 		    }
         } catch (Exception e) {
-        	handleError("Error while deleting dataservices ", response);
+        	handleError("Error while deleting dataservices ", response, ResponseStatus.FAILED.toString());
         } 
 	}
 	
@@ -188,7 +189,7 @@ public class RestApiDS extends HttpServlet {
 	        out.println(respResult);
 	        response.setStatus(responseStatus);
 	    } catch (Exception e) {
-	    	handleError("Error while listing dataservices ", response);
+	    	handleError("Error while listing dataservices ", response, ResponseStatus.FAILED.toString());
 	    } 
 	}
 	
@@ -199,13 +200,13 @@ public class RestApiDS extends HttpServlet {
         @ApiImplicitParam(name = "bearerToken", value = "The authorization bearer token", required = true, paramType = "header"),
         @ApiImplicitParam(name = "apikey", value = "The authorization apikey: required if there is no header token provided", required = false, paramType = "query"),
         @ApiImplicitParam(name = "tenantDomain", value = "The tenant containing the dataservice", required = true, paramType = "path"),
-        @ApiImplicitParam(name = "serviceid", value = "The service name", required = true, paramType = "query"),
+        @ApiImplicitParam(name = "servicename", value = "The service name", required = true, paramType = "query"),
         })
-	public void getDataService(HttpServletResponse response, String serviceId) throws IOException {
+	public void getDataService(HttpServletResponse response, String servicename) throws IOException {
 		String content;
     	Data data = null;
 		try {
-			content = dataServiceManager.getDataService(serviceId, tenantDomain);
+			content = dataServiceManager.getDataService(servicename, tenantDomain);
     		data = Utils.elaborateGetDS(content); 
 	    	String respResult = AbstractResource.handleResponseData(ResponseStatus.SUCCESS, "OK", data);
 	    	responseStatus = HttpStatus.SC_OK;
@@ -213,18 +214,28 @@ public class RestApiDS extends HttpServlet {
 	    	PrintWriter out = response.getWriter();
 	        out.println(respResult);
 	        response.setStatus(responseStatus);
+	    } catch (NullPointerException e) {
+	    	e.printStackTrace();
+	    	handleError("Data Service does not exist,null pointer exception ", response, ResponseStatus.NOT_FOUND.toString());
+	    } catch (FileNotFoundException e) {
+	    	e.printStackTrace();
+	    	handleError("Data Service does not exist,file of data service not found ", response, ResponseStatus.NOT_FOUND.toString());
+	    } catch (IOException e) {
+	    	e.printStackTrace();
+	    	handleError("Data Service does not exist,i/o exception ", response, ResponseStatus.NOT_FOUND.toString());
 	    } catch (Exception e) {
-	    	handleError("Error while getting dataservice information ", response);
+	    	e.printStackTrace();
+	    	handleError("Error while getting dataservice information ", response, ResponseStatus.FAILED.toString());
 	    } 
 	}
 	
-	private void handleError(String message, HttpServletResponse response) {
-		String respResult = AbstractResource.handleResponse(ResponseStatus.FAILED, message);
+	private void handleError(String message, HttpServletResponse response, String responseType) {
+		String respResult = AbstractResource.handleResponseError(responseType, message);
     	PrintWriter out;
 		try {
 			out = response.getWriter();
 	        out.println(respResult);
-	    	response.setStatus(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+	    	response.setStatus(AbstractResource.findStatus(responseType));
 	    	response.setContentType("text/json;charset=UTF-8");
 		} catch (IOException e) {
 			e.printStackTrace();
