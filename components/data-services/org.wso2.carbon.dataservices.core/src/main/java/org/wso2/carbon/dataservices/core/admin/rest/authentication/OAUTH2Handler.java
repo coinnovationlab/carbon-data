@@ -23,7 +23,7 @@ public class OAUTH2Handler implements AuthenticationHandler{
 	public boolean canHandle(Map httpHeaders, HttpServletRequest request, HttpServletResponse response) {
 		String authToken = getAuthHeaderToken(request);
     	String apiKey = getApiKey(request);
-    	log.info("OAUTH2Handler-> header parameters: "+"authToken: "+authToken+" apiKey: "+apiKey);
+    	log.trace("OAUTH2Handler-> header parameters: "+"authToken: "+authToken+" apiKey: "+apiKey);
     	boolean containsAuthToken = authToken != null && !authToken.trim().equals("");
     	boolean containsApiKey = apiKey != null && !apiKey.trim().equals("");  
         if(containsAuthToken || containsApiKey){

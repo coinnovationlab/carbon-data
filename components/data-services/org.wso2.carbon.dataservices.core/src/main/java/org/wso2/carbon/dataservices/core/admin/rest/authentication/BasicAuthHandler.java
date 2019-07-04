@@ -22,7 +22,7 @@ public class BasicAuthHandler implements AuthenticationHandler {
 
     public boolean canHandle(Map headers, HttpServletRequest request, HttpServletResponse response) {
     	String value = getAuthHeaderValue(request);
-    	LOG.info("BasicAuth -> "+value);
+    	LOG.trace("BasicAuth -> "+value);
         if (value != "") {
             return true;
         }
