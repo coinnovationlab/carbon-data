@@ -97,8 +97,7 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 	    			isAllowed = true;
 	    		}
 	    	} else if(containsApiKey) {
-	    		String userApiKey = checkAACUserOfApiKey(apiKey, tenantDomain, request, resp);
-	    		boolean isAllowedUserApiKey = checkValidityOfUser(userApiKey, tenantDomain, authToken, request, resp, SECURITY_FILTER_4SERVICES, "");
+	    		boolean isAllowedUserApiKey = checkAACUserOfApiKey(apiKey, tenantDomain, request, resp, false);
 	    		if (isAllowedUserApiKey) {
 	    			isAllowed = true;
 	    		}
@@ -132,8 +131,7 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 	    			isAllowed = true;
 	    		}
 	    	} else if(containsApiKey) {
-	    		String userApiKey = checkAACUserOfApiKey(apiKey, tenantDomain, request, resp);
-	    		boolean isAllowedUserApiKey = checkValidityOfUser(userApiKey, tenantDomain, authToken, request, resp, SECURITY_FILTER_4MGT, method);
+	    		boolean isAllowedUserApiKey = checkAACUserOfApiKey(apiKey, tenantDomain, request, resp, true);
 	    		if (isAllowedUserApiKey) {
 	    			isAllowed = true;
 	    		}
@@ -157,26 +155,37 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
      * @param tenantDomain
      * @return
      */
-    private static String checkAACUserOfApiKey(String apiKey, String oDataTenant, HttpServletRequest request, HttpServletResponse resp) {
+    private static boolean checkAACUserOfApiKey(String apiKey, String tenant, HttpServletRequest request, HttpServletResponse resp, boolean checkIsProvider) {
+    	boolean isAllowedUserApiKey = false;
     	String userApiKey = "";
     	try {
     	String urlApiKeyCheck = ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.APIKEY_CHECK_URL)+ "/"+apiKey; 
-    	Map <String,Object> response = handleGetRequest(urlApiKeyCheck,null);
+    	String clientToken = retrieveClientToken(request, resp);
+    	Map <String,Object> response = handleGetRequest(urlApiKeyCheck,clientToken);
     	if(response != null) {
     		String username = (String) response.get(ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.USER_NAME_FIELD));
+    		@SuppressWarnings("unchecked")
+			List<Map<String,Object>> rolesListResp =  (List<Map<String, Object>>) response.get("roles");	
     		if(username != null ) {
 				String [] usernameArray = username.split("@");
 				int length = usernameArray.length;
 				userApiKey = (length == 3 ? usernameArray[0]+"@"+usernameArray[1] : usernameArray[0]);
 				String userDomain = usernameArray[length-1];
-				log.info("(apikey)user trying to request data: "+userApiKey+" context: "+userDomain+" odataTenant: "+oDataTenant);
-	    	}
+				log.info("(apikey)user trying to request data: "+userApiKey+" userDoamin: "+userDomain+" odataTenant: "+tenant);
+				boolean existsInDSS = checkUserExistsInDSS(userApiKey, tenant);
+	    		if(existsInDSS) {
+	    			return true;
+	    		} else {
+	    			boolean roleAccordingContext = elaborateRolesList(rolesListResp,tenant,checkIsProvider,method);
+	    			return roleAccordingContext;
+	    		}
+    		}
 		}
     	}catch(Exception e) {
     		log.error("checkAACUserOfApiKey error: "+e.getMessage());
-    		return userApiKey;
+    		return isAllowedUserApiKey;
     	}
-    	return userApiKey;
+    	return isAllowedUserApiKey;
     }
     
     /**
@@ -260,7 +269,7 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
     
     private static boolean checkIsRoleAccordingly(String tenantDomain, String authToken, HttpServletRequest request, HttpServletResponse resp, boolean checkIsProvider, String method) {
     	String urlRolesApi =  ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.ROLES_OF_TOKEN_URL);
-		List<Map<String,Object>> rolesListResp =  handleGetRoles(urlRolesApi,authToken,request,resp);
+    	List<Map<String,Object>> rolesListResp =  handleGetRoles(urlRolesApi,authToken,request,resp);
 		boolean roleAccordingContext = elaborateRolesList(rolesListResp,tenantDomain,checkIsProvider,method);
 		return roleAccordingContext;
     }
