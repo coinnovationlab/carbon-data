@@ -171,7 +171,7 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 				int length = usernameArray.length;
 				userApiKey = (length == 3 ? usernameArray[0]+"@"+usernameArray[1] : usernameArray[0]);
 				String userDomain = usernameArray[length-1];
-				log.info("(apikey)user trying to request data: "+userApiKey+" userDoamin: "+userDomain+" odataTenant: "+tenant);
+				log.trace("(apikey)user trying to request data: "+userApiKey+" userDoamin: "+userDomain+" odataTenant: "+tenant);
 				boolean existsInDSS = checkUserExistsInDSS(userApiKey, tenant);
 	    		if(existsInDSS) {
 	    			return true;
@@ -214,7 +214,7 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 					int length = usernameArray.length;
 					userAuthToken = (length == 3 ? usernameArray[0]+"@"+usernameArray[1] : usernameArray[0]);
 					String userDomain = usernameArray[length-1];
-					log.info("(authtoken)user trying to request data: "+userAuthToken+" context: "+userDomain+" odataTenant: "+oDataTenant);				
+					log.trace("(authtoken)user trying to request data: "+userAuthToken+" context: "+userDomain+" odataTenant: "+oDataTenant);				
 				}
 			}
 		}
@@ -430,7 +430,7 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 			list.add(jsonHttpMessageConverternew);
 			restTemplate.setMessageConverters(list);
 			AuthorizationToken response = restTemplate.postForObject(url_token, requestBody, AuthorizationToken.class);
-			log.info("NEW: obtain client_credentials token : "+response.getAccess_token());
+			log.trace("NEW: obtain client_credentials token : "+response.getAccess_token());
 	        clientToken = response.getAccess_token();
 	        String clientTokenExp = Integer.toString(response.getExpires_in());
 	        storeSSOTokenCookie(clientToken,clientTokenExp,request,resp);
@@ -447,9 +447,9 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 		securityTokenCookieExpiration.setSecure(true);
 		Cookie securityTokenCookieGenerationTime = new Cookie(SECURITY_FILTER_TOKEN_GENERATION_TIME, LocalDateTime.now().toString());
 		securityTokenCookieGenerationTime.setSecure(true);
-		log.info("setting cookies: "+SECURITY_FILTER_TOKEN_ID+": "+securityTokenCookie.getValue());
-		log.info("setting cookies: "+SECURITY_FILTER_TOKEN_GENERATION_TIME+": "+securityTokenCookieGenerationTime.getValue());
-		log.info("setting cookies: "+SECURITY_FILTER_TOKEN_EXPIRE+": "+securityTokenCookieExpiration.getValue());
+		log.trace("setting cookies: "+SECURITY_FILTER_TOKEN_ID+": "+securityTokenCookie.getValue());
+		log.trace("setting cookies: "+SECURITY_FILTER_TOKEN_GENERATION_TIME+": "+securityTokenCookieGenerationTime.getValue());
+		log.trace("setting cookies: "+SECURITY_FILTER_TOKEN_EXPIRE+": "+securityTokenCookieExpiration.getValue());
 		resp.addCookie(securityTokenCookie);
 		resp.addCookie(securityTokenCookieExpiration);
 		resp.addCookie(securityTokenCookieGenerationTime);
