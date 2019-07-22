@@ -3,7 +3,7 @@
     <parent>
         <artifactId>data-sources-features</artifactId>
         <groupId>co.innovation.lab.wso2.dss</groupId>
-        <version>4.4.1</version>
+        <version>4.4.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -22,7 +22,7 @@
         <dependency>
             <groupId>co.innovation.lab.wso2.dss</groupId>
             <artifactId>org.wso2.carbon.datasource.reader.mongo</artifactId>
-	    <version>4.4.1</version>
+	    <version>4.4.1-SNAPSHOT</version>
         </dependency>
     </dependencies>
     <build>
