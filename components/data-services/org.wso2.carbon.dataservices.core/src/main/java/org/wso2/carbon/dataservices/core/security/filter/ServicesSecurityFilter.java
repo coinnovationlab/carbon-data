@@ -4,13 +4,11 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.http.HttpEntity;
@@ -24,7 +22,6 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
-import org.wso2.carbon.core.security.AuthenticatorsConfiguration;
 import org.wso2.carbon.core.util.AnonymousSessionUtil;
 import org.wso2.carbon.dataservices.core.internal.DataServicesDSComponent;
 import org.wso2.carbon.dataservices.core.odata.ODataServiceFault;
@@ -34,19 +31,21 @@ import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
-
 import edu.emory.mathcs.backport.java.util.Arrays;
 
 public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 	
 	private static final Log log = LogFactory.getLog(ServicesSecurityFilter.class);
-	private static final String SECURITY_FILTER_TOKEN_ID 				= "securityFilterTokenId";
-	private static final String SECURITY_FILTER_TOKEN_EXPIRE 			= "securityFilterTokenExpire";
-	private static final String SECURITY_FILTER_TOKEN_GENERATION_TIME 	= "securityFilterTokenGenerationTime";
+	private static final String SECURITY_FILTER_TOKEN_CLIENT_ID 				= "clientToken";
+	private static final String SECURITY_FILTER_TOKEN_CLIENT_EXPIRE 			= "clientTokenExpiresIn";
+	private static final String SECURITY_FILTER_TOKEN_CLIENT_GENERATION_TIME 	= "clientTokenGenerationTime";
+	private static final String SECURITY_FILTER_TOKEN_CLIENT_ELEMENTS		 	= "clientTokenElements";
 	private static final String SECURITY_FILTER_4SERVICES	 			= "SECURITY_FILTER_4SERVICES";
 	private static final String SECURITY_FILTER_4MGT 					= "SECURITY_FILTER_4MGT";
-	private static int MAX_EXPIRE = Integer.parseInt(OAUTH2SSOAuthenticatorConstants.MAX_EXPIRE_SEC_TOKEN_VALUE);		
 	private static String method;
+	private static Map<String,Object> accessTokens = new HashMap<>(); 
+	//{"clientToken" : "1234", "expires_in" : "1234", "tokenElements" : [TokenInfo, TokenInfo....] }
+	
 	
 	/**
      * Retrieve the apikey parameter 
@@ -159,28 +158,28 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
     	boolean isAllowedUserApiKey = false;
     	String userApiKey = "";
     	try {
-    	String urlApiKeyCheck = ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.APIKEY_CHECK_URL)+ "/"+apiKey; 
-    	String clientToken = retrieveClientToken(request, resp);
-    	Map <String,Object> response = handleGetRequest(urlApiKeyCheck,clientToken);
-    	if(response != null) {
-    		String username = (String) response.get(ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.USER_NAME_FIELD));
-    		@SuppressWarnings("unchecked")
-			List<Map<String,Object>> rolesListResp =  (List<Map<String, Object>>) response.get("roles");	
-    		if(username != null ) {
-				String [] usernameArray = username.split("@");
-				int length = usernameArray.length;
-				userApiKey = (length == 3 ? usernameArray[0]+"@"+usernameArray[1] : usernameArray[0]);
-				String userDomain = usernameArray[length-1];
-				log.trace("(apikey)user trying to request data: "+userApiKey+" userDoamin: "+userDomain+" odataTenant: "+tenant);
-				boolean existsInDSS = checkUserExistsInDSS(userApiKey, tenant);
-	    		if(existsInDSS) {
-	    			return true;
-	    		} else {
-	    			boolean roleAccordingContext = elaborateRolesList(rolesListResp,tenant,checkIsProvider,method);
-	    			return roleAccordingContext;
+	    	String urlApiKeyCheck = ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.APIKEY_CHECK_URL)+ "/"+apiKey; 
+	    	String clientToken = retrieveClientToken(request, resp);
+	    	Map <String,Object> response = handleGetRequest(urlApiKeyCheck,clientToken);
+	    	if(response != null) {
+	    		String username = (String) response.get(ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.USER_NAME_FIELD));
+	    		@SuppressWarnings("unchecked")
+				List<Map<String,Object>> rolesListResp =  (List<Map<String, Object>>) response.get("roles");	
+	    		if(username != null ) {
+					String [] usernameArray = username.split("@");
+					int length = usernameArray.length;
+					userApiKey = (length == 3 ? usernameArray[0]+"@"+usernameArray[1] : usernameArray[0]);
+					String userDomain = usernameArray[length-1];
+					log.info("(apikey)user trying to request data: "+userApiKey+" userDoamin: "+userDomain+" odataTenant: "+tenant);
+					boolean existsInDSS = checkUserExistsInDSS(userApiKey, tenant);
+		    		if(existsInDSS) {
+		    			return true;
+		    		} else {
+		    			boolean roleAccordingContext = elaborateRolesList(rolesListResp,tenant,checkIsProvider,method);
+		    			return roleAccordingContext;
+		    		}
 	    		}
-    		}
-		}
+			}
     	}catch(Exception e) {
     		log.error("checkAACUserOfApiKey error: "+e.getMessage());
     		return isAllowedUserApiKey;
@@ -406,12 +405,14 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
     
     private static String retrieveClientToken(HttpServletRequest request, HttpServletResponse resp) {
 
-    	Cookie securityTokenCookie = getSSOTokenCookie(request,SECURITY_FILTER_TOKEN_ID);
-    	Cookie securityTokenCookieExpiration = getSSOTokenCookie(request,SECURITY_FILTER_TOKEN_EXPIRE);
-    	Cookie securityTokenCookieGenerationTime = getSSOTokenCookie(request,SECURITY_FILTER_TOKEN_GENERATION_TIME);
+    	String securityTokenClient = getSSOTokenClient();
+    	int expiresIn 			= accessTokens.get(SECURITY_FILTER_TOKEN_CLIENT_EXPIRE) != null ?Integer.parseInt((String) accessTokens.get(SECURITY_FILTER_TOKEN_CLIENT_EXPIRE)) : 0;
+        String generationTime 	= (String) accessTokens.get(SECURITY_FILTER_TOKEN_CLIENT_GENERATION_TIME);
     	String clientToken = "";
-    	boolean hasExpired = hasExpired(securityTokenCookieExpiration,securityTokenCookieGenerationTime);
-    	if (securityTokenCookie == null || hasExpired) {
+    	log.info("expiresIn: " + expiresIn);
+    	log.info("generationTime: " + generationTime);
+    	boolean hasExpired = hasExpiredClient(expiresIn,generationTime);
+    	if (securityTokenClient == null || hasExpired) {
 	    	String url_token = ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.TOKEN_URL);
 	    	MultiValueMap<String,String> dataToBeSent = new LinkedMultiValueMap<String,String>();
 	    	dataToBeSent.add("client_id", ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.CLIENT_ID));
@@ -430,69 +431,97 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 			list.add(jsonHttpMessageConverternew);
 			restTemplate.setMessageConverters(list);
 			AuthorizationToken response = restTemplate.postForObject(url_token, requestBody, AuthorizationToken.class);
-			log.trace("NEW: obtain client_credentials token : "+response.getAccess_token());
+			log.info("NEW: obtain client_credentials token : "+response.getAccess_token());
 	        clientToken = response.getAccess_token();
 	        String clientTokenExp = Integer.toString(response.getExpires_in());
-	        storeSSOTokenCookie(clientToken,clientTokenExp,request,resp);
+	        storeSSOClientToken(clientToken,clientTokenExp);
     	}else {
-    		clientToken = securityTokenCookie.getValue();
+    		clientToken = securityTokenClient;
     	}
     	return clientToken;
     }
     
-    private static void storeSSOTokenCookie(String securityTokenID, String securityTokenExpire, HttpServletRequest req, HttpServletResponse resp) {
-		Cookie securityTokenCookie = new Cookie(SECURITY_FILTER_TOKEN_ID, securityTokenID);
-		securityTokenCookie.setSecure(true);
-		Cookie securityTokenCookieExpiration = new Cookie(SECURITY_FILTER_TOKEN_EXPIRE, securityTokenExpire);
-		securityTokenCookieExpiration.setSecure(true);
-		Cookie securityTokenCookieGenerationTime = new Cookie(SECURITY_FILTER_TOKEN_GENERATION_TIME, LocalDateTime.now().toString());
-		securityTokenCookieGenerationTime.setSecure(true);
-		log.trace("setting cookies: "+SECURITY_FILTER_TOKEN_ID+": "+securityTokenCookie.getValue());
-		log.trace("setting cookies: "+SECURITY_FILTER_TOKEN_GENERATION_TIME+": "+securityTokenCookieGenerationTime.getValue());
-		log.trace("setting cookies: "+SECURITY_FILTER_TOKEN_EXPIRE+": "+securityTokenCookieExpiration.getValue());
-		resp.addCookie(securityTokenCookie);
-		resp.addCookie(securityTokenCookieExpiration);
-		resp.addCookie(securityTokenCookieGenerationTime);
+    @SuppressWarnings("unchecked")
+	private static void storeSSOClientToken(String securityTokenID, String securityTokenExpire) {
+    	accessTokens.put(SECURITY_FILTER_TOKEN_CLIENT_ID, securityTokenID);
+    	accessTokens.put(SECURITY_FILTER_TOKEN_CLIENT_EXPIRE, 	securityTokenExpire);
+    	accessTokens.put(SECURITY_FILTER_TOKEN_CLIENT_GENERATION_TIME, 	LocalDateTime.now().toString());
+    	log.trace("setting tokenClient: " 					+SECURITY_FILTER_TOKEN_CLIENT_ID+": " + securityTokenID);
+		log.trace("setting tokenClient Generation Time: "	+SECURITY_FILTER_TOKEN_CLIENT_GENERATION_TIME+": " + LocalDateTime.now().toString());
+		log.trace("setting tokenClient Expire: "			+SECURITY_FILTER_TOKEN_CLIENT_EXPIRE+": " + securityTokenExpire);
 	}
     
-    private static Cookie getSSOTokenCookie(HttpServletRequest req, String paramName) {
-        Cookie[] cookies = req.getCookies();
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if (paramName.equals(cookie.getName())) {
-                	log.info("getting cookies: : "+ paramName+" " +cookie.getValue());
-                    return cookie;
-                }
-            }
-        }
-        return null;
+    private static void storeSSOUserTokens(String userToken, String userApiKey, int userKeyExpiresIn, int issuedTime) {
+    	TokenInfo info = new TokenInfo();
+    	if(userToken != null)
+    		info.setToken(userToken);
+    	else if(userApiKey != null)
+    		info.setApikey(userApiKey);
+    	info.setExpiresin(userKeyExpiresIn);
+    	info.setIssuedTime(issuedTime);
+    	List<TokenInfo> tokenList = (List<TokenInfo>) accessTokens.get(SECURITY_FILTER_TOKEN_CLIENT_ELEMENTS);
+    	if(tokenList != null)    		
+    		accessTokens.put(SECURITY_FILTER_TOKEN_CLIENT_ELEMENTS, tokenList.add(info));
+    	else {
+    		tokenList = new ArrayList<TokenInfo>();
+    		accessTokens.put(SECURITY_FILTER_TOKEN_CLIENT_ELEMENTS, tokenList.add(info));
+    	}
+    	tokenList = (List<TokenInfo>) accessTokens.get(SECURITY_FILTER_TOKEN_CLIENT_ELEMENTS);
+    	log.info("Number of user keys for the current cleintToken: " + tokenList.size());
+	}
+
+    private static String getSSOTokenClient() {
+        String clientToken  	= (String) accessTokens.get(SECURITY_FILTER_TOKEN_CLIENT_ID);
+        log.info("getting Token Client: " + clientToken);
+    	return clientToken;
     }
     
-    private static boolean hasExpired(Cookie securityTokenCookieExpiration, Cookie securityTokenCookieGenerationTime) {
+    @SuppressWarnings("unchecked")
+	private static TokenInfo getSSOTokenClientElements(String userToken, String userApiKey) {
+        List<TokenInfo> clientTokenElements = (List<TokenInfo>) accessTokens.get(SECURITY_FILTER_TOKEN_CLIENT_ELEMENTS);
+        TokenInfo tokenInfo = null;
+        if(clientTokenElements != null && clientTokenElements.size() > 0) {
+        	for(int i = 0; i<clientTokenElements.size(); i++) {
+        		if(userApiKey != null && clientTokenElements.get(i).getApikey().equals(userApiKey)) {
+        			tokenInfo = new TokenInfo();
+        			tokenInfo.setApikey(userApiKey);
+        			tokenInfo.setExpiresin(clientTokenElements.get(i).getExpiresin());
+        			break;
+        		} else if(userToken != null && clientTokenElements.get(i).getToken().equals(userToken)) {
+        			tokenInfo = new TokenInfo();
+        			tokenInfo.setToken(userToken);
+        			tokenInfo.setExpiresin(clientTokenElements.get(i).getExpiresin());
+        			break;
+        		}
+        	}
+        	return tokenInfo;
+        }
+        return tokenInfo;
+    }
+    
+    private static boolean hasExpiredClient(int tokenExpiration, String tokenGenerationTime) {
     	boolean hasExp = false;
-    	if(securityTokenCookieExpiration != null && securityTokenCookieGenerationTime != null) {
-	    	DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
-	    	LocalDateTime now = LocalDateTime.now();
-	    	LocalDateTime generationTime = LocalDateTime.parse(securityTokenCookieGenerationTime.getValue());
-	    	Long expIn = Long.parseLong(securityTokenCookieExpiration.getValue());
-	    	Long seconds = generationTime.until(now, ChronoUnit.SECONDS);
-	    	if(expIn > 0) {
-	    		hasExp = seconds > expIn;
-	    	}else {
-	    		try {
-		    		String customMaxExp = ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.MAX_EXPIRE_SEC_TOKEN);
-		    		if(customMaxExp != null && !customMaxExp.isEmpty()) {
-		    			MAX_EXPIRE = Integer.parseInt(ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.MAX_EXPIRE_SEC_TOKEN));
-		    		}
-		    		hasExp = seconds > MAX_EXPIRE;
-	    		}catch(NumberFormatException nfe) {
-	    			log.error("Max Expire Client Token default value empty or not a number: " + " : "+nfe.getMessage());
-	    		}
-	    	}
-	    	log.info("diff in seconds: "+seconds+" "+hasExp);
-	    	log.info("now time format: "+dtf.format(now)); 
-	    	log.info("generation time format: "+dtf.format(generationTime)); 
-	    }
+    	log.info("CLIENT TOKEN: check if client token has expired ");
+    	try {
+	    	if(tokenExpiration != 0 && tokenGenerationTime != null) {
+		    	DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+		    	LocalDateTime now = LocalDateTime.now();
+		    	LocalDateTime generationTime = LocalDateTime.parse(tokenGenerationTime);
+		    	Long expIn = new Long(tokenExpiration);
+		    	Long seconds = generationTime.until(now, ChronoUnit.SECONDS);
+		    	if(expIn > 0) {
+		    		hasExp = seconds > expIn;
+		    	} else {
+		    		throw new Exception();
+		    	}
+		    	log.info("CLIENT TOKEN: diff in seconds: "+seconds+" "+hasExp);
+		    	log.info("CLIENT TOKEN: now time format: "+dtf.format(now)); 
+		    	log.info("CLIENT TOKEN: generation time format: "+dtf.format(generationTime)); 
+		    }
+    	} catch(Exception e) {
+    		log.error("AAC ERROR: Missing expiration time of client token");
+    		return true;
+    	}
     	return hasExp;
     }
 
