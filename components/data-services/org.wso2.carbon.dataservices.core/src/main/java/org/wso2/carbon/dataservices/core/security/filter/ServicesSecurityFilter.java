@@ -333,7 +333,7 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 	    	RestTemplate restTemplate = new RestTemplate();
 	    	ResponseEntity<List> response = restTemplate.exchange(urlApi, HttpMethod.GET, httpEntity, List.class);
 	    	
-			log.info("response of GET API "+urlApi+" :  "+ response.toString()); 
+			log.trace("response of GET API "+urlApi+" :  "+ response.toString()); 
 			return response.getBody();
     	}catch(Exception e) {
     		log.error("handleGetRoles error GET API "+urlApi+ " : "+e.getMessage());
@@ -472,7 +472,7 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 
     private static String getSSOTokenClient() {
         String clientToken  	= (String) accessTokens.get(SECURITY_FILTER_TOKEN_CLIENT_ID);
-        log.info("getting Token Client: " + clientToken);
+        log.trace("getting Token Client: " + clientToken);
     	return clientToken;
     }
     
