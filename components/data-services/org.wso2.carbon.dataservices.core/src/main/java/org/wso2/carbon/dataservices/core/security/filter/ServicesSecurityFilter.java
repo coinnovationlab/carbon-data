@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -91,9 +92,11 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 	    	boolean containsApiKey = apiKey != null && !apiKey.equals("");  
 	    	if(containsAuthToken) {
 	    		String userAuthToken = checkAACUserOfAuthToken(authToken, tenantDomain, request, resp);
-	    		boolean isAllowedUserAuthToken = checkValidityOfUser(userAuthToken, tenantDomain, authToken, request, resp, SECURITY_FILTER_4SERVICES, "");
-	    		if (isAllowedUserAuthToken) {
-	    			isAllowed = true;
+	    		if(userAuthToken != null && !userAuthToken.equals("")) {
+		    		boolean isAllowedUserAuthToken = checkValidityOfUser(userAuthToken, tenantDomain, authToken, request, resp, SECURITY_FILTER_4SERVICES, "");
+		    		if (isAllowedUserAuthToken) {
+		    			isAllowed = true;
+		    		}
 	    		}
 	    	} else if(containsApiKey) {
 	    		boolean isAllowedUserApiKey = checkAACUserOfApiKey(apiKey, tenantDomain, request, resp, false);
@@ -125,9 +128,11 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 	    	boolean containsApiKey = apiKey != null && !apiKey.trim().equals("");  
 	    	if(containsAuthToken) {
 	    		String userAuthToken = checkAACUserOfAuthToken(authToken, tenantDomain, request, resp);
-	    		boolean isAllowedUserAuthToken = checkValidityOfUser(userAuthToken, tenantDomain, authToken, request, resp, SECURITY_FILTER_4MGT, method);
-	    		if (isAllowedUserAuthToken) {
-	    			isAllowed = true;
+	    		if(userAuthToken != null && !userAuthToken.equals("")) {
+		    		boolean isAllowedUserAuthToken = checkValidityOfUser(userAuthToken, tenantDomain, authToken, request, resp, SECURITY_FILTER_4MGT, method);
+		    		if (isAllowedUserAuthToken) {
+		    			isAllowed = true;
+		    		}
 	    		}
 	    	} else if(containsApiKey) {
 	    		boolean isAllowedUserApiKey = checkAACUserOfApiKey(apiKey, tenantDomain, request, resp, true);
@@ -205,15 +210,18 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
     	String userAuthToken = "";
     	try {
 	    	String urlTokenApi = ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.CHECK_TOKEN_ENDPOINT_URL); 
-	    	Map <String,Object> response = handleGetRequest(urlTokenApi,authToken);
+	    	Map <String,Object> response = handlePostRequest(urlTokenApi,authToken);
 			if(response != null) {
 				String username = (String) response.get(ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.USER_NAME_FIELD));
-				if(username != null) {
+				boolean active = (boolean) response.get("active");
+				if(active && username != null) {
 					String [] usernameArray = username.split("@");
 					int length = usernameArray.length;
-					userAuthToken = (length == 3 ? usernameArray[0]+"@"+usernameArray[1] : usernameArray[0]);
+					userAuthToken = (length == 3 || length == 2 ? usernameArray[0]+"@"+usernameArray[1] : usernameArray[0]);
 					String userDomain = usernameArray[length-1];
 					log.trace("(authtoken)user trying to request data: "+userAuthToken+" context: "+userDomain+" odataTenant: "+oDataTenant);				
+				} else {
+					throw new Exception("User Token not valid");
 				}
 			}
 		}
@@ -267,7 +275,7 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
     }
     
     private static boolean checkIsRoleAccordingly(String tenantDomain, String authToken, HttpServletRequest request, HttpServletResponse resp, boolean checkIsProvider, String method) {
-    	String urlRolesApi =  ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.ROLES_OF_TOKEN_URL);
+    	String urlRolesApi =  ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.API_ROLE_INFO_URL);
     	List<Map<String,Object>> rolesListResp =  handleGetRoles(urlRolesApi,authToken,request,resp);
 		boolean roleAccordingContext = elaborateRolesList(rolesListResp,tenantDomain,checkIsProvider,method);
 		return roleAccordingContext;
@@ -277,20 +285,22 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
     	boolean exists = false;
     	RegistryService registryService = DataServicesDSComponent.getRegistryService();
         RealmService realmService = DataServicesDSComponent.getRealmService();
-        try {
-			UserRealm realm = AnonymousSessionUtil.getRealmByTenantDomain(registryService,realmService, tenantDomain);
-			if(realm != null) {
-				UserStoreManager userstore = realm.getUserStoreManager();
-				if( !tenantDomain.equals("carbon.super") && username.equals("admin")) {
-					exists = false;
-				}else if (userstore.isExistingUser(username)) {
-					exists = true;
+        if(username != null && !username.equals("")) {
+	        try {
+				UserRealm realm = AnonymousSessionUtil.getRealmByTenantDomain(registryService,realmService, tenantDomain);
+				if(realm != null) {
+					UserStoreManager userstore = realm.getUserStoreManager();
+					if( !tenantDomain.equals("carbon.super") && username.equals("admin")) {
+						exists = false;
+					}else if (userstore.isExistingUser(username)) {
+						exists = true;
+					}
 				}
+			} catch (Exception e) {
+				e.printStackTrace();
+				return exists;
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			return exists;
-		}
+        }
         log.info("User "+username+" exists in DSS? "+exists+" Tenant: "+tenantDomain);
     	return exists;
     }
@@ -323,12 +333,12 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
     private static List<Map<String,Object>> handleGetRoles(String urlApi, String tokenToBeChecked, HttpServletRequest request, HttpServletResponse resp){
     	try {
 	    	HttpEntity<String> httpEntity;
-	    	if(tokenToBeChecked != null) {
-	    		urlApi += "/" + tokenToBeChecked;
-	    	}
-	    	String clientToken = retrieveClientToken(request, resp);
+//	    	if(tokenToBeChecked != null) {
+//	    		urlApi += "/" + tokenToBeChecked;
+//	    	}
+//	    	String clientToken = retrieveClientToken(request, resp);
 	    	HttpHeaders headers = new HttpHeaders();
-        	headers.add("Authorization","Bearer "+clientToken);
+        	headers.add("Authorization","Bearer "+tokenToBeChecked);
         	httpEntity = new HttpEntity<String>(headers);
 	    	RestTemplate restTemplate = new RestTemplate();
 	    	ResponseEntity<List> response = restTemplate.exchange(urlApi, HttpMethod.GET, httpEntity, List.class);
@@ -361,6 +371,24 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
     		log.error("handleGetRequest error GET API "+urlApi+ " : "+e.getMessage());
     	}
     	return null;
+    }
+	
+	@SuppressWarnings("unchecked")
+	private static Map<String,Object> handlePostRequest(String urlApi, String authToken) throws Exception{
+		urlApi += "?token=" + authToken;
+    	try {
+	    	HttpEntity<String> httpEntity;
+    		HttpHeaders headers = setHeaderBasicAuth();
+        	httpEntity = new HttpEntity<String>(headers);
+	    	RestTemplate restTemplate = new RestTemplate();
+	    	ResponseEntity<Map> response = restTemplate.exchange(urlApi, HttpMethod.POST, httpEntity, Map.class);
+	    	
+			log.info("response of POST API "+urlApi+" :  "+ response.getBody().toString()); 
+			return response.getBody();
+    	}catch(Exception e) {
+    		log.error("handlePostRequest error POST API "+urlApi+ " : "+e.getMessage());
+    		throw new Exception("handlePostRequest error POST API "+urlApi+ " : "+e.getMessage());
+    	}
     }
     
    
@@ -519,10 +547,21 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 		    	log.info("CLIENT TOKEN: generation time format: "+dtf.format(generationTime)); 
 		    }
     	} catch(Exception e) {
+    		e.printStackTrace();
     		log.error("AAC ERROR: Missing expiration time of client token");
     		return true;
     	}
     	return hasExp;
     }
 
+    public static HttpHeaders setHeaderBasicAuth() {
+    	String clientId 	= ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.CLIENT_ID);
+    	String cleintSecret = ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.CLIENT_SECRET);
+		String val = clientId + ":" + cleintSecret;
+		String encodedStr = new String(Base64.getEncoder().encode(val.getBytes()));
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.add("Authorization", "Basic " + encodedStr);
+		return headers;
+	}
 }
