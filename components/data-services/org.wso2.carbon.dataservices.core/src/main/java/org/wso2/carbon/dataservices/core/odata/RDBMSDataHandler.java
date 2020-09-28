@@ -173,10 +173,11 @@ public class RDBMSDataHandler implements ODataDataHandler {
 	                OMElement dynamicOdataConfig = dynamicODataTablesConfigs.next();
 	                String tblname = dynamicOdataConfig.getAttributeValue(new QName("name"));
 	                String schemaname = dynamicOdataConfig.getAttributeValue(new QName("schema"));
-	                String key = schemaname + SPECIAL_CHAR_SCHEMA_TBL_SEPARATOR + tblname;
+	                String key = tblname;
 	                if(schemaname.equals(DBConstants.NO_SCHEMA)) {
 	                	dynamicTableList.add(tblname);
 	                } else {
+	                	key = schemaname + SPECIAL_CHAR_SCHEMA_TBL_SEPARATOR + tblname;
 	                	dynamicTableList.add(key);
 	                }
 	                //this.oDataTableSchema.put(tblname, schemaname);
