@@ -452,8 +452,8 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
     
     private static boolean isProvider(String roleName, String context, String definedContext) {
     	boolean isProvider = false;
-    	if(context != null && roleName!= null && context.contains(definedContext) 
-    			&& roleName.equals(OAUTH2SSOAuthenticatorConstants.ROLE_PROVIDER)) {
+    	String roleProvider	= ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.ROLE_PROVIDER);
+    	if(context != null && roleName!= null && context.contains(definedContext) && roleName.equals(roleProvider)) {
     		isProvider = true;
     	}
     	return isProvider;
