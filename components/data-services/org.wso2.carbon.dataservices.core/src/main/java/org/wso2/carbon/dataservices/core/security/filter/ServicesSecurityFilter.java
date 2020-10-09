@@ -174,13 +174,9 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 					int length = usernameArray.length;
 					userApiKey = (length == 3 || length == 2 ? usernameArray[0]+"@"+usernameArray[1] : usernameArray[0]);
 					log.info("(apikey)user trying to request data: "+userApiKey+" odataTenant: "+tenant);
-					boolean existsInDSS = checkUserExistsInDSS(userApiKey, tenant);
-		    		if(existsInDSS) {
-		    			return true;
-		    		} else {
-		    			boolean roleAccordingContext = elaborateRolesListApiKey(rolesListResp,tenant,checkIsProvider,method);
-		    			return roleAccordingContext;
-		    		}
+//					boolean existsInDSS = checkUserExistsInDSS(userApiKey, tenant);
+	    			boolean roleAccordingContext = elaborateRolesListApiKey(rolesListResp,tenant,checkIsProvider,method);
+	    			return roleAccordingContext;
 	    		} else {
 					throw new Exception("Username/Roles are empty. Check ApiKey scopes.");
 				}
@@ -253,22 +249,14 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
      */
     private static boolean checkValidityOfUser(String username, String tenantDomain, String authToken, HttpServletRequest request, HttpServletResponse resp, String reason, String method) {
     	if(reason.equals(SECURITY_FILTER_4SERVICES)) {
-    		boolean existsInDSS = checkUserExistsInDSS(username, tenantDomain);
-    		if(existsInDSS) {
-    			return true;
-    		} else {
-    			boolean roleAccordingContext = checkIsRoleAccordingly(tenantDomain,authToken,request,resp,false, "");
-    			return roleAccordingContext;
-    		}
+//    		boolean existsInDSS = checkUserExistsInDSS(username, tenantDomain);
+			boolean roleAccordingContext = checkIsRoleAccordingly(tenantDomain,authToken,request,resp,false, "");
+			return roleAccordingContext;
     	} else if(reason.equals(SECURITY_FILTER_4MGT)) {
-    		boolean existsInDSS = checkUserExistsInDSS(username, tenantDomain);
-    		boolean userHasRights = checkUserHasRights(username, tenantDomain, method);
-    		if(existsInDSS && userHasRights) {
-    			return true;
-    		} else {
-    			boolean roleAccordingContext = checkIsRoleAccordingly(tenantDomain,authToken,request,resp,true,method);
-    			return roleAccordingContext;
-    		}
+//    		boolean existsInDSS = checkUserExistsInDSS(username, tenantDomain);
+//    		boolean userHasRights = checkUserHasRights(username, tenantDomain, method);
+			boolean roleAccordingContext = checkIsRoleAccordingly(tenantDomain,authToken,request,resp,true,method);
+			return roleAccordingContext;
 		}
     	return false;
     }
@@ -280,29 +268,29 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 		return roleAccordingContext;
     }
     
-    private static boolean checkUserExistsInDSS(String username, String tenantDomain) {
-    	boolean exists = false;
-    	RegistryService registryService = DataServicesDSComponent.getRegistryService();
-        RealmService realmService = DataServicesDSComponent.getRealmService();
-        if(username != null && !username.equals("")) {
-	        try {
-				UserRealm realm = AnonymousSessionUtil.getRealmByTenantDomain(registryService,realmService, tenantDomain);
-				if(realm != null) {
-					UserStoreManager userstore = realm.getUserStoreManager();
-					if( !tenantDomain.equals("carbon.super") && username.equals("admin")) {
-						exists = false;
-					}else if (userstore.isExistingUser(username)) {
-						exists = true;
-					}
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-				return exists;
-			}
-        }
-        log.info("User "+username+" exists in DSS? "+exists+" Tenant: "+tenantDomain);
-    	return exists;
-    }
+//    private static boolean checkUserExistsInDSS(String username, String tenantDomain) {
+//    	boolean exists = false;
+//    	RegistryService registryService = DataServicesDSComponent.getRegistryService();
+//        RealmService realmService = DataServicesDSComponent.getRealmService();
+//        if(username != null && !username.equals("")) {
+//	        try {
+//				UserRealm realm = AnonymousSessionUtil.getRealmByTenantDomain(registryService,realmService, tenantDomain);
+//				if(realm != null) {
+//					UserStoreManager userstore = realm.getUserStoreManager();
+//					if( !tenantDomain.equals("carbon.super") && username.equals("admin")) {
+//						exists = false;
+//					}else if (userstore.isExistingUser(username)) {
+//						exists = true;
+//					}
+//				}
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//				return exists;
+//			}
+//        }
+//        log.info("User "+username+" exists in DSS? "+exists+" Tenant: "+tenantDomain);
+//    	return exists;
+//    }
     
     public static boolean checkUserHasRights(String username, String tenantDomain, String method) {
     	boolean hasRights = false;
