@@ -236,7 +236,7 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
     }
     
     /**
-     * Check if user exists in DSS in order to allow him to access the ODATA/REST services of the data service being exposed.(4Services reason)
+     * Check if user exists in DSS or has proper roles in the token/apikey in order to allow him to access the ODATA/REST services of the data service being exposed.(4Services reason)
      * Check if user is provider of the domain in order to be able to manage new or existing data services
      * by accessing the data services CRUD Rest API (4Mgt reason)
      * @param username
@@ -248,17 +248,15 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
      * @return
      */
     private static boolean checkValidityOfUser(String username, String tenantDomain, String authToken, HttpServletRequest request, HttpServletResponse resp, String reason, String method) {
-    	if(reason.equals(SECURITY_FILTER_4SERVICES)) {
-//    		boolean existsInDSS = checkUserExistsInDSS(username, tenantDomain);
-			boolean roleAccordingContext = checkIsRoleAccordingly(tenantDomain,authToken,request,resp,false, "");
-			return roleAccordingContext;
-    	} else if(reason.equals(SECURITY_FILTER_4MGT)) {
-//    		boolean existsInDSS = checkUserExistsInDSS(username, tenantDomain);
-//    		boolean userHasRights = checkUserHasRights(username, tenantDomain, method);
-			boolean roleAccordingContext = checkIsRoleAccordingly(tenantDomain,authToken,request,resp,true,method);
-			return roleAccordingContext;
-		}
-    	return false;
+    	boolean checkIsProvider = false;
+    	String methodVal = "";
+    	boolean roleAccordingContext = false;
+    	if(reason.equals(SECURITY_FILTER_4MGT)) {
+			checkIsProvider = true;
+			methodVal = method;
+    	}    			
+    	roleAccordingContext = checkIsRoleAccordingly(tenantDomain,authToken,request,resp,checkIsProvider,methodVal);
+		return roleAccordingContext;
     }
     
     private static boolean checkIsRoleAccordingly(String tenantDomain, String authToken, HttpServletRequest request, HttpServletResponse resp, boolean checkIsProvider, String method) {
