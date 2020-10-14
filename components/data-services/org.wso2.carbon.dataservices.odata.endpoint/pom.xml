@@ -47,7 +47,7 @@
         <dependency>
             <groupId>co.innovation.lab</groupId>
             <artifactId>org.wso2.carbon.identity.authenticator.oauth2.sso</artifactId>
-            <version>1.0.1</version>
+            <version>${identity.auth.oauth2.version}</version>
         </dependency>
     </dependencies>
 
