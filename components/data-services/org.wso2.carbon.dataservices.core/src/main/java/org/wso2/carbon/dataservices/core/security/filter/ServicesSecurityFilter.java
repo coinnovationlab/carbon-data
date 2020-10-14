@@ -196,7 +196,8 @@ public class ServicesSecurityFilter  implements ServicesSecurityFilterInterface{
 	    	Map <String,Object> response = handlePostRequest(urlTokenApi,authToken);
 			if(response != null) {
 				String username = (String) response.get(ServicesSecurityFilterUtils.authenticatorConfig(OAUTH2SSOAuthenticatorConstants.USER_NAME_FIELD));
-				aac_applicationToken = (boolean) response.get("aac_applicationToken");
+				if(response.get("aac_applicationToken") != null)
+					aac_applicationToken = (boolean) response.get("aac_applicationToken");
 				boolean active = (boolean) response.get("active");
 				if(active && username != null) {
 					String [] usernameArray = username.split("@");
